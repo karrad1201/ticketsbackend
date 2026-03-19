@@ -1,12 +1,13 @@
 package com.karrad.bilets.domain.entity
 
 data class SeatTemplate(
-    val sectionLabel: String,
-    val rowLabel: String,
-    val seatNumber: Int,
+    val seatKey: SeatKey,
     val price: Int
 ) {
+    init {
+        require(price >= 0) { "SeatTemplate price must not be negative" }
+    }
 
-    val seatKey: String
-        get() = "$sectionLabel:$rowLabel:$seatNumber"
+    val seatNumber: Int
+        get() = seatKey.seatNumber
 }
