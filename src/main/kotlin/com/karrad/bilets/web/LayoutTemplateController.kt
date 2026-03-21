@@ -26,7 +26,7 @@ class LayoutTemplateController(
     fun create(
         @RequestBody request: CreateLayoutTemplateRequest
     ): LayoutTemplate {
-        return createLayoutTemplateUseCase.create(request.toDomain())
+        return createLayoutTemplateUseCase.create(request.toDomain(), request.creatorUserId)
     }
 
     @GetMapping

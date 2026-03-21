@@ -3,12 +3,17 @@ package com.karrad.bilets.application.usecase
 import com.karrad.bilets.application.service.ApplicationServicesTestConfig
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +35,12 @@ class CreateLayoutTemplateUseCaseTests {
     lateinit var venueRepository: VenueRepository
 
     @Autowired
+    lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
+
+    @Autowired
     lateinit var layoutTemplateRepository: LayoutTemplateRepository
 
     @Autowired
@@ -37,11 +48,14 @@ class CreateLayoutTemplateUseCaseTests {
 
     @Test
     fun `should create layout template when venue space exists`() {
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174513")
+        seedOrganizationAccess(actorUserId)
         val venue = demoVenue()
         venueRepository.save(venue)
 
         val result = useCase.create(
-            demoLayoutTemplate(venueSpaceId = venue.spaces.first().id)
+            demoLayoutTemplate(venueSpaceId = venue.spaces.first().id),
+            actorUserId
         )
 
         assertEquals(venue.spaces.first().id, result.venueSpaceId)
@@ -54,17 +68,72 @@ class CreateLayoutTemplateUseCaseTests {
             useCase.create(
                 demoLayoutTemplate(
                     venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614174501")
-                )
+                ),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174513")
             )
         }
 
         assertTrue(exception.message!!.contains("VenueSpace not found"))
     }
 
+    @Test
+    fun `should reject layout template creation when actor is not organization member`() {
+        organizationRepository.save(demoOrganization())
+        venueRepository.save(demoVenue())
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                demoLayoutTemplate(venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614174511")),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174514")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("is not a member"))
+    }
+
+    @Test
+    fun `should reject layout template creation when venue has no organization`() {
+        venueRepository.save(
+            demoVenue().copy(
+                organizationId = null,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174515")
+            )
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                demoLayoutTemplate(venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614174511")),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174513")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("is not attached to an organization"))
+    }
+
+    private fun seedOrganizationAccess(actorUserId: UUID) {
+        organizationRepository.save(demoOrganization())
+        organizationMemberRepository.save(
+            OrganizationMember(
+                organizationId = demoOrganization().id,
+                userId = actorUserId,
+                role = OrganizationMemberRole.OWNER
+            )
+        )
+    }
+
+    private fun demoOrganization(): Organization {
+        return Organization(
+            code = "demo-org",
+            name = "Demo Org",
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174509")
+        )
+    }
+
     private fun demoVenue(): Venue {
         return Venue(
             label = "Demo Hall",
             city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
+            organizationId = demoOrganization().id,
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614174510"),
             spaces = listOf(
                 VenueSpace(
