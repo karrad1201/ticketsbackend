@@ -9,12 +9,15 @@ import java.util.UUID
 data class CreateVenueRequest(
     val label: String,
     val city: CityRequest,
+    val organizationId: UUID,
+    val creatorUserId: UUID,
     val spaces: List<VenueSpaceRequest> = emptyList()
 ) {
     fun toDomain(): Venue {
         return Venue(
             label = label,
             city = city.toDomain(),
+            organizationId = organizationId,
             spaces = spaces.map { it.toDomain() }
         )
     }

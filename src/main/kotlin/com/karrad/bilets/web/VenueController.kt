@@ -25,7 +25,7 @@ class VenueController(
     fun create(
         @RequestBody request: CreateVenueRequest
     ): Venue {
-        return createVenueUseCase.create(request.toDomain())
+        return createVenueUseCase.create(request.toDomain(), request.creatorUserId)
     }
 
     @GetMapping

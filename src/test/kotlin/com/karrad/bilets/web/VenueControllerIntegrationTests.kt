@@ -1,6 +1,11 @@
 package com.karrad.bilets.web
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationMember
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -28,6 +33,12 @@ class VenueControllerIntegrationTests {
     lateinit var objectMapper: ObjectMapper
 
     @Autowired
+    lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
+
+    @Autowired
     lateinit var venueRepository: VenueRepository
 
     @BeforeEach
@@ -37,6 +48,8 @@ class VenueControllerIntegrationTests {
 
     @Test
     fun `should create venue over http`() {
+        seedOrganizationAccess()
+
         mockMvc.perform(
             post("/api/venues")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -48,6 +61,8 @@ class VenueControllerIntegrationTests {
                                 "label" to "Ekaterinburg",
                                 "subject" to mapOf("label" to "Sverdlovsk Oblast")
                             ),
+                            "organizationId" to demoOrganization().id,
+                            "creatorUserId" to demoCreatorUserId(),
                             "spaces" to listOf(
                                 mapOf("label" to "Main Hall"),
                                 mapOf("label" to "Small Hall")
@@ -59,11 +74,14 @@ class VenueControllerIntegrationTests {
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.label").value("Demo Hall"))
             .andExpect(jsonPath("$.city.label").value("Ekaterinburg"))
+            .andExpect(jsonPath("$.organizationId").value(demoOrganization().id.toString()))
             .andExpect(jsonPath("$.spaces.length()").value(2))
     }
 
     @Test
     fun `should reject venue over http when space ids are duplicated`() {
+        seedOrganizationAccess()
+
         mockMvc.perform(
             post("/api/venues")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -75,6 +93,8 @@ class VenueControllerIntegrationTests {
                                 "label" to "Ekaterinburg",
                                 "subject" to mapOf("label" to "Sverdlovsk Oblast")
                             ),
+                            "organizationId" to demoOrganization().id,
+                            "creatorUserId" to demoCreatorUserId(),
                             "spaces" to listOf(
                                 mapOf(
                                     "label" to "Main Hall",
@@ -91,4 +111,51 @@ class VenueControllerIntegrationTests {
         )
             .andExpect(status().isBadRequest)
     }
+
+    @Test
+    fun `should reject venue over http when creator is not organization member`() {
+        organizationRepository.save(demoOrganization())
+
+        mockMvc.perform(
+            post("/api/venues")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "label" to "Demo Hall",
+                            "city" to mapOf(
+                                "label" to "Ekaterinburg",
+                                "subject" to mapOf("label" to "Sverdlovsk Oblast")
+                            ),
+                            "organizationId" to demoOrganization().id,
+                            "creatorUserId" to demoCreatorUserId(),
+                            "spaces" to listOf(mapOf("label" to "Main Hall"))
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    private fun seedOrganizationAccess() {
+        organizationRepository.save(demoOrganization())
+        organizationMemberRepository.save(
+            OrganizationMember(
+                organizationId = demoOrganization().id,
+                userId = demoCreatorUserId(),
+                role = OrganizationMemberRole.OWNER
+            )
+        )
+    }
+
+    private fun demoOrganization(): Organization {
+        return Organization(
+            code = "demo-org",
+            name = "Demo Org",
+            id = java.util.UUID.fromString("123e4567-e89b-12d3-a456-426614174629")
+        )
+    }
+
+    private fun demoCreatorUserId(): java.util.UUID =
+        java.util.UUID.fromString("123e4567-e89b-12d3-a456-426614174630")
 }

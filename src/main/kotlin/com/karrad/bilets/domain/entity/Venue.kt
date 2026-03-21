@@ -5,6 +5,7 @@ import java.util.UUID
 data class Venue(
     val label: String,
     val city: City,
+    val organizationId: UUID? = null,
     val id: UUID = UUID.randomUUID(),
     val spaces: List<VenueSpace> = emptyList()
 ) {

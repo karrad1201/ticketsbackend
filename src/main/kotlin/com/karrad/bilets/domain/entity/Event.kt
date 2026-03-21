@@ -11,7 +11,8 @@ data class Event(
     val categoryId: UUID,
     val time: Instant,
     val venueSpaceId: UUID? = null,
-    val id: UUID = UUID.randomUUID()
+    val id: UUID = UUID.randomUUID(),
+    val organizationId: UUID? = null
 ) {
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }

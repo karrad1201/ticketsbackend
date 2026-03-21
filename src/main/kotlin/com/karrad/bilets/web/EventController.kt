@@ -25,7 +25,7 @@ class EventController(
     fun create(
         @RequestBody request: CreateEventRequest
     ): Event {
-        return createEventUseCase.create(request.toDomain())
+        return createEventUseCase.create(request.toDomain(), request.creatorUserId)
     }
 
     @GetMapping

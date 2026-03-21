@@ -4,11 +4,16 @@ import com.karrad.bilets.application.service.ApplicationServicesTestConfig
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,6 +39,12 @@ class CreateEventUseCaseTests {
     lateinit var venueRepository: VenueRepository
 
     @Autowired
+    lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
+
+    @Autowired
     lateinit var eventRepository: EventRepository
 
     @Autowired
@@ -43,6 +54,8 @@ class CreateEventUseCaseTests {
     fun `should create event when venue exists and venue space belongs to venue`() {
         val venue = demoVenue()
         val category = demoCategory()
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+        seedOrganizationAccess(actorUserId)
         categoryRepository.save(category)
         venueRepository.save(venue)
 
@@ -51,11 +64,13 @@ class CreateEventUseCaseTests {
                 categoryId = category.id,
                 venueId = venue.id,
                 venueSpaceId = venue.spaces.first().id
-            )
+            ),
+            actorUserId
         )
 
         assertEquals(venue.id, result.venueId)
         assertEquals(venue.spaces.first().id, result.venueSpaceId)
+        assertEquals(venue.organizationId, result.organizationId)
         assertEquals(result, eventRepository.findById(result.id))
     }
 
@@ -63,6 +78,8 @@ class CreateEventUseCaseTests {
     fun `should create event without venue space for general admission flow`() {
         val venue = demoVenue()
         val category = demoCategory()
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+        seedOrganizationAccess(actorUserId)
         categoryRepository.save(category)
         venueRepository.save(venue)
 
@@ -71,11 +88,13 @@ class CreateEventUseCaseTests {
                 categoryId = category.id,
                 venueId = venue.id,
                 venueSpaceId = null
-            )
+            ),
+            actorUserId
         )
 
         assertNotNull(eventRepository.findById(result.id))
         assertEquals(null, result.venueSpaceId)
+        assertEquals(venue.organizationId, result.organizationId)
     }
 
     @Test
@@ -89,7 +108,8 @@ class CreateEventUseCaseTests {
                     categoryId = category.id,
                     venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174401"),
                     venueSpaceId = null
-                )
+                ),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
             )
         }
 
@@ -100,6 +120,8 @@ class CreateEventUseCaseTests {
     fun `should reject event creation when venue space does not belong to venue`() {
         val venue = demoVenue()
         val category = demoCategory()
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+        seedOrganizationAccess(actorUserId)
         categoryRepository.save(category)
         venueRepository.save(venue)
 
@@ -109,7 +131,8 @@ class CreateEventUseCaseTests {
                     categoryId = category.id,
                     venueId = venue.id,
                     venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614174402")
-                )
+                ),
+                actorUserId
             )
         }
 
@@ -120,6 +143,7 @@ class CreateEventUseCaseTests {
         return Venue(
             label = "Demo Hall",
             city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
+            organizationId = UUID.fromString("123e4567-e89b-12d3-a456-426614174409"),
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614174410"),
             spaces = listOf(
                 VenueSpace(
@@ -133,6 +157,8 @@ class CreateEventUseCaseTests {
     @Test
     fun `should reject event creation when category does not exist`() {
         val venue = demoVenue()
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+        seedOrganizationAccess(actorUserId)
         venueRepository.save(venue)
 
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -141,11 +167,59 @@ class CreateEventUseCaseTests {
                     categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614174403"),
                     venueId = venue.id,
                     venueSpaceId = venue.spaces.first().id
-                )
+                ),
+                actorUserId
             )
         }
 
         assertTrue(exception.message!!.contains("Category not found"))
+    }
+
+    @Test
+    fun `should reject event creation when actor is not organization member`() {
+        val venue = demoVenue()
+        val category = demoCategory()
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+        organizationRepository.save(demoOrganization())
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                demoEvent(
+                    categoryId = category.id,
+                    venueId = venue.id,
+                    venueSpaceId = venue.spaces.first().id
+                ),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174415")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("is not a member"))
+    }
+
+    @Test
+    fun `should reject event creation when venue has no organization`() {
+        val category = demoCategory()
+        categoryRepository.save(category)
+        venueRepository.save(
+            demoVenue().copy(
+                organizationId = null,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174416")
+            )
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                demoEvent(
+                    categoryId = category.id,
+                    venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174416"),
+                    venueSpaceId = null
+                ),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("is not attached to an organization"))
     }
 
     private fun demoCategory(): Category {
@@ -165,6 +239,25 @@ class CreateEventUseCaseTests {
             time = Instant.parse("2026-04-10T18:00:00Z"),
             venueSpaceId = venueSpaceId,
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614174412")
+        )
+    }
+
+    private fun seedOrganizationAccess(actorUserId: UUID) {
+        organizationRepository.save(demoOrganization())
+        organizationMemberRepository.save(
+            OrganizationMember(
+                organizationId = demoOrganization().id,
+                userId = actorUserId,
+                role = OrganizationMemberRole.OWNER
+            )
+        )
+    }
+
+    private fun demoOrganization(): Organization {
+        return Organization(
+            code = "demo-org",
+            name = "Demo Org",
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174409")
         )
     }
 }
