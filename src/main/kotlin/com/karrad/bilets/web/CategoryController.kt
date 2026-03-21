@@ -32,5 +32,5 @@ class CategoryController(
 
     @GetMapping("/{categoryId}")
     fun getById(@PathVariable categoryId: UUID): Category =
-        requireNotNull(categoryService.getById(categoryId)) { "Category not found: $categoryId" }
+        categoryService.getById(categoryId) ?: throw NoSuchElementException("Category not found: $categoryId")
 }

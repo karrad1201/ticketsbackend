@@ -33,5 +33,5 @@ class EventController(
 
     @GetMapping("/{eventId}")
     fun getById(@PathVariable eventId: java.util.UUID): Event =
-        requireNotNull(eventService.getById(eventId)) { "Event not found: $eventId" }
+        eventService.getById(eventId) ?: throw NoSuchElementException("Event not found: $eventId")
 }

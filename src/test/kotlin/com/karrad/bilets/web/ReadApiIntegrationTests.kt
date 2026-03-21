@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -15,6 +16,7 @@ import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,6 +45,9 @@ class ReadApiIntegrationTests {
     lateinit var objectMapper: ObjectMapper
 
     @Autowired
+    lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
     lateinit var categoryRepository: CategoryRepository
 
     @Autowired
@@ -65,16 +70,26 @@ class ReadApiIntegrationTests {
     @Test
     fun `should expose list and get endpoints for current domain entities`() {
         val category = Category(code = "theatre", label = "Theatre", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175100"))
+        val organization = Organization(code = "ufa-jazz", name = "Ufa Jazz Collective", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175099"))
         val venue = demoVenue()
         val layoutTemplate = demoLayoutTemplate(venue.spaces.first().id)
         val event = demoEvent(category.id, venue.id, venue.spaces.first().id)
         val inventoryPlan = EventInventoryPlan.seated(event, layoutTemplate)
 
+        organizationRepository.save(organization)
         categoryRepository.save(category)
         venueRepository.save(venue)
         layoutTemplateRepository.save(layoutTemplate)
         eventRepository.save(event)
         eventInventoryPlanRepository.save(inventoryPlan)
+
+        mockMvc.perform(get("/api/organizations"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(1))
+
+        mockMvc.perform(get("/api/organizations/${organization.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.code").value("ufa-jazz"))
 
         mockMvc.perform(get("/api/categories"))
             .andExpect(status().isOk)
@@ -119,6 +134,30 @@ class ReadApiIntegrationTests {
         mockMvc.perform(get("/api/events/${event.id}/inventory"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventId").value(event.id.toString()))
+    }
+
+    @Test
+    fun `should return 404 for missing resources on read endpoints`() {
+        mockMvc.perform(get("/api/organizations/123e4567-e89b-12d3-a456-426614175110"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/categories/123e4567-e89b-12d3-a456-426614175111"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/venues/123e4567-e89b-12d3-a456-426614175112"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/layout-templates/123e4567-e89b-12d3-a456-426614175113"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/events/123e4567-e89b-12d3-a456-426614175114"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/inventory-plans/123e4567-e89b-12d3-a456-426614175115"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/events/123e4567-e89b-12d3-a456-426614175116/inventory"))
+            .andExpect(status().isNotFound)
     }
 
     private fun demoVenue(): Venue {

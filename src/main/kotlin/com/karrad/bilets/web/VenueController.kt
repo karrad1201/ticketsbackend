@@ -33,5 +33,5 @@ class VenueController(
 
     @GetMapping("/{venueId}")
     fun getById(@PathVariable venueId: java.util.UUID): Venue =
-        requireNotNull(venueService.getById(venueId)) { "Venue not found: $venueId" }
+        venueService.getById(venueId) ?: throw NoSuchElementException("Venue not found: $venueId")
 }

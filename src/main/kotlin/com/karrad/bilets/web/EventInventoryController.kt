@@ -37,7 +37,8 @@ class EventInventoryController(
 ) {
     @GetMapping
     fun getInventory(@PathVariable eventId: UUID): EventInventoryPlan =
-        requireNotNull(inventoryPlanService.getByEventId(eventId)) { "EventInventoryPlan not found for event: $eventId" }
+        inventoryPlanService.getByEventId(eventId)
+            ?: throw NoSuchElementException("EventInventoryPlan not found for event: $eventId")
 
 
     @PostMapping("/seated")

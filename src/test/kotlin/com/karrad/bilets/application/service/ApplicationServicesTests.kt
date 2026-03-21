@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -26,6 +27,9 @@ import kotlin.test.assertTrue
 @SpringJUnitConfig(ApplicationServicesTestConfig::class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ApplicationServicesTests {
+
+    @Autowired
+    lateinit var organizationService: OrganizationService
 
     @Autowired
     lateinit var venueService: VenueService
@@ -51,6 +55,29 @@ class ApplicationServicesTests {
         assertEquals(1, venueService.list().size)
         assertTrue(venueService.deleteById(created.id))
         assertNull(venueService.getById(created.id))
+    }
+
+    @Test
+    fun `organization service should create list get update and delete organizations`() {
+        val organization = demoOrganization()
+
+        val created = organizationService.create(organization)
+        val updated = organizationService.update(created.copy(name = "Updated Promoter"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Promoter", organizationService.getById(created.id)?.name)
+        assertEquals(1, organizationService.list().size)
+        assertTrue(organizationService.deleteById(created.id))
+        assertNull(organizationService.getById(created.id))
+    }
+
+    @Test
+    fun `organization service should reject update for missing organization`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            organizationService.update(demoOrganization())
+        }
+
+        assertTrue(exception.message!!.contains("Organization not found"))
     }
 
     @Test
@@ -166,6 +193,16 @@ class ApplicationServicesTests {
             city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
             id = id,
             spaces = listOf(VenueSpace(label = "Main Hall"))
+        )
+    }
+
+    private fun demoOrganization(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174040")
+    ): Organization {
+        return Organization(
+            code = "ufa-jazz",
+            name = "Ufa Jazz Collective",
+            id = id
         )
     }
 

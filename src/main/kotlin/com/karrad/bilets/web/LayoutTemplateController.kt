@@ -36,5 +36,5 @@ class LayoutTemplateController(
 
     @GetMapping("/{layoutTemplateId}")
     fun getById(@PathVariable layoutTemplateId: java.util.UUID): LayoutTemplate =
-        requireNotNull(layoutTemplateService.getById(layoutTemplateId)) { "LayoutTemplate not found: $layoutTemplateId" }
+        layoutTemplateService.getById(layoutTemplateId) ?: throw NoSuchElementException("LayoutTemplate not found: $layoutTemplateId")
 }
