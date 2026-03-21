@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -12,6 +13,9 @@ import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.InventoryMode
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
+import com.karrad.bilets.domain.enums.UserRole
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.annotation.DirtiesContext
@@ -30,6 +34,12 @@ class ApplicationServicesTests {
 
     @Autowired
     lateinit var organizationService: OrganizationService
+
+    @Autowired
+    lateinit var organizationApplicationService: OrganizationApplicationService
+
+    @Autowired
+    lateinit var userService: UserService
 
     @Autowired
     lateinit var venueService: VenueService
@@ -78,6 +88,58 @@ class ApplicationServicesTests {
         }
 
         assertTrue(exception.message!!.contains("Organization not found"))
+    }
+
+    @Test
+    fun `user service should create list get update and delete users`() {
+        val user = demoUser()
+
+        val created = userService.create(user)
+        val updated = userService.update(created.copy(fullName = "Updated Manager"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Manager", userService.getById(created.id)?.fullName)
+        assertEquals(1, userService.list().size)
+        assertTrue(userService.deleteById(created.id))
+        assertNull(userService.getById(created.id))
+    }
+
+    @Test
+    fun `user service should reject update for missing user`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            userService.update(demoUser())
+        }
+
+        assertTrue(exception.message!!.contains("User not found"))
+    }
+
+    @Test
+    fun `organization application service should create list get update and delete applications`() {
+        val application = demoOrganizationApplication()
+
+        val created = organizationApplicationService.create(application)
+        val updated = organizationApplicationService.update(
+            created.copy(
+                status = OrganizationApplicationStatus.REJECTED,
+                reviewedByUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174042"),
+                reviewedAt = Instant.parse("2026-03-21T10:00:00Z")
+            )
+        )
+
+        assertEquals(created.id, updated.id)
+        assertEquals(OrganizationApplicationStatus.REJECTED, organizationApplicationService.getById(created.id)?.status)
+        assertEquals(1, organizationApplicationService.list().size)
+        assertTrue(organizationApplicationService.deleteById(created.id))
+        assertNull(organizationApplicationService.getById(created.id))
+    }
+
+    @Test
+    fun `organization application service should reject update for missing application`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            organizationApplicationService.update(demoOrganizationApplication())
+        }
+
+        assertTrue(exception.message!!.contains("OrganizationApplication not found"))
     }
 
     @Test
@@ -202,6 +264,28 @@ class ApplicationServicesTests {
         return Organization(
             code = "ufa-jazz",
             name = "Ufa Jazz Collective",
+            id = id
+        )
+    }
+
+    private fun demoUser(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174041")
+    ): User {
+        return User(
+            email = "manager@example.com",
+            fullName = "Organization Manager",
+            role = UserRole.USER,
+            id = id
+        )
+    }
+
+    private fun demoOrganizationApplication(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174043")
+    ): OrganizationApplication {
+        return OrganizationApplication(
+            applicantUserId = demoUser().id,
+            organizationCode = "ural-live",
+            organizationName = "Ural Live Events",
             id = id
         )
     }

@@ -7,16 +7,21 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -45,6 +50,12 @@ class ReadApiIntegrationTests {
     lateinit var objectMapper: ObjectMapper
 
     @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var organizationApplicationRepository: OrganizationApplicationRepository
+
+    @Autowired
     lateinit var organizationRepository: OrganizationRepository
 
     @Autowired
@@ -70,18 +81,43 @@ class ReadApiIntegrationTests {
     @Test
     fun `should expose list and get endpoints for current domain entities`() {
         val category = Category(code = "theatre", label = "Theatre", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175100"))
+        val user = User(email = "user@example.com", fullName = "Regular User", role = UserRole.USER, id = UUID.fromString("123e4567-e89b-12d3-a456-426614175098"))
+        val application = OrganizationApplication(
+            applicantUserId = user.id,
+            organizationCode = "ural-live",
+            organizationName = "Ural Live Events",
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175097")
+        )
         val organization = Organization(code = "ufa-jazz", name = "Ufa Jazz Collective", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175099"))
         val venue = demoVenue()
         val layoutTemplate = demoLayoutTemplate(venue.spaces.first().id)
         val event = demoEvent(category.id, venue.id, venue.spaces.first().id)
         val inventoryPlan = EventInventoryPlan.seated(event, layoutTemplate)
 
+        userRepository.save(user)
+        organizationApplicationRepository.save(application)
         organizationRepository.save(organization)
         categoryRepository.save(category)
         venueRepository.save(venue)
         layoutTemplateRepository.save(layoutTemplate)
         eventRepository.save(event)
         eventInventoryPlanRepository.save(inventoryPlan)
+
+        mockMvc.perform(get("/api/users"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(1))
+
+        mockMvc.perform(get("/api/users/${user.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.email").value("user@example.com"))
+
+        mockMvc.perform(get("/api/organization-applications"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(1))
+
+        mockMvc.perform(get("/api/organization-applications/${application.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.organizationCode").value("ural-live"))
 
         mockMvc.perform(get("/api/organizations"))
             .andExpect(status().isOk)
@@ -138,6 +174,12 @@ class ReadApiIntegrationTests {
 
     @Test
     fun `should return 404 for missing resources on read endpoints`() {
+        mockMvc.perform(get("/api/users/123e4567-e89b-12d3-a456-426614175109"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/organization-applications/123e4567-e89b-12d3-a456-426614175108"))
+            .andExpect(status().isNotFound)
+
         mockMvc.perform(get("/api/organizations/123e4567-e89b-12d3-a456-426614175110"))
             .andExpect(status().isNotFound)
 
