@@ -9,6 +9,7 @@ import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.TicketType
+import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import org.junit.jupiter.api.Test
@@ -132,6 +133,25 @@ class InMemoryRepositoriesTests {
         assertTrue(repository.deleteByEventId(event.id))
         assertNull(repository.findByEventId(event.id))
         assertFalse(repository.deleteByEventId(event.id))
+    }
+
+    @Test
+    fun `user event visit repository should save update list and delete visits`() {
+        val repository = InMemoryUserEventVisitRepository()
+        val visit = UserEventVisit(
+            userId = UUID.fromString("123e4567-e89b-12d3-a456-426614174130"),
+            eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174131"),
+            visitedAt = Instant.parse("2026-04-01T18:00:00Z")
+        )
+        val saved = repository.save(visit)
+        val updated = repository.save(saved.copy(visitedAt = Instant.parse("2026-04-02T18:00:00Z")))
+
+        assertEquals(updated, repository.findById(visit.id))
+        assertEquals(listOf(updated), repository.findByUserId(visit.userId))
+        assertEquals(listOf(updated), repository.findAll())
+        assertTrue(repository.deleteById(visit.id))
+        assertNull(repository.findById(visit.id))
+        assertFalse(repository.deleteById(visit.id))
     }
 
     private fun demoVenue(id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")): Venue {

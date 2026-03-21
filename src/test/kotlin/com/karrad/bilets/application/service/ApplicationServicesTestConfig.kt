@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
@@ -16,6 +17,7 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryLayoutTempl
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
 import org.springframework.context.annotation.Bean
@@ -38,6 +40,9 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun userRepository(): UserRepository = InMemoryUserRepository()
+
+    @Bean
+    fun userEventVisitRepository(): UserEventVisitRepository = InMemoryUserEventVisitRepository()
 
     @Bean
     fun venueRepository(): VenueRepository = InMemoryVenueRepository()
@@ -71,6 +76,10 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun userService(userRepository: UserRepository): UserService = UserService(userRepository)
+
+    @Bean
+    fun userEventVisitService(userEventVisitRepository: UserEventVisitRepository): UserEventVisitService =
+        UserEventVisitService(userEventVisitRepository)
 
     @Bean
     fun layoutTemplateService(layoutTemplateRepository: LayoutTemplateRepository): LayoutTemplateService =

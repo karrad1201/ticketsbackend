@@ -2,6 +2,7 @@ package com.karrad.bilets.web
 
 import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.application.usecase.CreateEventUseCase
+import com.karrad.bilets.application.usecase.SearchEventsUseCase
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.web.dto.CreateEventRequest
 import org.springframework.web.bind.annotation.GetMapping
@@ -10,14 +11,18 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/events")
 class EventController(
     private val createEventUseCase: CreateEventUseCase,
-    private val eventService: EventService
+    private val eventService: EventService,
+    private val searchEventsUseCase: SearchEventsUseCase
 ) {
 
     @PostMapping
@@ -30,6 +35,19 @@ class EventController(
 
     @GetMapping
     fun list(): List<Event> = eventService.list()
+
+    @GetMapping("/search")
+    fun search(
+        @RequestParam(required = false) q: String?,
+        @RequestParam(required = false) city: String?,
+        @RequestParam(required = false) categoryId: UUID?,
+        @RequestParam(required = false) venueId: UUID?,
+        @RequestParam(required = false) dateFrom: LocalDate?,
+        @RequestParam(required = false) dateTo: LocalDate?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "10") size: Int
+    ): List<Event> =
+        searchEventsUseCase.search(q, city, categoryId, venueId, dateFrom, dateTo, page, size)
 
     @GetMapping("/{eventId}")
     fun getById(@PathVariable eventId: java.util.UUID): Event =

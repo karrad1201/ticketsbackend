@@ -15,6 +15,7 @@ import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.InventoryMode
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.UserRole
@@ -45,6 +46,9 @@ class ApplicationServicesTests {
 
     @Autowired
     lateinit var userService: UserService
+
+    @Autowired
+    lateinit var userEventVisitService: UserEventVisitService
 
     @Autowired
     lateinit var venueService: VenueService
@@ -116,6 +120,30 @@ class ApplicationServicesTests {
         }
 
         assertTrue(exception.message!!.contains("User not found"))
+    }
+
+    @Test
+    fun `user event visit service should create list get update and delete visits`() {
+        val visit = demoUserEventVisit()
+
+        val created = userEventVisitService.create(visit)
+        val updated = userEventVisitService.update(created.copy(visitedAt = Instant.parse("2026-05-01T10:00:00Z")))
+
+        assertEquals(created.id, updated.id)
+        assertEquals(Instant.parse("2026-05-01T10:00:00Z"), userEventVisitService.getById(created.id)?.visitedAt)
+        assertEquals(1, userEventVisitService.list().size)
+        assertEquals(1, userEventVisitService.listByUserId(visit.userId).size)
+        assertTrue(userEventVisitService.deleteById(created.id))
+        assertNull(userEventVisitService.getById(created.id))
+    }
+
+    @Test
+    fun `user event visit service should reject update for missing visit`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            userEventVisitService.update(demoUserEventVisit())
+        }
+
+        assertTrue(exception.message!!.contains("UserEventVisit not found"))
     }
 
     @Test
@@ -359,6 +387,17 @@ class ApplicationServicesTests {
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614174033"),
             time = Instant.parse("2026-04-01T18:00:00Z"),
             venueSpaceId = venueSpaceId,
+            id = id
+        )
+    }
+
+    private fun demoUserEventVisit(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174045")
+    ): UserEventVisit {
+        return UserEventVisit(
+            userId = demoUser().id,
+            eventId = demoEvent().id,
+            visitedAt = Instant.parse("2026-04-01T18:00:00Z"),
             id = id
         )
     }
