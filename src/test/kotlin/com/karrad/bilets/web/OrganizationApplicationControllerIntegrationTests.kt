@@ -2,8 +2,10 @@ package com.karrad.bilets.web
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -38,6 +40,9 @@ class OrganizationApplicationControllerIntegrationTests {
 
     @Autowired
     lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
 
     @Autowired
     lateinit var organizationApplicationRepository: OrganizationApplicationRepository
@@ -89,7 +94,11 @@ class OrganizationApplicationControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
 
-        assert(organizationRepository.findByCode("ural-live") != null)
+        val organization = organizationRepository.findByCode("ural-live")
+        assert(organization != null)
+        val member = organizationMemberRepository.findByOrganizationIdAndUserId(requireNotNull(organization).id, applicant.id)
+        assert(member != null)
+        assert(requireNotNull(member).role == OrganizationMemberRole.OWNER)
     }
 
     @Test

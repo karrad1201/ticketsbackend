@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.OrganizationApplication
+import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -15,6 +16,7 @@ import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.InventoryMode
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.UserRole
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -37,6 +39,9 @@ class ApplicationServicesTests {
 
     @Autowired
     lateinit var organizationApplicationService: OrganizationApplicationService
+
+    @Autowired
+    lateinit var organizationMemberService: OrganizationMemberService
 
     @Autowired
     lateinit var userService: UserService
@@ -140,6 +145,31 @@ class ApplicationServicesTests {
         }
 
         assertTrue(exception.message!!.contains("OrganizationApplication not found"))
+    }
+
+    @Test
+    fun `organization member service should create list get update and delete members`() {
+        val member = demoOrganizationMember()
+
+        val created = organizationMemberService.create(member)
+        val updated = organizationMemberService.update(created.copy(role = OrganizationMemberRole.MANAGER))
+
+        assertEquals(created.id, updated.id)
+        assertEquals(OrganizationMemberRole.MANAGER, organizationMemberService.getById(created.id)?.role)
+        assertEquals(1, organizationMemberService.list().size)
+        assertEquals(1, organizationMemberService.listByOrganizationId(member.organizationId).size)
+        assertEquals(1, organizationMemberService.listByUserId(member.userId).size)
+        assertTrue(organizationMemberService.deleteById(created.id))
+        assertNull(organizationMemberService.getById(created.id))
+    }
+
+    @Test
+    fun `organization member service should reject update for missing member`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            organizationMemberService.update(demoOrganizationMember())
+        }
+
+        assertTrue(exception.message!!.contains("OrganizationMember not found"))
     }
 
     @Test
@@ -286,6 +316,17 @@ class ApplicationServicesTests {
             applicantUserId = demoUser().id,
             organizationCode = "ural-live",
             organizationName = "Ural Live Events",
+            id = id
+        )
+    }
+
+    private fun demoOrganizationMember(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174044")
+    ): OrganizationMember {
+        return OrganizationMember(
+            organizationId = demoOrganization().id,
+            userId = demoUser().id,
+            role = OrganizationMemberRole.OWNER,
             id = id
         )
     }

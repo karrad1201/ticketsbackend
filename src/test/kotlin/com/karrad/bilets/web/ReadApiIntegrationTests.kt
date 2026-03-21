@@ -8,6 +8,7 @@ import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.OrganizationApplication
+import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -15,11 +16,13 @@ import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
@@ -56,6 +59,9 @@ class ReadApiIntegrationTests {
     lateinit var organizationApplicationRepository: OrganizationApplicationRepository
 
     @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
+
+    @Autowired
     lateinit var organizationRepository: OrganizationRepository
 
     @Autowired
@@ -89,6 +95,12 @@ class ReadApiIntegrationTests {
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614175097")
         )
         val organization = Organization(code = "ufa-jazz", name = "Ufa Jazz Collective", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175099"))
+        val member = OrganizationMember(
+            organizationId = organization.id,
+            userId = user.id,
+            role = OrganizationMemberRole.OWNER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175096")
+        )
         val venue = demoVenue()
         val layoutTemplate = demoLayoutTemplate(venue.spaces.first().id)
         val event = demoEvent(category.id, venue.id, venue.spaces.first().id)
@@ -97,6 +109,7 @@ class ReadApiIntegrationTests {
         userRepository.save(user)
         organizationApplicationRepository.save(application)
         organizationRepository.save(organization)
+        organizationMemberRepository.save(member)
         categoryRepository.save(category)
         venueRepository.save(venue)
         layoutTemplateRepository.save(layoutTemplate)
@@ -126,6 +139,14 @@ class ReadApiIntegrationTests {
         mockMvc.perform(get("/api/organizations/${organization.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.code").value("ufa-jazz"))
+
+        mockMvc.perform(get("/api/organization-members"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(1))
+
+        mockMvc.perform(get("/api/organization-members/${member.id}"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.role").value("OWNER"))
 
         mockMvc.perform(get("/api/categories"))
             .andExpect(status().isOk)
@@ -178,6 +199,9 @@ class ReadApiIntegrationTests {
             .andExpect(status().isNotFound)
 
         mockMvc.perform(get("/api/organization-applications/123e4567-e89b-12d3-a456-426614175108"))
+            .andExpect(status().isNotFound)
+
+        mockMvc.perform(get("/api/organization-members/123e4567-e89b-12d3-a456-426614175107"))
             .andExpect(status().isNotFound)
 
         mockMvc.perform(get("/api/organizations/123e4567-e89b-12d3-a456-426614175110"))

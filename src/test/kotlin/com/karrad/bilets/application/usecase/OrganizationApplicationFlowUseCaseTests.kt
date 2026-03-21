@@ -3,9 +3,11 @@ package com.karrad.bilets.application.usecase
 import com.karrad.bilets.application.service.ApplicationServicesTestConfig
 import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.Test
@@ -30,6 +32,9 @@ class OrganizationApplicationFlowUseCaseTests {
 
     @Autowired
     lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
 
     @Autowired
     lateinit var organizationApplicationRepository: OrganizationApplicationRepository
@@ -73,7 +78,11 @@ class OrganizationApplicationFlowUseCaseTests {
         assertEquals(OrganizationApplicationStatus.APPROVED, approved.status)
         assertEquals(admin.id, approved.reviewedByUserId)
         assertNotNull(approved.organizationId)
-        assertNotNull(organizationRepository.findById(requireNotNull(approved.organizationId)))
+        val organizationId = requireNotNull(approved.organizationId)
+        assertNotNull(organizationRepository.findById(organizationId))
+        val member = organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, applicant.id)
+        assertNotNull(member)
+        assertEquals(OrganizationMemberRole.OWNER, member.role)
     }
 
     @Test
