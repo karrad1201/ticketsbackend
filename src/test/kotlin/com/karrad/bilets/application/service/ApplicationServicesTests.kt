@@ -1,0 +1,204 @@
+package com.karrad.bilets.application.service
+
+import com.karrad.bilets.domain.entity.City
+import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.entity.EventInventoryPlan
+import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Row
+import com.karrad.bilets.domain.entity.Section
+import com.karrad.bilets.domain.entity.Subject
+import com.karrad.bilets.domain.entity.TicketType
+import com.karrad.bilets.domain.entity.Venue
+import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.entity.InventoryMode
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
+import java.time.Instant
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@SpringJUnitConfig(ApplicationServicesTestConfig::class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class ApplicationServicesTests {
+
+    @Autowired
+    lateinit var venueService: VenueService
+
+    @Autowired
+    lateinit var layoutTemplateService: LayoutTemplateService
+
+    @Autowired
+    lateinit var eventService: EventService
+
+    @Autowired
+    lateinit var inventoryPlanService: InventoryPlanService
+
+    @Test
+    fun `venue service should create list get update and delete venues`() {
+        val venue = demoVenue()
+
+        val created = venueService.create(venue)
+        val updated = venueService.update(created.copy(label = "Updated Hall"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Hall", venueService.getById(created.id)?.label)
+        assertEquals(1, venueService.list().size)
+        assertTrue(venueService.deleteById(created.id))
+        assertNull(venueService.getById(created.id))
+    }
+
+    @Test
+    fun `venue service should reject update for missing venue`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            venueService.update(demoVenue())
+        }
+
+        assertTrue(exception.message!!.contains("Venue not found"))
+    }
+
+    @Test
+    fun `layout template service should filter by venue space`() {
+        val mainHallId = UUID.fromString("123e4567-e89b-12d3-a456-426614174010")
+        val anotherHallId = UUID.fromString("123e4567-e89b-12d3-a456-426614174011")
+
+        val first = layoutTemplateService.create(demoLayoutTemplate(mainHallId))
+        layoutTemplateService.create(demoLayoutTemplate(anotherHallId))
+
+        val result = layoutTemplateService.listByVenueSpaceId(mainHallId)
+
+        assertEquals(listOf(first.id), result.map { it.id })
+    }
+
+    @Test
+    fun `event service should filter events by venue`() {
+        val venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174020")
+        val anotherVenueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174021")
+
+        val first = eventService.create(demoEvent(venueId = venueId))
+        eventService.create(demoEvent(id = UUID.fromString("123e4567-e89b-12d3-a456-426614174022"), venueId = anotherVenueId))
+
+        val result = eventService.listByVenueId(venueId)
+
+        assertEquals(listOf(first.id), result.map { it.id })
+    }
+
+    @Test
+    fun `inventory plan service should create seated plan and store it`() {
+        val event = demoEvent()
+        val layoutTemplate = demoLayoutTemplate(requireNotNull(event.venueSpaceId))
+
+        val created = inventoryPlanService.createSeatedPlan(event, layoutTemplate)
+
+        assertEquals(InventoryMode.SEATED, created.mode)
+        assertEquals(created, inventoryPlanService.getByEventId(event.id))
+        assertTrue(created.seatInventory.isNotEmpty())
+    }
+
+    @Test
+    fun `inventory plan service should create general admission plan and store it`() {
+        val event = demoEvent(venueSpaceId = null)
+
+        val created = inventoryPlanService.createGeneralAdmissionPlan(
+            event = event,
+            ticketTypes = listOf(
+                TicketType(label = "Standard", price = 1500, quota = 100),
+                TicketType(label = "VIP", price = 3000, quota = 20)
+            )
+        )
+
+        assertEquals(InventoryMode.GENERAL_ADMISSION, created.mode)
+        assertEquals(2, created.admissionInventory.size)
+        assertEquals(created, inventoryPlanService.getByEventId(event.id))
+    }
+
+    @Test
+    fun `inventory plan service should update existing plan`() {
+        val event = demoEvent(venueSpaceId = null)
+        val created = inventoryPlanService.createGeneralAdmissionPlan(
+            event = event,
+            ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100))
+        )
+        val updated = created.copy(
+            admissionInventory = created.admissionInventory.map { it.copy(capacity = 120) }
+        )
+
+        val saved = inventoryPlanService.update(updated)
+
+        assertEquals(120, saved.admissionInventory.first().capacity)
+    }
+
+    @Test
+    fun `inventory plan service should reject update for missing plan`() {
+        val missingPlan = EventInventoryPlan.generalAdmission(
+            event = demoEvent(venueSpaceId = null),
+            ticketTypes = listOf(TicketType(label = "Standard", price = 1000, quota = 10))
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            inventoryPlanService.update(missingPlan)
+        }
+
+        assertTrue(exception.message!!.contains("EventInventoryPlan not found"))
+    }
+
+    @Test
+    fun `inventory plan service should delete by event id`() {
+        val event = demoEvent(venueSpaceId = null)
+        inventoryPlanService.createGeneralAdmissionPlan(
+            event = event,
+            ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100))
+        )
+
+        assertTrue(inventoryPlanService.deleteByEventId(event.id))
+        assertNull(inventoryPlanService.getByEventId(event.id))
+        assertFalse(inventoryPlanService.deleteByEventId(event.id))
+    }
+
+    private fun demoVenue(id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")): Venue {
+        return Venue(
+            label = "Demo Hall",
+            city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
+            id = id,
+            spaces = listOf(VenueSpace(label = "Main Hall"))
+        )
+    }
+
+    private fun demoLayoutTemplate(venueSpaceId: UUID): LayoutTemplate {
+        return LayoutTemplate(
+            venueSpaceId = venueSpaceId,
+            label = "Theatre Layout",
+            sections = listOf(
+                Section(
+                    label = "Партер",
+                    key = "parter",
+                    rows = listOf(
+                        Row(label = "Ряд 1", key = "r1", startSeat = 1, endSeat = 3, price = 2000)
+                    )
+                )
+            )
+        )
+    }
+
+    private fun demoEvent(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174030"),
+        venueId: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174031"),
+        venueSpaceId: UUID? = UUID.fromString("123e4567-e89b-12d3-a456-426614174032")
+    ): Event {
+        return Event(
+            label = "Demo Event",
+            description = "Service layer test event",
+            venueId = venueId,
+            categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614174033"),
+            time = Instant.parse("2026-04-01T18:00:00Z"),
+            venueSpaceId = venueSpaceId,
+            id = id
+        )
+    }
+
+}

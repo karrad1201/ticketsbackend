@@ -1,0 +1,107 @@
+package com.karrad.bilets.application.usecase
+
+import com.karrad.bilets.application.service.ApplicationServicesTestConfig
+import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.entity.EventInventoryPlan
+import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Row
+import com.karrad.bilets.domain.entity.SeatKey
+import com.karrad.bilets.domain.entity.Section
+import com.karrad.bilets.domain.enums.SeatStatus
+import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
+import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Import
+import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
+import java.time.Instant
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+
+@SpringJUnitConfig(ApplicationServicesTestConfig::class)
+@Import(ReleaseEventSeatsUseCase::class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+class ReleaseEventSeatsUseCaseTests {
+
+    @Autowired
+    lateinit var eventRepository: EventRepository
+
+    @Autowired
+    lateinit var layoutTemplateRepository: LayoutTemplateRepository
+
+    @Autowired
+    lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
+
+    @Autowired
+    lateinit var useCase: ReleaseEventSeatsUseCase
+
+    @Test
+    fun `should release held seats back to available`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        layoutTemplateRepository.save(layoutTemplate)
+        val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+        )
+        eventInventoryPlanRepository.save(heldPlan)
+
+        val result = useCase.release(
+            eventId = event.id,
+            seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+        )
+
+        assertEquals(SeatStatus.AVAILABLE, result.seatInventory.first { it.seatNumber == 1 }.status)
+    }
+
+    @Test
+    fun `should reject release when seat is not held`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        layoutTemplateRepository.save(layoutTemplate)
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.release(
+                eventId = event.id,
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Seats are not held"))
+    }
+
+    private fun seatedEvent(): Event {
+        return Event(
+            label = "Hamlet",
+            description = "Evening show",
+            venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174810"),
+            categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614174814"),
+            time = Instant.parse("2026-04-01T18:00:00Z"),
+            venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614174811"),
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174812")
+        )
+    }
+
+    private fun seatedLayoutTemplate(venueSpaceId: UUID): LayoutTemplate {
+        return LayoutTemplate(
+            venueSpaceId = venueSpaceId,
+            label = "Main Hall Layout",
+            sections = listOf(
+                Section(
+                    label = "Партер",
+                    key = "parter",
+                    rows = listOf(
+                        Row(label = "Ряд 1", key = "r1", startSeat = 1, endSeat = 3, price = 2000)
+                    )
+                )
+            ),
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174813")
+        )
+    }
+}

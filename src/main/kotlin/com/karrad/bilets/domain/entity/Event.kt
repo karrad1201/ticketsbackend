@@ -1,6 +1,5 @@
 package com.karrad.bilets.domain.entity
 
-import com.karrad.bilets.domain.enums.Category
 import java.time.Instant
 import java.util.UUID
 
@@ -8,9 +7,14 @@ import java.util.UUID
 data class Event(
     val label: String,
     val description: String,
-    val venue: Venue,
-    val category: Category,
-    val hasSeating: Boolean = false,
+    val venueId: UUID,
+    val categoryId: UUID,
     val time: Instant,
+    val venueSpaceId: UUID? = null,
     val id: UUID = UUID.randomUUID()
-)
+) {
+    init {
+        require(label.isNotBlank()) { "Event label must not be blank" }
+        require(description.isNotBlank()) { "Event description must not be blank" }
+    }
+}

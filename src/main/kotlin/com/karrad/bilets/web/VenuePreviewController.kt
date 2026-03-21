@@ -7,10 +7,12 @@ import com.karrad.bilets.domain.dto.SectionRenderDto
 import com.karrad.bilets.domain.dto.StageRenderDto
 import com.karrad.bilets.domain.dto.VenueRenderDto
 import com.karrad.bilets.domain.entity.City
+import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
+import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.VenueStruct
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,9 +27,10 @@ class VenuePreviewController(
     @GetMapping("/", produces = [MediaType.TEXT_HTML_VALUE])
     fun root(): String {
         val venue = demoVenue()
+        val layoutTemplate = demoLayoutTemplate(venue.spaces.first().id)
         val renderLayout = demoRenderLayout()
 
-        val venueJson = objectMapper.writeValueAsString(venue.struct)
+        val venueJson = objectMapper.writeValueAsString(VenueStruct(sections = layoutTemplate.sections))
         val renderJson = objectMapper.writeValueAsString(renderLayout)
 
         return """
@@ -364,29 +367,39 @@ class VenuePreviewController(
 
     private fun demoVenue(): Venue {
         val venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+        val mainHallId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")
 
         return Venue(
             label = "Demo Hall",
             city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
             id = venueId,
-            struct = VenueStruct(
-                sections = listOf(
-                    Section(
-                        key = "parter",
-                        label = "Партер",
-                        rows = listOf(
-                            Row(key = "parter-r1", label = "Ряд 1", startSeat = 1, endSeat = 10, price = 2000),
-                            Row(key = "parter-r2", label = "Ряд 2", startSeat = 1, endSeat = 10, price = 2000),
-                            Row(key = "parter-r3", label = "Ряд 3", startSeat = 1, endSeat = 10, price = 1800)
-                        )
-                    ),
-                    Section(
-                        key = "balkon",
-                        label = "Балкон",
-                        rows = listOf(
-                            Row(key = "balkon-r1", label = "Ряд 1", startSeat = 1, endSeat = 15, price = 1500),
-                            Row(key = "balkon-r2", label = "Ряд 2", startSeat = 1, endSeat = 15, price = 1500)
-                        )
+            spaces = listOf(
+                VenueSpace(label = "Main Hall", id = mainHallId),
+                VenueSpace(label = "Small Hall")
+            )
+        )
+    }
+
+    private fun demoLayoutTemplate(venueSpaceId: UUID): LayoutTemplate {
+        return LayoutTemplate(
+            venueSpaceId = venueSpaceId,
+            label = "Theatre Layout",
+            sections = listOf(
+                Section(
+                    key = "parter",
+                    label = "Партер",
+                    rows = listOf(
+                        Row(key = "parter-r1", label = "Ряд 1", startSeat = 1, endSeat = 10, price = 2000),
+                        Row(key = "parter-r2", label = "Ряд 2", startSeat = 1, endSeat = 10, price = 2000),
+                        Row(key = "parter-r3", label = "Ряд 3", startSeat = 1, endSeat = 10, price = 1800)
+                    )
+                ),
+                Section(
+                    key = "balkon",
+                    label = "Балкон",
+                    rows = listOf(
+                        Row(key = "balkon-r1", label = "Ряд 1", startSeat = 1, endSeat = 15, price = 1500),
+                        Row(key = "balkon-r2", label = "Ряд 2", startSeat = 1, endSeat = 15, price = 1500)
                     )
                 )
             )
