@@ -25,6 +25,17 @@ create table if not exists organization_members (
     role varchar(64) not null
 );
 
+create table if not exists organization_applications (
+    id uuid primary key,
+    applicant_user_id uuid not null,
+    organization_code varchar(255) not null,
+    organization_name varchar(255) not null,
+    status varchar(64) not null,
+    reviewed_by_user_id uuid null,
+    reviewed_at timestamp null,
+    organization_id uuid null
+);
+
 create table if not exists venues (
     id uuid primary key,
     label varchar(255) not null,

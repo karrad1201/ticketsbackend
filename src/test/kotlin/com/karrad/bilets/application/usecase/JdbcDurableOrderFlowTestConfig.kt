@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
@@ -18,6 +19,7 @@ import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
@@ -92,6 +94,10 @@ class JdbcDurableOrderFlowTestConfig {
 
     @Bean
     fun organizationRepository(jdbcTemplate: JdbcTemplate): OrganizationRepository = JdbcOrganizationRepository(jdbcTemplate)
+
+    @Bean
+    fun organizationApplicationRepository(jdbcTemplate: JdbcTemplate): OrganizationApplicationRepository =
+        JdbcOrganizationApplicationRepository(jdbcTemplate)
 
     @Bean
     fun organizationMemberRepository(jdbcTemplate: JdbcTemplate): OrganizationMemberRepository =

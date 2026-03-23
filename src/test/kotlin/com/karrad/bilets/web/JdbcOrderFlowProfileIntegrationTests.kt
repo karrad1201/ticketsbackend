@@ -7,11 +7,14 @@ import com.karrad.bilets.application.usecase.CreateOrderCommand
 import com.karrad.bilets.application.usecase.CreateOrderUseCase
 import com.karrad.bilets.application.usecase.CreateVenueUseCase
 import com.karrad.bilets.application.usecase.GenerateEventInventoryUseCase
+import com.karrad.bilets.application.usecase.ReviewOrganizationApplicationUseCase
+import com.karrad.bilets.application.usecase.SubmitOrganizationApplicationUseCase
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
@@ -27,6 +30,7 @@ import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
@@ -36,6 +40,7 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanR
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
@@ -69,6 +74,9 @@ class JdbcOrderFlowProfileIntegrationTests {
     lateinit var organizationRepository: OrganizationRepository
 
     @Autowired
+    lateinit var organizationApplicationRepository: OrganizationApplicationRepository
+
+    @Autowired
     lateinit var organizationMemberRepository: OrganizationMemberRepository
 
     @Autowired
@@ -93,6 +101,12 @@ class JdbcOrderFlowProfileIntegrationTests {
     lateinit var createVenueUseCase: CreateVenueUseCase
 
     @Autowired
+    lateinit var submitOrganizationApplicationUseCase: SubmitOrganizationApplicationUseCase
+
+    @Autowired
+    lateinit var reviewOrganizationApplicationUseCase: ReviewOrganizationApplicationUseCase
+
+    @Autowired
     lateinit var createLayoutTemplateUseCase: CreateLayoutTemplateUseCase
 
     @Autowired
@@ -112,6 +126,7 @@ class JdbcOrderFlowProfileIntegrationTests {
         assertIs<JdbcUserRepository>(userRepository)
         assertIs<JdbcOrganizationRepository>(organizationRepository)
         assertIs<JdbcCategoryRepository>(categoryRepository)
+        assertIs<JdbcOrganizationApplicationRepository>(organizationApplicationRepository)
         assertIs<JdbcOrganizationMemberRepository>(organizationMemberRepository)
         assertIs<JdbcVenueRepository>(venueRepository)
         assertIs<JdbcLayoutTemplateRepository>(layoutTemplateRepository)
@@ -314,5 +329,56 @@ class JdbcOrderFlowProfileIntegrationTests {
         assertEquals(1, ticketRepository.findByOrderId(order.id).size)
         assertEquals(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1), ticket.seatKey)
         assertEquals(2250, requireNotNull(organizationRepository.findById(organization.id)).balance)
+    }
+
+    @Test
+    fun `jdbc order flow profile should complete organization application lifecycle through jdbc repository`() {
+        val applicant = userRepository.save(
+            User(
+                email = "jdbc-applicant@example.com",
+                fullName = "Jdbc Applicant",
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179320")
+            )
+        )
+        val admin = userRepository.save(
+            User(
+                email = "jdbc-admin@example.com",
+                fullName = "Jdbc Admin",
+                role = com.karrad.bilets.domain.enums.UserRole.ADMIN,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179321")
+            )
+        )
+
+        val pending = submitOrganizationApplicationUseCase.submit(
+            OrganizationApplication(
+                applicantUserId = applicant.id,
+                organizationCode = "jdbc-admin-flow",
+                organizationName = "Jdbc Admin Flow",
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179322")
+            )
+        )
+        val approved = reviewOrganizationApplicationUseCase.approve(pending.id, admin.id)
+
+        assertEquals(pending.id, approved.id)
+        assertEquals(com.karrad.bilets.domain.enums.OrganizationApplicationStatus.APPROVED, approved.status)
+        assertEquals(admin.id, approved.reviewedByUserId)
+
+        val persisted = requireNotNull(organizationApplicationRepository.findById(approved.id))
+        assertEquals(approved.id, persisted.id)
+        assertEquals(approved.applicantUserId, persisted.applicantUserId)
+        assertEquals(approved.organizationCode, persisted.organizationCode)
+        assertEquals(approved.organizationName, persisted.organizationName)
+        assertEquals(approved.status, persisted.status)
+        assertEquals(approved.reviewedByUserId, persisted.reviewedByUserId)
+        assertEquals(approved.organizationId, persisted.organizationId)
+        assertEquals(approved.reviewedAt?.epochSecond, persisted.reviewedAt?.epochSecond)
+
+        val organization = requireNotNull(approved.organizationId).let { organizationRepository.findById(it) }
+        val ownerMembership = requireNotNull(organization).let {
+            organizationMemberRepository.findByOrganizationIdAndUserId(it.id, applicant.id)
+        }
+
+        assertEquals("jdbc-admin-flow", organization.code)
+        assertEquals(OrganizationMemberRole.OWNER, requireNotNull(ownerMembership).role)
     }
 }

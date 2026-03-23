@@ -45,7 +45,7 @@ class RepositoryConfig {
     fun organizationRepository(): OrganizationRepository = InMemoryOrganizationRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun organizationApplicationRepository(): OrganizationApplicationRepository = InMemoryOrganizationApplicationRepository()
 
     @Bean
