@@ -1,5 +1,6 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
@@ -14,7 +15,8 @@ import java.util.UUID
 class GetEventDiscoveryUseCase(
     private val eventRepository: EventRepository,
     private val venueRepository: VenueRepository,
-    private val userEventVisitRepository: UserEventVisitRepository
+    private val userEventVisitRepository: UserEventVisitRepository,
+    private val eventAvailabilityService: EventAvailabilityService
 ) {
     fun get(userId: UUID, city: String, page: Int, size: Int): EventDiscoveryResponse {
         validatePagination(page, size)
@@ -24,7 +26,9 @@ class GetEventDiscoveryUseCase(
         val upcomingEvents = eventRepository.findAll()
             .filter { event ->
                 val venue = venueRepository.findById(event.venueId) ?: return@filter false
-                venue.city.label.lowercase() == normalizedCity && !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC))
+                venue.city.label.lowercase() == normalizedCity &&
+                    !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) &&
+                    eventAvailabilityService.isAvailableForPurchase(event)
             }
 
         val visits = userEventVisitRepository.findByUserId(userId)

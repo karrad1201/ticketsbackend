@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.application.service.PaymentSettlementService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
@@ -159,4 +160,7 @@ class JdbcDurableOrderFlowTestConfig {
         ticketRepository,
         purchaseProperties
     )
+
+    @Bean
+    fun eventAvailabilityService(clock: Clock): EventAvailabilityService = EventAvailabilityService(clock)
 }

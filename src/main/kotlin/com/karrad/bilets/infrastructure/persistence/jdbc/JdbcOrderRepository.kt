@@ -164,6 +164,34 @@ class JdbcOrderRepository(
         )
     }
 
+    override fun findPendingByEventId(eventId: UUID): List<Order> = jdbcTemplate.query(
+        """
+        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
+        from orders
+        where event_id = ? and status = 'PENDING_PAYMENT'
+        order by created_at, id
+        """.trimIndent(),
+        { rs, _ ->
+            val orderId = rs.uuid("id")
+            Order(
+                eventId = rs.uuid("event_id"),
+                buyerUserId = rs.uuid("buyer_user_id"),
+                amount = rs.getInt("amount"),
+                expiresAt = rs.instant("expires_at"),
+                seatKeys = findSeatKeys(orderId),
+                admissionItems = findAdmissionItems(orderId),
+                paymentReference = rs.getString("payment_reference"),
+                paymentUrl = rs.getString("payment_url"),
+                status = OrderStatus.valueOf(rs.getString("status")),
+                id = orderId,
+                createdAt = rs.instant("created_at"),
+                paidAt = rs.nullableInstant("paid_at"),
+                failedAt = rs.nullableInstant("failed_at")
+            )
+        },
+        eventId
+    )
+
     private fun findSeatKeys(orderId: UUID): List<SeatKey> = jdbcTemplate.query(
         """
         select section_key, row_key, seat_number

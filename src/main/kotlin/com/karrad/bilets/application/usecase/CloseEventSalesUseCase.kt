@@ -1,8 +1,13 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.application.service.PaymentSettlementService
+import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -11,23 +16,46 @@ import java.util.UUID
 class CloseEventSalesUseCase(
     private val eventRepository: EventRepository,
     private val organizationMemberRepository: OrganizationMemberRepository,
+    private val orderRepository: OrderRepository,
+    private val paymentAttemptRepository: PaymentAttemptRepository,
+    private val paymentSettlementService: PaymentSettlementService,
+    private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
     fun closeByOrganizer(eventId: UUID, actorUserId: UUID): Event {
-        val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
-        val organizationId = requireNotNull(event.organizationId) {
-            "Event is not assigned to organization: $eventId"
+        return orderFlowTransactionManager.inTransaction {
+            val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
+            val organizationId = requireNotNull(event.organizationId) {
+                "Event is not assigned to organization: $eventId"
+            }
+            requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
+                "User $actorUserId is not a member of organization $organizationId"
+            }
+            closeEventAndPendingOrders(event)
         }
-        requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
-            "User $actorUserId is not a member of organization $organizationId"
-        }
-        return eventRepository.save(event.closeSales(clock.instant()))
     }
 
     fun closeWhenStarted(eventId: UUID): Event {
-        val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
-        val now = clock.instant()
-        require(!now.isBefore(event.time)) { "Event has not started yet: $eventId" }
-        return eventRepository.save(event.closeSales(now))
+        return orderFlowTransactionManager.inTransaction {
+            val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
+            val now = clock.instant()
+            require(!now.isBefore(event.time)) { "Event has not started yet: $eventId" }
+            closeEventAndPendingOrders(event)
+        }
+    }
+
+    private fun closeEventAndPendingOrders(event: Event): Event {
+        val closedEvent = eventRepository.save(event.closeSales(clock.instant()))
+        orderRepository.findPendingByEventId(closedEvent.id).forEach { order ->
+            paymentAttemptRepository.findByOrderIdForUpdate(order.id)?.let { attempt ->
+                if (attempt.status == PaymentAttemptStatus.PENDING) {
+                    paymentAttemptRepository.save(
+                        attempt.markFailed(clock.instant(), "Ticket sales closed for event ${closedEvent.id}")
+                    )
+                }
+            }
+            paymentSettlementService.failPendingOrder(order, clock.instant())
+        }
+        return closedEvent
     }
 }

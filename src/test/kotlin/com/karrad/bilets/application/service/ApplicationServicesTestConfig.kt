@@ -150,6 +150,9 @@ class ApplicationServicesTestConfig {
     fun eventService(eventRepository: EventRepository): EventService = EventService(eventRepository)
 
     @Bean
+    fun eventAvailabilityService(clock: Clock): EventAvailabilityService = EventAvailabilityService(clock)
+
+    @Bean
     fun inventoryPlanService(eventInventoryPlanRepository: EventInventoryPlanRepository): InventoryPlanService =
         InventoryPlanService(eventInventoryPlanRepository)
 

@@ -8,4 +8,5 @@ interface OrderRepository {
     fun findById(id: UUID): Order?
     fun findByIdForUpdate(id: UUID): Order? = findById(id)
     fun findAll(): List<Order>
+    fun findPendingByEventId(eventId: UUID): List<Order> = findAll().filter { it.eventId == eventId }
 }

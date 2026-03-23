@@ -55,6 +55,7 @@ ticketsbackend
     │   │               │   ├── transaction
     │   │               │   │   └── OrderFlowTransactionManager.kt
     │   │               │   └── usecase
+    │   │               │       ├── CloseEventSalesUseCase.kt
     │   │               │       ├── ConfirmOrderPaymentUseCase.kt
     │   │               │       ├── CreateCategoryUseCase.kt
     │   │               │       ├── CreateEventUseCase.kt
@@ -223,7 +224,8 @@ ticketsbackend
     │       └── db
     │           └── migration
     │               ├── V1__jdbc_order_flow.sql
-    │               └── V2__payment_model.sql
+    │               ├── V2__payment_model.sql
+    │               └── V3__event_sales_closure.sql
     └── test
         ├── kotlin
         │   └── com
