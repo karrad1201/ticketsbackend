@@ -109,6 +109,35 @@ class GeneralAdmissionInventoryLifecycleUseCaseTests {
         assertTrue(exception.message!!.contains("Not enough admission capacity"))
     }
 
+    @Test
+    fun `should reject general admission lifecycle when plan is missing`() {
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174906")
+
+        val holdException = assertFailsWith<IllegalArgumentException> {
+            holdUseCase.hold(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(holdException.message!!.contains("EventInventoryPlan not found"))
+
+        val releaseException = assertFailsWith<IllegalArgumentException> {
+            releaseUseCase.release(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(releaseException.message!!.contains("EventInventoryPlan not found"))
+
+        val sellException = assertFailsWith<IllegalArgumentException> {
+            sellUseCase.sell(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(sellException.message!!.contains("EventInventoryPlan not found"))
+    }
+
     private fun generalAdmissionEvent(): Event {
         return Event(
             label = "Festival",

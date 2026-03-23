@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.Order
@@ -10,10 +11,8 @@ import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.UserRepository
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Clock
-import java.time.Duration
 import java.util.UUID
 
 data class CreateOrderCommand(
@@ -32,8 +31,7 @@ class CreateOrderUseCase(
     private val paymentGateway: PaymentGateway,
     private val eventLockManager: EventLockManager,
     private val clock: Clock,
-    @Value("\${purchase.hold-ttl:PT30M}")
-    private val holdTtlRaw: String
+    private val purchaseProperties: PurchaseProperties
 ) {
     fun create(command: CreateOrderCommand): Order {
         return eventLockManager.withEventLock(command.eventId) {
@@ -45,8 +43,7 @@ class CreateOrderUseCase(
             }
 
             val now = clock.instant()
-            val holdTtl = Duration.parse(holdTtlRaw)
-            val expiresAt = now.plus(holdTtl)
+            val expiresAt = now.plus(purchaseProperties.holdTtl)
             val updatedPlan = holdInventory(plan, command)
             val amount = calculateAmount(plan, command)
             val orderId = UUID.randomUUID()

@@ -169,6 +169,33 @@ class PurchaseFlowUseCaseTests {
     }
 
     @Test
+    fun `should expire general admission order and release held inventory after ttl`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 2))
+            )
+        )
+
+        clock.advanceByMinutes(31)
+        val expired = expireOrderUseCase.expire(order.id)
+
+        assertEquals(OrderStatus.EXPIRED, expired.status)
+        val inventory = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+            .admissionInventory
+            .first { it.ticketTypeId == standardTicketTypeId() }
+        assertEquals(0, inventory.held)
+        assertEquals(0, inventory.sold)
+    }
+
+    @Test
     fun `should allow only first concurrent purchase request for same seat`() {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
@@ -387,6 +414,33 @@ class PurchaseFlowUseCaseTests {
         }
 
         assertTrue(exception.message!!.contains("Only pending order can expire"))
+    }
+
+    @Test
+    fun `should return already expired order without changing inventory`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        )
+
+        clock.advanceByMinutes(31)
+        val expired = expireOrderUseCase.expire(order.id)
+        val repeated = expireOrderUseCase.expire(order.id)
+
+        assertEquals(OrderStatus.EXPIRED, repeated.status)
+        assertEquals(expired.id, repeated.id)
+        val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+        assertEquals(SeatStatus.AVAILABLE, plan.seatInventory.first { it.seatNumber == 1 }.status)
     }
 
     private fun seatedEvent(): Event {

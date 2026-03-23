@@ -66,6 +66,39 @@ class OrganizationApplicationFlowUseCaseTests {
     }
 
     @Test
+    fun `should reject organization application when organization code already exists`() {
+        val applicant = demoUser()
+        userRepository.save(applicant)
+        organizationRepository.save(
+            com.karrad.bilets.domain.entity.Organization(
+                code = "ural-live",
+                name = "Existing Org"
+            )
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            submitUseCase.submit(demoApplication(applicant.id))
+        }
+
+        assertTrue(exception.message!!.contains("Organization code already exists"))
+    }
+
+    @Test
+    fun `should reject organization application when pending application with same code already exists`() {
+        val applicant = demoUser()
+        val anotherApplicant = demoSecondUser()
+        userRepository.save(applicant)
+        userRepository.save(anotherApplicant)
+        submitUseCase.submit(demoApplication(applicant.id))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            submitUseCase.submit(demoApplication(anotherApplicant.id, id = UUID.fromString("123e4567-e89b-12d3-a456-426614174664")))
+        }
+
+        assertTrue(exception.message!!.contains("Pending organization application already exists"))
+    }
+
+    @Test
     fun `should approve organization application and create organization`() {
         val applicant = demoUser()
         val admin = demoAdmin()
@@ -113,6 +146,60 @@ class OrganizationApplicationFlowUseCaseTests {
         assertTrue(exception.message!!.contains("Reviewer must be admin"))
     }
 
+    @Test
+    fun `should reject approval when admin is missing`() {
+        val applicant = demoUser()
+        userRepository.save(applicant)
+        val application = submitUseCase.submit(demoApplication(applicant.id))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            reviewUseCase.approve(
+                application.id,
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174666")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Admin user not found"))
+    }
+
+    @Test
+    fun `should reject review when application is missing`() {
+        val admin = demoAdmin()
+        userRepository.save(admin)
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            reviewUseCase.reject(
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174667"),
+                admin.id
+            )
+        }
+
+        assertTrue(exception.message!!.contains("OrganizationApplication not found"))
+    }
+
+    @Test
+    fun `should reject approval when organization code already exists during review`() {
+        val applicant = demoUser()
+        val admin = demoAdmin()
+        userRepository.save(applicant)
+        userRepository.save(admin)
+        val application = submitUseCase.submit(demoApplication(applicant.id))
+        organizationApplicationRepository.deleteById(application.id)
+        organizationApplicationRepository.save(application)
+        organizationRepository.save(
+            com.karrad.bilets.domain.entity.Organization(
+                code = "ural-live",
+                name = "Existing Org"
+            )
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            reviewUseCase.approve(application.id, admin.id)
+        }
+
+        assertTrue(exception.message!!.contains("Organization code already exists"))
+    }
+
     private fun demoUser(): User {
         return User(
             email = "user@example.com",
@@ -131,12 +218,24 @@ class OrganizationApplicationFlowUseCaseTests {
         )
     }
 
-    private fun demoApplication(applicantUserId: UUID): OrganizationApplication {
+    private fun demoSecondUser(): User {
+        return User(
+            email = "user-two@example.com",
+            fullName = "Second User",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174665")
+        )
+    }
+
+    private fun demoApplication(
+        applicantUserId: UUID,
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174663")
+    ): OrganizationApplication {
         return OrganizationApplication(
             applicantUserId = applicantUserId,
             organizationCode = "ural-live",
             organizationName = "Ural Live Events",
-            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174663")
+            id = id
         )
     }
 }

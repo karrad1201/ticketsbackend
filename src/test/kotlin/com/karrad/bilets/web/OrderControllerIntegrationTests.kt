@@ -306,6 +306,41 @@ class OrderControllerIntegrationTests {
     }
 
     @Test
+    fun `should return existing order by id`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val createResponse = mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "seatKeys" to listOf(
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+
+        val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        mockMvc.perform(get("/api/orders/$orderId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(orderId))
+            .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"))
+            .andExpect(jsonPath("$.buyerUserId").value(buyerUserId().toString()))
+    }
+
+    @Test
     fun `should return not found for unknown order`() {
         mockMvc.perform(get("/api/orders/123e4567-e89b-12d3-a456-426614177999"))
             .andExpect(status().isNotFound)

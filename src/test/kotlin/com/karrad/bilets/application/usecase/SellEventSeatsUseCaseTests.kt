@@ -76,6 +76,18 @@ class SellEventSeatsUseCaseTests {
         assertTrue(exception.message!!.contains("must be held before sale"))
     }
 
+    @Test
+    fun `should reject sale when inventory plan is missing`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.sell(
+                eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174825"),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        }
+
+        assertTrue(exception.message!!.contains("EventInventoryPlan not found"))
+    }
+
     private fun seatedEvent(): Event {
         return Event(
             label = "Hamlet",

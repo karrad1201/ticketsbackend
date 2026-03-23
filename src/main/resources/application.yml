@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: bilets
+
+server:
+  address: 0.0.0.0
+
+purchase:
+  hold-ttl: PT30M
+  platform-commission-rate: 0.10

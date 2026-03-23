@@ -76,6 +76,18 @@ class ReleaseEventSeatsUseCaseTests {
         assertTrue(exception.message!!.contains("Seats are not held"))
     }
 
+    @Test
+    fun `should reject release when inventory plan is missing`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.release(
+                eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174815"),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        }
+
+        assertTrue(exception.message!!.contains("EventInventoryPlan not found"))
+    }
+
     private fun seatedEvent(): Event {
         return Event(
             label = "Hamlet",

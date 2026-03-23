@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.Ticket
 import com.karrad.bilets.domain.enums.OrderStatus
@@ -9,7 +10,6 @@ import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.TicketRepository
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -24,8 +24,7 @@ class ConfirmOrderPaymentUseCase(
     private val ticketRepository: TicketRepository,
     private val eventLockManager: EventLockManager,
     private val clock: Clock,
-    @Value("\${purchase.platform-commission-rate:0.10}")
-    private val platformCommissionRateRaw: String
+    private val purchaseProperties: PurchaseProperties
 ) {
     fun confirm(orderId: UUID): Order {
         val order = requireNotNull(orderRepository.findById(orderId)) { "Order not found: $orderId" }
@@ -73,8 +72,7 @@ class ConfirmOrderPaymentUseCase(
     }
 
     private fun calculateOrganizationNetAmount(amount: Int): Int {
-        val rate = platformCommissionRateRaw.toDouble()
-        require(rate in 0.0..1.0) { "Platform commission rate must be between 0 and 1" }
+        val rate = purchaseProperties.platformCommissionRate
         return (amount * (1 - rate)).roundToInt()
     }
 

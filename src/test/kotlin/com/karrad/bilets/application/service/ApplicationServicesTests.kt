@@ -1,5 +1,7 @@
 package com.karrad.bilets.application.service
 
+import com.karrad.bilets.domain.entity.AdmissionQuantity
+import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
@@ -36,6 +38,9 @@ import kotlin.test.assertTrue
 class ApplicationServicesTests {
 
     @Autowired
+    lateinit var categoryService: CategoryService
+
+    @Autowired
     lateinit var organizationService: OrganizationService
 
     @Autowired
@@ -61,6 +66,29 @@ class ApplicationServicesTests {
 
     @Autowired
     lateinit var inventoryPlanService: InventoryPlanService
+
+    @Test
+    fun `category service should create list get update and delete categories`() {
+        val category = demoCategory()
+
+        val created = categoryService.create(category)
+        val updated = categoryService.update(created.copy(label = "Updated Category"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Category", categoryService.getById(created.id)?.label)
+        assertEquals(1, categoryService.list().size)
+        assertTrue(categoryService.deleteById(created.id))
+        assertNull(categoryService.getById(created.id))
+    }
+
+    @Test
+    fun `category service should reject update for missing category`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            categoryService.update(demoCategory())
+        }
+
+        assertTrue(exception.message!!.contains("Category not found"))
+    }
 
     @Test
     fun `venue service should create list get update and delete venues`() {
@@ -210,6 +238,29 @@ class ApplicationServicesTests {
     }
 
     @Test
+    fun `layout template service should create list get update and delete templates`() {
+        val template = demoLayoutTemplate(UUID.fromString("123e4567-e89b-12d3-a456-426614174012"))
+
+        val created = layoutTemplateService.create(template)
+        val updated = layoutTemplateService.update(created.copy(label = "Updated Layout"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Layout", layoutTemplateService.getById(created.id)?.label)
+        assertEquals(1, layoutTemplateService.list().size)
+        assertTrue(layoutTemplateService.deleteById(created.id))
+        assertNull(layoutTemplateService.getById(created.id))
+    }
+
+    @Test
+    fun `layout template service should reject update for missing layout template`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            layoutTemplateService.update(demoLayoutTemplate(UUID.fromString("123e4567-e89b-12d3-a456-426614174013")))
+        }
+
+        assertTrue(exception.message!!.contains("LayoutTemplate not found"))
+    }
+
+    @Test
     fun `layout template service should filter by venue space`() {
         val mainHallId = UUID.fromString("123e4567-e89b-12d3-a456-426614174010")
         val anotherHallId = UUID.fromString("123e4567-e89b-12d3-a456-426614174011")
@@ -233,6 +284,29 @@ class ApplicationServicesTests {
         val result = eventService.listByVenueId(venueId)
 
         assertEquals(listOf(first.id), result.map { it.id })
+    }
+
+    @Test
+    fun `event service should create list get update and delete events`() {
+        val event = demoEvent()
+
+        val created = eventService.create(event)
+        val updated = eventService.update(created.copy(label = "Updated Event"))
+
+        assertEquals(created.id, updated.id)
+        assertEquals("Updated Event", eventService.getById(created.id)?.label)
+        assertEquals(1, eventService.list().size)
+        assertTrue(eventService.deleteById(created.id))
+        assertNull(eventService.getById(created.id))
+    }
+
+    @Test
+    fun `event service should reject update for missing event`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            eventService.update(demoEvent())
+        }
+
+        assertTrue(exception.message!!.contains("Event not found"))
     }
 
     @Test
@@ -299,12 +373,75 @@ class ApplicationServicesTests {
         val event = demoEvent(venueSpaceId = null)
         inventoryPlanService.createGeneralAdmissionPlan(
             event = event,
-            ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100))
+            ticketTypes = listOf(
+                TicketType(label = "Standard", price = 1500, quota = 100, id = standardTicketTypeId())
+            )
         )
 
         assertTrue(inventoryPlanService.deleteByEventId(event.id))
         assertNull(inventoryPlanService.getByEventId(event.id))
         assertFalse(inventoryPlanService.deleteByEventId(event.id))
+    }
+
+    @Test
+    fun `inventory plan service should hold release and sell general admission inventory`() {
+        val event = demoEvent(venueSpaceId = null)
+        inventoryPlanService.createGeneralAdmissionPlan(
+            event = event,
+            ticketTypes = listOf(
+                TicketType(label = "Standard", price = 1500, quota = 100, id = standardTicketTypeId())
+            )
+        )
+
+        val held = inventoryPlanService.holdAdmission(
+            event.id,
+            listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 3))
+        )
+        assertEquals(3, held.admissionInventory.first().held)
+        assertEquals(0, held.admissionInventory.first().sold)
+
+        val released = inventoryPlanService.releaseAdmission(
+            event.id,
+            listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+        )
+        assertEquals(2, released.admissionInventory.first().held)
+        assertEquals(0, released.admissionInventory.first().sold)
+
+        val sold = inventoryPlanService.sellAdmission(
+            event.id,
+            listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 2))
+        )
+        assertEquals(0, sold.admissionInventory.first().held)
+        assertEquals(2, sold.admissionInventory.first().sold)
+    }
+
+    @Test
+    fun `inventory plan service should reject general admission lifecycle for missing plan`() {
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174047")
+
+        val holdException = assertFailsWith<IllegalArgumentException> {
+            inventoryPlanService.holdAdmission(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(holdException.message!!.contains("EventInventoryPlan not found"))
+
+        val releaseException = assertFailsWith<IllegalArgumentException> {
+            inventoryPlanService.releaseAdmission(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(releaseException.message!!.contains("EventInventoryPlan not found"))
+
+        val sellException = assertFailsWith<IllegalArgumentException> {
+            inventoryPlanService.sellAdmission(
+                eventId,
+                listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        }
+        assertTrue(sellException.message!!.contains("EventInventoryPlan not found"))
     }
 
     private fun demoVenue(id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174001")): Venue {
@@ -313,6 +450,16 @@ class ApplicationServicesTests {
             city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
             id = id,
             spaces = listOf(VenueSpace(label = "Main Hall"))
+        )
+    }
+
+    private fun demoCategory(
+        id: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+    ): Category {
+        return Category(
+            code = "concerts",
+            label = "Concerts",
+            id = id
         )
     }
 
@@ -401,5 +548,8 @@ class ApplicationServicesTests {
             id = id
         )
     }
+
+    private fun standardTicketTypeId(): UUID =
+        UUID.fromString("123e4567-e89b-12d3-a456-426614174046")
 
 }

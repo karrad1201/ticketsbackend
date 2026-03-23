@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.service
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
@@ -28,13 +29,18 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepos
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.support.YamlPropertySourceFactory
 import com.karrad.bilets.support.MutableClock
 import org.springframework.context.annotation.Bean
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.annotation.PropertySource
 import java.time.Clock
 import java.time.Instant
 
 @TestConfiguration
+@EnableConfigurationProperties(PurchaseProperties::class)
+@PropertySource(value = ["classpath:application.yml"], factory = YamlPropertySourceFactory::class)
 class ApplicationServicesTestConfig {
 
     @Bean

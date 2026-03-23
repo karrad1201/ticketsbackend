@@ -72,6 +72,63 @@ class SearchEventsUseCaseTests {
         assertEquals("dateFrom must be before or equal to dateTo", exception.message)
     }
 
+    @Test
+    fun `should reject invalid pagination`() {
+        val negativePage = assertFailsWith<IllegalArgumentException> {
+            useCase.search(
+                query = null,
+                city = null,
+                categoryId = null,
+                venueId = null,
+                dateFrom = null,
+                dateTo = null,
+                page = -1,
+                size = 10
+            )
+        }
+        assertEquals("page must be non-negative", negativePage.message)
+
+        val invalidSize = assertFailsWith<IllegalArgumentException> {
+            useCase.search(
+                query = null,
+                city = null,
+                categoryId = null,
+                venueId = null,
+                dateFrom = null,
+                dateTo = null,
+                page = 0,
+                size = 51
+            )
+        }
+        assertEquals("size must be between 1 and 50", invalidSize.message)
+    }
+
+    @Test
+    fun `should return empty page when offset exceeds filtered results`() {
+        venueRepository.save(demoVenue())
+        eventRepository.save(
+            demoEvent(
+                label = "Rock Arena",
+                venueId = venueId(),
+                categoryId = categoryId(),
+                time = Instant.parse("2026-05-01T18:00:00Z")
+            )
+        )
+
+        val result = useCase.search(
+            query = "arena",
+            city = null,
+            categoryId = null,
+            venueId = null,
+            dateFrom = null,
+            dateTo = null,
+            page = 1,
+            size = 10
+        )
+
+        assertEquals(emptyList(), result)
+    }
+
     private fun demoVenue(): Venue =
         Venue(
             label = "Demo Hall",
