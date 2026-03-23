@@ -11,6 +11,11 @@ OUTPUT_PATH = REPO_ROOT / "docs" / "tree.md"
 EXCLUDED_PATHS = {
     "docs/tree.md",
 }
+EXCLUDED_PREFIXES = (
+    "target/",
+    ".idea/",
+    ".git/",
+)
 
 
 def tracked_paths() -> list[str]:
@@ -22,7 +27,11 @@ def tracked_paths() -> list[str]:
         text=True,
     )
     paths = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    return sorted(path for path in paths if path not in EXCLUDED_PATHS)
+    return sorted(
+        path
+        for path in paths
+        if path not in EXCLUDED_PATHS and not path.startswith(EXCLUDED_PREFIXES)
+    )
 
 
 def build_tree(paths: list[str]) -> list[str]:

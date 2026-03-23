@@ -26,7 +26,7 @@
   - `make install-hooks`
 - Это включает локальный `.githooks/post-commit`.
 - `post-commit` автоматически регенерирует [tree.md](/home/karrad/IdeaProjects/ticketsbackend/docs/tree.md) из tracked files через `scripts/generate_tree.py`.
-- Hook намеренно игнорирует мусор вроде `.git`, `target`, `.idea`, потому что источник дерева это `git ls-files`.
+- Генератор явно выкидывает `.git`, `target`, `.idea` и сам `docs/tree.md`, даже если что-то из этого когда-то оказалось в индексе.
 - Так как hook срабатывает после commit, `docs/tree.md` может остаться измененным в рабочем дереве. Если нужно включить актуальное дерево в текущий commit, запускаем `make tree` до commit.
 
 ## Branch Policy
