@@ -23,6 +23,7 @@ ticketsbackend
 │   │   ├── 0007-durable-order-flow-jdbc.md
 │   │   └── 0008-payment-attempt-and-current-user-boundary.md
 │   ├── contributors.md
+│   ├── current-state.md
 │   └── product-flow.md
 ├── pom.xml
 ├── scripts
@@ -39,6 +40,7 @@ ticketsbackend
     │   │               │   │   └── EventLockManager.kt
     │   │               │   ├── service
     │   │               │   │   ├── CategoryService.kt
+    │   │               │   │   ├── EventAvailabilityService.kt
     │   │               │   │   ├── EventService.kt
     │   │               │   │   ├── InventoryPlanService.kt
     │   │               │   │   ├── LayoutTemplateService.kt
@@ -70,6 +72,7 @@ ticketsbackend
     │   │               │       ├── HandlePaymentCallbackUseCase.kt
     │   │               │       ├── HoldEventSeatsUseCase.kt
     │   │               │       ├── HoldGeneralAdmissionUseCase.kt
+    │   │               │       ├── ProcessStalePaymentAttemptsUseCase.kt
     │   │               │       ├── ReleaseEventSeatsUseCase.kt
     │   │               │       ├── ReleaseGeneralAdmissionUseCase.kt
     │   │               │       ├── ReviewOrganizationApplicationUseCase.kt
@@ -250,6 +253,7 @@ ticketsbackend
         │               │       ├── JdbcDurableOrderFlowConcurrencyTests.kt
         │               │       ├── JdbcDurableOrderFlowTestConfig.kt
         │               │       ├── JdbcDurableOrderFlowTests.kt
+        │               │       ├── JdbcOrganizationApprovalTransactionTests.kt
         │               │       ├── OrganizationApplicationFlowUseCaseTests.kt
         │               │       ├── PurchaseFlowUseCaseTests.kt
         │               │       ├── ReleaseEventSeatsUseCaseTests.kt
