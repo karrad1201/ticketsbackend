@@ -1,11 +1,11 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
-import com.karrad.bilets.application.payment.PaymentGateway
 import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.SeatKey
+import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrderRepository

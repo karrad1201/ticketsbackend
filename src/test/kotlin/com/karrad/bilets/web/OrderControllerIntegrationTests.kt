@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.SeatKey
 import com.karrad.bilets.domain.entity.Section
@@ -13,6 +14,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -51,6 +53,9 @@ class OrderControllerIntegrationTests {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var organizationRepository: OrganizationRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -61,6 +66,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -101,12 +107,17 @@ class OrderControllerIntegrationTests {
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
         val seat = plan.seatInventory.first { it.seatKey.seatNumber == 1 }
         org.junit.jupiter.api.Assertions.assertEquals(SeatStatus.SOLD, seat.status)
+        org.junit.jupiter.api.Assertions.assertEquals(
+            1800,
+            requireNotNull(organizationRepository.findById(organizationId())).balance
+        )
     }
 
     @Test
     fun `should create and confirm general admission order over http`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
@@ -139,6 +150,11 @@ class OrderControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].ticketTypeId").value(standardTicketTypeId().toString()))
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+            2700,
+            requireNotNull(organizationRepository.findById(organizationId())).balance
+        )
     }
 
     @Test
@@ -146,6 +162,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -183,6 +200,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -199,6 +217,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -227,6 +246,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
             listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
@@ -255,6 +275,7 @@ class OrderControllerIntegrationTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -298,7 +319,8 @@ class OrderControllerIntegrationTests {
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614177002"),
             time = Instant.parse("2026-04-01T18:00:00Z"),
             venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614177003"),
-            id = UUID.fromString("123e4567-e89b-12d3-a456-426614177004")
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614177004"),
+            organizationId = organizationId()
         )
     }
 
@@ -310,7 +332,8 @@ class OrderControllerIntegrationTests {
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614177012"),
             time = Instant.parse("2026-04-01T20:00:00Z"),
             venueSpaceId = null,
-            id = UUID.fromString("123e4567-e89b-12d3-a456-426614177013")
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614177013"),
+            organizationId = organizationId()
         )
     }
 
@@ -334,6 +357,9 @@ class OrderControllerIntegrationTests {
     private fun buyerUserId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614177006")
 
+    private fun organizationId(): UUID =
+        UUID.fromString("123e4567-e89b-12d3-a456-426614177015")
+
     private fun standardTicketTypeId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614177014")
 
@@ -351,5 +377,12 @@ class OrderControllerIntegrationTests {
             email = "order-buyer@example.com",
             fullName = "Order Buyer",
             id = buyerUserId()
+        )
+
+    private fun organization(): Organization =
+        Organization(
+            code = "order-org",
+            name = "Order Org",
+            id = organizationId()
         )
 }

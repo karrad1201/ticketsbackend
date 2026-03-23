@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.SeatKey
 import com.karrad.bilets.domain.entity.Section
@@ -15,6 +16,7 @@ import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
@@ -37,7 +39,7 @@ import kotlin.test.assertTrue
 
 @SpringJUnitConfig(ApplicationServicesTestConfig::class)
 @Import(CreateOrderUseCase::class, ConfirmOrderPaymentUseCase::class, ExpireOrderUseCase::class)
-@TestPropertySource(properties = ["purchase.hold-ttl=PT30M"])
+@TestPropertySource(properties = ["purchase.hold-ttl=PT30M", "purchase.platform-commission-rate=0.10"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PurchaseFlowUseCaseTests {
 
@@ -52,6 +54,9 @@ class PurchaseFlowUseCaseTests {
 
     @Autowired
     lateinit var orderRepository: OrderRepository
+
+    @Autowired
+    lateinit var organizationRepository: OrganizationRepository
 
     @Autowired
     lateinit var ticketRepository: TicketRepository
@@ -76,6 +81,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -105,6 +111,7 @@ class PurchaseFlowUseCaseTests {
     fun `should confirm payment sell inventory and issue tickets`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
@@ -132,6 +139,7 @@ class PurchaseFlowUseCaseTests {
         assertEquals(2, issuedTickets.size)
         assertTrue(issuedTickets.all { it.userId == buyerUserId() })
         assertTrue(issuedTickets.all { it.ticketTypeId == standardTicketTypeId() })
+        assertEquals(2700, requireNotNull(organizationRepository.findById(organizationId())).balance)
     }
 
     @Test
@@ -139,6 +147,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -164,6 +173,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -198,6 +208,7 @@ class PurchaseFlowUseCaseTests {
     fun `should reject payment confirmation after ttl elapsed`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
@@ -224,6 +235,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -244,6 +256,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -266,6 +279,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -285,6 +299,7 @@ class PurchaseFlowUseCaseTests {
     fun `should reject order creation when event inventory plan does not exist`() {
         val event = seatedEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
 
         val exception = assertFailsWith<IllegalArgumentException> {
@@ -304,6 +319,7 @@ class PurchaseFlowUseCaseTests {
     fun `should reject confirming already paid order`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
@@ -329,6 +345,7 @@ class PurchaseFlowUseCaseTests {
         val event = seatedEvent()
         val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
@@ -351,6 +368,7 @@ class PurchaseFlowUseCaseTests {
     fun `should reject expiring already paid order`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
+        organizationRepository.save(organization())
         userRepository.save(buyer())
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
@@ -379,7 +397,8 @@ class PurchaseFlowUseCaseTests {
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614176002"),
             time = Instant.parse("2026-04-01T18:00:00Z"),
             venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614176003"),
-            id = UUID.fromString("123e4567-e89b-12d3-a456-426614176004")
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614176004"),
+            organizationId = organizationId()
         )
     }
 
@@ -391,7 +410,8 @@ class PurchaseFlowUseCaseTests {
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614176006"),
             time = Instant.parse("2026-04-01T18:00:00Z"),
             venueSpaceId = null,
-            id = UUID.fromString("123e4567-e89b-12d3-a456-426614176007")
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614176007"),
+            organizationId = organizationId()
         )
     }
 
@@ -426,6 +446,16 @@ class PurchaseFlowUseCaseTests {
 
     private fun buyerUserId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614176010")
+
+    private fun organizationId(): UUID =
+        UUID.fromString("123e4567-e89b-12d3-a456-426614176011")
+
+    private fun organization(): Organization =
+        Organization(
+            code = "demo-org",
+            name = "Demo Org",
+            id = organizationId()
+        )
 
     private fun buyer(): User =
         User(

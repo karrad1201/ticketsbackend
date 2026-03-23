@@ -1,7 +1,7 @@
 package com.karrad.bilets.application.service
 
 import com.karrad.bilets.application.lock.EventLockManager
-import com.karrad.bilets.application.payment.PaymentGateway
+import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
