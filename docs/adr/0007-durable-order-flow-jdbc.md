@@ -34,6 +34,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
   - `OrganizationRepository`
   - `OrganizationMemberRepository`
   - `VenueRepository`
+  - `LayoutTemplateRepository`
   - `EventRepository`
   - `EventInventoryPlanRepository`
   - `OrderRepository`
@@ -69,6 +70,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 
 - membership-проверку через `OrganizationMember`;
 - создание `Venue`;
+- хранение `LayoutTemplate` для seated inventory;
 - создание `Event` поверх `Venue`;
 - inventory generation перед покупкой.
 
@@ -79,6 +81,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - purchase flow перестает зависеть от process-local mutex как основной гарантии корректности;
 - появляются durable order/inventory/ticket данные;
 - ownership и venue-backed event creation тоже начинают жить в том же persistence family;
+- seated catalog перестает зависеть от in-memory `LayoutTemplateRepository` в JDBC profile;
 - concurrency и rollback теперь проверяются тестами против реальной БД;
 - profile можно включать отдельно, не ломая default in-memory режим разработки.
 

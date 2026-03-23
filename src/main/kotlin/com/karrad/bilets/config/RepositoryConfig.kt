@@ -65,7 +65,7 @@ class RepositoryConfig {
     fun venueRepository(): VenueRepository = InMemoryVenueRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun layoutTemplateRepository(): LayoutTemplateRepository = InMemoryLayoutTemplateRepository()
 
     @Bean
