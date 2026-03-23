@@ -4,7 +4,6 @@ import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
-import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.web.dto.EventDiscoveryResponse
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -14,7 +13,6 @@ import java.util.UUID
 @Component
 class GetEventDiscoveryUseCase(
     private val eventRepository: EventRepository,
-    private val venueRepository: VenueRepository,
     private val userEventVisitRepository: UserEventVisitRepository,
     private val eventAvailabilityService: EventAvailabilityService
 ) {
@@ -22,14 +20,8 @@ class GetEventDiscoveryUseCase(
         validatePagination(page, size)
 
         val today = LocalDate.now(ZoneOffset.UTC)
-        val normalizedCity = city.trim().lowercase()
-        val upcomingEvents = eventRepository.findAll()
-            .filter { event ->
-                val venue = venueRepository.findById(event.venueId) ?: return@filter false
-                venue.city.label.lowercase() == normalizedCity &&
-                    !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) &&
-                    eventAvailabilityService.isAvailableForPurchase(event)
-            }
+        val upcomingEvents = eventRepository.findAvailableByCity(city, eventAvailabilityService.now())
+            .filter { event -> !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) }
 
         val visits = userEventVisitRepository.findByUserId(userId)
         val visitedEvents = visits.mapNotNull { eventRepository.findById(it.eventId) }

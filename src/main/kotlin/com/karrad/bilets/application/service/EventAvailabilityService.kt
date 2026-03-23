@@ -8,5 +8,7 @@ import java.time.Clock
 class EventAvailabilityService(
     private val clock: Clock
 ) {
+    fun now() = clock.instant()
+
     fun isAvailableForPurchase(event: Event): Boolean = !event.isSalesClosed(clock.instant())
 }

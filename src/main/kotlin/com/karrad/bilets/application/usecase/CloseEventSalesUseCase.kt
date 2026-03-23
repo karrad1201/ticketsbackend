@@ -1,5 +1,6 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.application.service.PaymentSettlementService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.entity.Event
@@ -19,28 +20,33 @@ class CloseEventSalesUseCase(
     private val orderRepository: OrderRepository,
     private val paymentAttemptRepository: PaymentAttemptRepository,
     private val paymentSettlementService: PaymentSettlementService,
+    private val eventLockManager: EventLockManager,
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
     fun closeByOrganizer(eventId: UUID, actorUserId: UUID): Event {
-        return orderFlowTransactionManager.inTransaction {
-            val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
-            val organizationId = requireNotNull(event.organizationId) {
-                "Event is not assigned to organization: $eventId"
+        return eventLockManager.withEventLock(eventId) {
+            orderFlowTransactionManager.inTransaction {
+                val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
+                val organizationId = requireNotNull(event.organizationId) {
+                    "Event is not assigned to organization: $eventId"
+                }
+                requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
+                    "User $actorUserId is not a member of organization $organizationId"
+                }
+                closeEventAndPendingOrders(event)
             }
-            requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
-                "User $actorUserId is not a member of organization $organizationId"
-            }
-            closeEventAndPendingOrders(event)
         }
     }
 
     fun closeWhenStarted(eventId: UUID): Event {
-        return orderFlowTransactionManager.inTransaction {
-            val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
-            val now = clock.instant()
-            require(!now.isBefore(event.time)) { "Event has not started yet: $eventId" }
-            closeEventAndPendingOrders(event)
+        return eventLockManager.withEventLock(eventId) {
+            orderFlowTransactionManager.inTransaction {
+                val event = requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
+                val now = clock.instant()
+                require(!now.isBefore(event.time)) { "Event has not started yet: $eventId" }
+                closeEventAndPendingOrders(event)
+            }
         }
     }
 

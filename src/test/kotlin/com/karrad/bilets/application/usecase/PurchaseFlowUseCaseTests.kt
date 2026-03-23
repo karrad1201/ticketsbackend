@@ -49,6 +49,7 @@ import kotlin.test.assertTrue
     ExpireOrderUseCase::class,
     HandlePaymentCallbackUseCase::class,
     CloseEventSalesUseCase::class,
+    ProcessStartedEventSalesUseCase::class,
     ProcessStalePaymentAttemptsUseCase::class
 )
 @TestPropertySource(properties = ["purchase.hold-ttl=PT30M", "purchase.platform-commission-rate=0.10"])
@@ -102,6 +103,9 @@ class PurchaseFlowUseCaseTests {
 
     @Autowired
     lateinit var closeEventSalesUseCase: CloseEventSalesUseCase
+
+    @Autowired
+    lateinit var processStartedEventSalesUseCase: ProcessStartedEventSalesUseCase
 
     @Autowired
     lateinit var processStalePaymentAttemptsUseCase: ProcessStalePaymentAttemptsUseCase
@@ -472,6 +476,31 @@ class PurchaseFlowUseCaseTests {
     }
 
     @Test
+    fun `should auto close started event sales in batch`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 2))
+            )
+        )
+
+        clock.advanceByMinutes(14 * 24 * 60)
+        val processed = processStartedEventSalesUseCase.process(limit = 10)
+
+        assertEquals(listOf(event.id), processed.map { it.id })
+        assertEquals(OrderStatus.PAYMENT_FAILED, requireNotNull(orderRepository.findById(order.id)).status)
+        assertEquals(PaymentAttemptStatus.FAILED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+    }
+
+    @Test
     fun `should process stale payment attempts through expire flow`() {
         val event = generalAdmissionEvent()
         eventRepository.save(event)
@@ -494,6 +523,39 @@ class PurchaseFlowUseCaseTests {
         assertEquals(listOf(order.id), processed.map { it.id })
         assertEquals(OrderStatus.EXPIRED, requireNotNull(orderRepository.findById(order.id)).status)
         assertEquals(PaymentAttemptStatus.FAILED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+    }
+
+    @Test
+    fun `should process stale payment attempts in limited batch`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val first = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+        val second = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+
+        clock.advanceByMinutes(31)
+
+        val processed = processStalePaymentAttemptsUseCase.process(limit = 1)
+
+        assertEquals(1, processed.size)
+        assertEquals(OrderStatus.EXPIRED, requireNotNull(orderRepository.findById(processed.single().id)).status)
+        val remainingOrderId = listOf(first.id, second.id).first { it != processed.single().id }
+        assertEquals(OrderStatus.PENDING_PAYMENT, requireNotNull(orderRepository.findById(remainingOrderId)).status)
     }
 
     @Test

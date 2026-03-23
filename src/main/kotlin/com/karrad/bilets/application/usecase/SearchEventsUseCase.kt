@@ -2,17 +2,15 @@ package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.repository.EventSearchCriteria
 import com.karrad.bilets.domain.repository.EventRepository
-import com.karrad.bilets.domain.repository.VenueRepository
 import org.springframework.stereotype.Component
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.util.UUID
 
 @Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
-    private val venueRepository: VenueRepository,
     private val eventAvailabilityService: EventAvailabilityService
 ) {
     fun search(
@@ -31,20 +29,17 @@ class SearchEventsUseCase(
         }
 
         val normalizedQuery = query?.trim()?.lowercase().orEmpty()
-        val normalizedCity = city?.trim()?.lowercase()
-        val filtered = eventRepository.findAll()
-            .filter { event ->
-                val venue = venueRepository.findById(event.venueId) ?: return@filter false
-                val eventDate = event.time.atOffset(ZoneOffset.UTC).toLocalDate()
-
-                eventAvailabilityService.isAvailableForPurchase(event) &&
-                    (normalizedQuery.isBlank() || event.label.lowercase().contains(normalizedQuery)) &&
-                    (normalizedCity == null || venue.city.label.lowercase() == normalizedCity) &&
-                    (categoryId == null || event.categoryId == categoryId) &&
-                    (venueId == null || event.venueId == venueId) &&
-                    (dateFrom == null || !eventDate.isBefore(dateFrom)) &&
-                    (dateTo == null || !eventDate.isAfter(dateTo))
-            }
+        val filtered = eventRepository.searchAvailable(
+            EventSearchCriteria(
+                query = query,
+                city = city,
+                categoryId = categoryId,
+                venueId = venueId,
+                dateFrom = dateFrom,
+                dateTo = dateTo,
+                now = eventAvailabilityService.now()
+            )
+        )
             .sortedWith(compareBy<Event> { queryRank(it.label, normalizedQuery) }.thenBy { it.time })
 
         val fromIndex = page * size

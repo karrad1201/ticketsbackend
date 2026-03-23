@@ -81,7 +81,7 @@ class ApplicationServicesTestConfig {
     fun paymentCallbackAuditRepository(): PaymentCallbackAuditRepository = InMemoryPaymentCallbackAuditRepository()
 
     @Bean
-    fun eventRepository(): EventRepository = InMemoryEventRepository()
+    fun eventRepository(venueRepository: VenueRepository): EventRepository = InMemoryEventRepository(venueRepository)
 
     @Bean
     fun eventInventoryPlanRepository(): EventInventoryPlanRepository = InMemoryEventInventoryPlanRepository()

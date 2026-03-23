@@ -11,8 +11,9 @@ class ProcessStalePaymentAttemptsUseCase(
     private val expireOrderUseCase: ExpireOrderUseCase,
     private val clock: Clock
 ) {
-    fun process(): List<Order> {
-        return paymentReconciliationService.findStalePendingAttempts(clock.instant())
+    fun process(limit: Int = Int.MAX_VALUE): List<Order> {
+        require(limit > 0) { "limit must be positive" }
+        return paymentReconciliationService.findStalePendingAttempts(clock.instant(), limit)
             .map { expireOrderUseCase.expire(it.orderId) }
     }
 }

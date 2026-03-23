@@ -36,16 +36,19 @@
 ## Read Models
 
 - `search` и `discovery` отдают только события, доступные для покупки.
-- Оба read path пока строятся через repository `findAll()` и фильтрацию в памяти.
+- Для JDBC runtime `search` и `discovery` теперь идут через целевые repository query path, а не через глобальный `findAll()`.
+- Отдельного read-optimized projection слоя пока нет: это еще не полноценная search/discovery read model.
 
 ## Operational Flows
 
 - Есть `PaymentReconciliationService` для поиска stale pending attempts.
 - Есть `ProcessStalePaymentAttemptsUseCase` для их пакетной обработки через стандартный expire path.
-- Автоматический scheduler пока не добавлен.
+- Есть `ProcessStartedEventSalesUseCase` для пакетного auto-close начавшихся событий.
+- Есть scheduler для auto-close started event sales и stale payment processing.
+- Есть admin ops HTTP surface для ручного запуска обоих batch flow.
 
 ## Current Technical Limits
 
 - Approval flow организации и прочие multi-step бизнес-переходы еще не везде одинаково богаты operational tooling.
-- Search/discovery пока не вынесены в отдельные SQL/read-optimized модели.
+- Search/discovery пока не вынесены в отдельные SQL/read-optimized projection модели.
 - Security boundary остается минимальной до отдельного auth/authz slice.
