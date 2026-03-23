@@ -12,6 +12,7 @@ import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
@@ -24,6 +25,7 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcTicketRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -65,6 +67,10 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun userRepository(jdbcTemplate: JdbcTemplate): UserRepository = JdbcUserRepository(jdbcTemplate)
+
+    @Bean
+    fun userEventVisitRepository(jdbcTemplate: JdbcTemplate): UserEventVisitRepository =
+        JdbcUserEventVisitRepository(jdbcTemplate)
 
     @Bean
     fun organizationRepository(jdbcTemplate: JdbcTemplate): OrganizationRepository =

@@ -38,6 +38,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
   - `VenueRepository`
   - `LayoutTemplateRepository`
   - `EventRepository`
+  - `UserEventVisitRepository`
   - `EventInventoryPlanRepository`
   - `OrderRepository`
   - `OrderInventoryRepository`
@@ -76,6 +77,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - создание `Venue`;
 - хранение `LayoutTemplate` для seated inventory;
 - создание `Event` поверх `Venue`;
+- хранение `UserEventVisit` для discovery/read path;
 - inventory generation перед покупкой.
 
 ## Consequences
@@ -88,6 +90,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - admin flow вокруг organization application тоже начинает жить в JDBC profile;
 - event creation в JDBC profile больше не опирается на in-memory `CategoryRepository`;
 - seated catalog перестает зависеть от in-memory `LayoutTemplateRepository` в JDBC profile;
+- discovery profile начинает читать visit history из JDBC, а не из in-memory адаптера;
 - concurrency и rollback теперь проверяются тестами против реальной БД;
 - profile можно включать отдельно, не ломая default in-memory режим разработки.
 

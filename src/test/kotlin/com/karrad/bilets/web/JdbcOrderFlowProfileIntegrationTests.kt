@@ -9,6 +9,7 @@ import com.karrad.bilets.application.usecase.CreateVenueUseCase
 import com.karrad.bilets.application.usecase.GenerateEventInventoryUseCase
 import com.karrad.bilets.application.usecase.ReviewOrganizationApplicationUseCase
 import com.karrad.bilets.application.usecase.SubmitOrganizationApplicationUseCase
+import com.karrad.bilets.application.usecase.GetEventDiscoveryUseCase
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
@@ -24,6 +25,7 @@ import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.repository.CategoryRepository
@@ -35,6 +37,7 @@ import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
@@ -44,6 +47,7 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationApplica
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -72,6 +76,9 @@ class JdbcOrderFlowProfileIntegrationTests {
 
     @Autowired
     lateinit var organizationRepository: OrganizationRepository
+
+    @Autowired
+    lateinit var userEventVisitRepository: UserEventVisitRepository
 
     @Autowired
     lateinit var organizationApplicationRepository: OrganizationApplicationRepository
@@ -121,9 +128,13 @@ class JdbcOrderFlowProfileIntegrationTests {
     @Autowired
     lateinit var confirmOrderPaymentUseCase: ConfirmOrderPaymentUseCase
 
+    @Autowired
+    lateinit var getEventDiscoveryUseCase: GetEventDiscoveryUseCase
+
     @Test
     fun `jdbc order flow profile should use jdbc repositories and complete purchase flow`() {
         assertIs<JdbcUserRepository>(userRepository)
+        assertIs<JdbcUserEventVisitRepository>(userEventVisitRepository)
         assertIs<JdbcOrganizationRepository>(organizationRepository)
         assertIs<JdbcCategoryRepository>(categoryRepository)
         assertIs<JdbcOrganizationApplicationRepository>(organizationApplicationRepository)
@@ -380,5 +391,79 @@ class JdbcOrderFlowProfileIntegrationTests {
 
         assertEquals("jdbc-admin-flow", organization.code)
         assertEquals(OrganizationMemberRole.OWNER, requireNotNull(ownerMembership).role)
+    }
+
+    @Test
+    fun `jdbc order flow profile should build discovery response from jdbc user event visits`() {
+        val rock = categoryRepository.save(
+            Category(
+                code = "jdbc-discovery-rock",
+                label = "Rock",
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179420")
+            )
+        )
+        val userId = UUID.fromString("123e4567-e89b-12d3-a456-426614179421")
+        val user = userRepository.save(
+            User(
+                email = "jdbc-discovery@example.com",
+                fullName = "Jdbc Discovery User",
+                id = userId
+            )
+        )
+        val venue = venueRepository.save(
+            Venue(
+                label = "Jdbc Discovery Hall",
+                city = City(label = "Ekaterinburg", subject = Subject("Sverdlovsk Oblast")),
+                organizationId = UUID.fromString("123e4567-e89b-12d3-a456-426614179422"),
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179423"),
+                spaces = listOf(VenueSpace(label = "Main", id = UUID.fromString("123e4567-e89b-12d3-a456-426614179424")))
+            )
+        )
+        val pastVisit = eventRepository.save(
+            Event(
+                label = "Jdbc Past Visit",
+                description = "Visited event",
+                venueId = venue.id,
+                categoryId = rock.id,
+                time = java.time.LocalDate.now(java.time.ZoneOffset.UTC).minusDays(1).atTime(18, 0)
+                    .toInstant(java.time.ZoneOffset.UTC),
+                venueSpaceId = null,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179425"),
+                organizationId = venue.organizationId
+            )
+        )
+        eventRepository.save(
+            Event(
+                label = "Jdbc Tomorrow Show",
+                description = "Upcoming event",
+                venueId = venue.id,
+                categoryId = rock.id,
+                time = java.time.LocalDate.now(java.time.ZoneOffset.UTC).plusDays(1).atTime(18, 0)
+                    .toInstant(java.time.ZoneOffset.UTC),
+                venueSpaceId = null,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179426"),
+                organizationId = venue.organizationId
+            )
+        )
+
+        userEventVisitRepository.save(
+            UserEventVisit(
+                userId = user.id,
+                eventId = pastVisit.id,
+                visitedAt = Instant.parse("2026-03-22T10:00:00Z"),
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179427")
+            )
+        )
+
+        val response = getEventDiscoveryUseCase.get(
+            userId = user.id,
+            city = "Ekaterinburg",
+            page = 0,
+            size = 10
+        )
+
+        assertEquals(listOf("Jdbc Tomorrow Show"), response.seenOrganizations.map { it.label })
+        assertEquals(listOf("Jdbc Tomorrow Show"), response.favoriteCategories.map { it.label })
+        assertEquals(listOf("Jdbc Tomorrow Show"), response.tomorrow.map { it.label })
     }
 }

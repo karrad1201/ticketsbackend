@@ -57,7 +57,7 @@ class RepositoryConfig {
     fun userRepository(): UserRepository = InMemoryUserRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun userEventVisitRepository(): UserEventVisitRepository = InMemoryUserEventVisitRepository()
 
     @Bean

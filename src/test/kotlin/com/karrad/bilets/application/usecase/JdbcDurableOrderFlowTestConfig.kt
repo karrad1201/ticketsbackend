@@ -14,6 +14,7 @@ import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
@@ -26,6 +27,7 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcTicketRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import com.karrad.bilets.support.MutableClock
 import org.springframework.boot.test.context.TestConfiguration
@@ -91,6 +93,10 @@ class JdbcDurableOrderFlowTestConfig {
 
     @Bean
     fun userRepository(jdbcTemplate: JdbcTemplate): UserRepository = JdbcUserRepository(jdbcTemplate)
+
+    @Bean
+    fun userEventVisitRepository(jdbcTemplate: JdbcTemplate): UserEventVisitRepository =
+        JdbcUserEventVisitRepository(jdbcTemplate)
 
     @Bean
     fun organizationRepository(jdbcTemplate: JdbcTemplate): OrganizationRepository = JdbcOrganizationRepository(jdbcTemplate)

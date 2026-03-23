@@ -134,6 +134,13 @@ create table if not exists tickets (
     issued_at timestamp not null
 );
 
+create table if not exists user_event_visits (
+    id uuid primary key,
+    user_id uuid not null,
+    event_id uuid not null,
+    visited_at timestamp not null
+);
+
 create table if not exists event_seat_inventory (
     event_id uuid not null,
     section_key varchar(255) not null,
