@@ -219,6 +219,158 @@ class PurchaseFlowUseCaseTests {
         assertEquals(OrderStatus.EXPIRED, requireNotNull(orderRepository.findById(order.id)).status)
     }
 
+    @Test
+    fun `should reject order creation when neither seats nor admission items are provided`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = buyerUserId()
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("must contain seats or admission items"))
+    }
+
+    @Test
+    fun `should reject order creation when both seats and admission items are provided`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = buyerUserId(),
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1)),
+                    admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("either seatKeys or admissionItems"))
+    }
+
+    @Test
+    fun `should reject order creation when buyer does not exist`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614176099"),
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("User not found"))
+    }
+
+    @Test
+    fun `should reject order creation when event inventory plan does not exist`() {
+        val event = seatedEvent()
+        eventRepository.save(event)
+        userRepository.save(buyer())
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = buyerUserId(),
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("EventInventoryPlan not found"))
+    }
+
+    @Test
+    fun `should reject confirming already paid order`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+
+        confirmOrderPaymentUseCase.confirm(order.id)
+
+        val exception = assertFailsWith<IllegalStateException> {
+            confirmOrderPaymentUseCase.confirm(order.id)
+        }
+
+        assertTrue(exception.message!!.contains("already paid"))
+    }
+
+    @Test
+    fun `should reject expiring order before ttl`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        )
+
+        val exception = assertFailsWith<IllegalStateException> {
+            expireOrderUseCase.expire(order.id)
+        }
+
+        assertTrue(exception.message!!.contains("not expired yet"))
+    }
+
+    @Test
+    fun `should reject expiring already paid order`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+        confirmOrderPaymentUseCase.confirm(order.id)
+        clock.advanceByMinutes(31)
+
+        val exception = assertFailsWith<IllegalStateException> {
+            expireOrderUseCase.expire(order.id)
+        }
+
+        assertTrue(exception.message!!.contains("Only pending order can expire"))
+    }
+
     private fun seatedEvent(): Event {
         return Event(
             label = "Hamlet",

@@ -1,12 +1,14 @@
 package com.karrad.bilets.web
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
+import com.karrad.bilets.domain.entity.SeatKey
 import com.karrad.bilets.domain.entity.Section
+import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
@@ -101,6 +103,193 @@ class OrderControllerIntegrationTests {
         org.junit.jupiter.api.Assertions.assertEquals(SeatStatus.SOLD, seat.status)
     }
 
+    @Test
+    fun `should create and confirm general admission order over http`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val createResponse = mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "admissionItems" to listOf(
+                                mapOf("ticketTypeId" to standardTicketTypeId(), "quantity" to 2)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"))
+            .andExpect(jsonPath("$.amount").value(3000))
+            .andReturn()
+
+        val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("PAID"))
+
+        mockMvc.perform(get("/api/users/${buyerUserId()}/tickets"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].ticketTypeId").value(standardTicketTypeId().toString()))
+    }
+
+    @Test
+    fun `should expire order over http and release held seat`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val createResponse = mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "seatKeys" to listOf(
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 2)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+
+        val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        mockMvc.perform(post("/api/orders/$orderId/expire"))
+            .andExpect(status().isConflict)
+
+        val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+        org.junit.jupiter.api.Assertions.assertEquals(
+            SeatStatus.HELD,
+            plan.seatInventory.first { it.seatKey.seatNumber == 2 }.status
+        )
+    }
+
+    @Test
+    fun `should reject order creation over http when request has no items`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("buyerUserId" to buyerUserId())))
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject order creation over http when both seats and admission items are provided`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "seatKeys" to listOf(
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                            ),
+                            "admissionItems" to listOf(
+                                mapOf("ticketTypeId" to standardTicketTypeId(), "quantity" to 1)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject order creation over http when seat is unavailable`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+        )
+        eventInventoryPlanRepository.save(heldPlan)
+
+        mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "seatKeys" to listOf(
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject repeated payment confirmation over http`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val createResponse = mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "buyerUserId" to buyerUserId(),
+                            "seatKeys" to listOf(
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+
+        val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+            .andExpect(status().isOk)
+
+        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+            .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `should return not found for unknown order`() {
+        mockMvc.perform(get("/api/orders/123e4567-e89b-12d3-a456-426614177999"))
+            .andExpect(status().isNotFound)
+    }
+
     private fun seatedEvent(): Event {
         return Event(
             label = "Hamlet",
@@ -110,6 +299,18 @@ class OrderControllerIntegrationTests {
             time = Instant.parse("2026-04-01T18:00:00Z"),
             venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614177003"),
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614177004")
+        )
+    }
+
+    private fun generalAdmissionEvent(): Event {
+        return Event(
+            label = "Festival",
+            description = "Open floor event",
+            venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614177011"),
+            categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614177012"),
+            time = Instant.parse("2026-04-01T20:00:00Z"),
+            venueSpaceId = null,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614177013")
         )
     }
 
@@ -132,6 +333,18 @@ class OrderControllerIntegrationTests {
 
     private fun buyerUserId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614177006")
+
+    private fun standardTicketTypeId(): UUID =
+        UUID.fromString("123e4567-e89b-12d3-a456-426614177014")
+
+    private fun generalAdmissionPlan(event: Event): EventInventoryPlan {
+        return EventInventoryPlan.generalAdmission(
+            event = event,
+            ticketTypes = listOf(
+                TicketType(label = "Standard", price = 1500, quota = 100, id = standardTicketTypeId())
+            )
+        )
+    }
 
     private fun buyer(): User =
         User(
