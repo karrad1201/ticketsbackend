@@ -21,8 +21,12 @@ ticketsbackend
 │   │   ├── 0005-layout-template-ownership-via-venue.md
 │   │   ├── 0006-sectioned-discovery-and-event-search.md
 │   │   ├── 0007-durable-order-flow-jdbc.md
-│   │   └── 0008-payment-attempt-and-current-user-boundary.md
+│   │   ├── 0008-payment-attempt-and-current-user-boundary.md
+│   │   ├── 0009-operational-automation-for-event-sales-and-stale-payments.md
+│   │   └── 0010-query-backed-event-discovery-and-search.md
 │   ├── contributors.md
+│   ├── current-branch-summary.md
+│   ├── current-state.md
 │   └── product-flow.md
 ├── pom.xml
 ├── scripts
@@ -37,8 +41,11 @@ ticketsbackend
     │   │               ├── application
     │   │               │   ├── lock
     │   │               │   │   └── EventLockManager.kt
+    │   │               │   ├── ops
+    │   │               │   │   └── OperationsScheduler.kt
     │   │               │   ├── service
     │   │               │   │   ├── CategoryService.kt
+    │   │               │   │   ├── EventAvailabilityService.kt
     │   │               │   │   ├── EventService.kt
     │   │               │   │   ├── InventoryPlanService.kt
     │   │               │   │   ├── LayoutTemplateService.kt
@@ -55,6 +62,7 @@ ticketsbackend
     │   │               │   ├── transaction
     │   │               │   │   └── OrderFlowTransactionManager.kt
     │   │               │   └── usecase
+    │   │               │       ├── CloseEventSalesUseCase.kt
     │   │               │       ├── ConfirmOrderPaymentUseCase.kt
     │   │               │       ├── CreateCategoryUseCase.kt
     │   │               │       ├── CreateEventUseCase.kt
@@ -69,6 +77,8 @@ ticketsbackend
     │   │               │       ├── HandlePaymentCallbackUseCase.kt
     │   │               │       ├── HoldEventSeatsUseCase.kt
     │   │               │       ├── HoldGeneralAdmissionUseCase.kt
+    │   │               │       ├── ProcessStalePaymentAttemptsUseCase.kt
+    │   │               │       ├── ProcessStartedEventSalesUseCase.kt
     │   │               │       ├── ReleaseEventSeatsUseCase.kt
     │   │               │       ├── ReleaseGeneralAdmissionUseCase.kt
     │   │               │       ├── ReviewOrganizationApplicationUseCase.kt
@@ -79,6 +89,7 @@ ticketsbackend
     │   │               ├── config
     │   │               │   ├── JacksonConfig.kt
     │   │               │   ├── JdbcOrderFlowPersistenceConfig.kt
+    │   │               │   ├── OperationsProperties.kt
     │   │               │   ├── PurchaseProperties.kt
     │   │               │   ├── RepositoryConfig.kt
     │   │               │   └── TimeConfig.kt
@@ -195,6 +206,7 @@ ticketsbackend
     │   │                   ├── EventInventoryController.kt
     │   │                   ├── InventoryPlanController.kt
     │   │                   ├── LayoutTemplateController.kt
+    │   │                   ├── OperationsController.kt
     │   │                   ├── OrderController.kt
     │   │                   ├── OrganizationApplicationController.kt
     │   │                   ├── OrganizationController.kt
@@ -210,6 +222,7 @@ ticketsbackend
     │   │                       ├── EventRequests.kt
     │   │                       ├── InventoryGenerationRequest.kt
     │   │                       ├── LayoutTemplateRequests.kt
+    │   │                       ├── OperationsBatchResponse.kt
     │   │                       ├── OrderRequests.kt
     │   │                       ├── OrganizationApplicationRequests.kt
     │   │                       ├── OrganizationRequests.kt
@@ -223,7 +236,8 @@ ticketsbackend
     │       └── db
     │           └── migration
     │               ├── V1__jdbc_order_flow.sql
-    │               └── V2__payment_model.sql
+    │               ├── V2__payment_model.sql
+    │               └── V3__event_sales_closure.sql
     └── test
         ├── kotlin
         │   └── com
@@ -248,6 +262,7 @@ ticketsbackend
         │               │       ├── JdbcDurableOrderFlowConcurrencyTests.kt
         │               │       ├── JdbcDurableOrderFlowTestConfig.kt
         │               │       ├── JdbcDurableOrderFlowTests.kt
+        │               │       ├── JdbcOrganizationApprovalTransactionTests.kt
         │               │       ├── OrganizationApplicationFlowUseCaseTests.kt
         │               │       ├── PurchaseFlowUseCaseTests.kt
         │               │       ├── ReleaseEventSeatsUseCaseTests.kt
@@ -277,6 +292,7 @@ ticketsbackend
         │                   ├── GeneralAdmissionInventoryLifecycleIntegrationTests.kt
         │                   ├── JdbcOrderFlowProfileIntegrationTests.kt
         │                   ├── LayoutTemplateControllerIntegrationTests.kt
+        │                   ├── OperationsControllerIntegrationTests.kt
         │                   ├── OrderControllerIntegrationTests.kt
         │                   ├── OrganizationApplicationControllerIntegrationTests.kt
         │                   ├── OrganizationControllerIntegrationTests.kt

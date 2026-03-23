@@ -23,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -232,6 +233,42 @@ class EventControllerIntegrationTests {
                 )
         )
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should close event sales over http`() {
+        val venue = demoVenue()
+        val category = demoCategory("theatre", "Theatre", UUID.fromString("123e4567-e89b-12d3-a456-426614174446"))
+        seedOrganizationAccess()
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+
+        val createResponse = mockMvc.perform(
+            post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "label" to "Hamlet",
+                            "description" to "Evening show",
+                            "venueId" to venue.id,
+                            "categoryId" to category.id,
+                            "time" to "2026-04-10T18:00:00Z",
+                            "venueSpaceId" to venue.spaces.first().id
+                        )
+                    )
+                )
+        ).andReturn()
+
+        val eventId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        mockMvc.perform(
+            post("/api/events/$eventId/close-sales")
+                .header("X-User-Id", demoCreatorUserId().toString())
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.salesClosedAt").isNotEmpty)
     }
 
     private fun demoVenue(): Venue {

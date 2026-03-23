@@ -13,7 +13,8 @@ class PaymentReconciliationService(
     private val paymentAttemptRepository: PaymentAttemptRepository,
     private val orderRepository: OrderRepository
 ) {
-    fun findStalePendingAttempts(now: Instant): List<PaymentAttempt> {
+    fun findStalePendingAttempts(now: Instant, limit: Int = Int.MAX_VALUE): List<PaymentAttempt> {
+        require(limit > 0) { "limit must be positive" }
         return paymentAttemptRepository.findAll().filter { attempt ->
             if (attempt.status != PaymentAttemptStatus.PENDING) {
                 false
@@ -21,6 +22,6 @@ class PaymentReconciliationService(
                 val order = orderRepository.findById(attempt.orderId) ?: return@filter true
                 order.status == OrderStatus.PENDING_PAYMENT && !now.isBefore(order.expiresAt)
             }
-        }
+        }.take(limit)
     }
 }

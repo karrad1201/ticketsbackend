@@ -6,7 +6,9 @@ import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.PaymentCallbackStatus
 import com.karrad.bilets.domain.enums.PaymentAttemptStatus
+import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -26,6 +28,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
+import java.time.Instant
 import java.util.UUID
 
 @SpringBootTest
@@ -130,6 +133,63 @@ class PaymentControllerIntegrationTests {
             .andExpect(jsonPath("$.detail").value("Missing X-User-Id header"))
     }
 
+    @Test
+    fun `should release held inventory when mock callback returns expired`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val createResponse = mockMvc.perform(
+            post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "admissionItems" to listOf(
+                                mapOf("ticketTypeId" to standardTicketTypeId(), "quantity" to 2)
+                            )
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andReturn()
+
+        val orderJson = objectMapper.readTree(createResponse.response.contentAsString)
+        val orderId = UUID.fromString(orderJson.get("id").asText())
+        val paymentReference = paymentAttemptRepository.findByOrderId(orderId)?.reference
+            ?: error("Payment attempt not created for order $orderId")
+
+        mockMvc.perform(
+            post("/api/payments/callbacks/mock")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "paymentReference" to paymentReference,
+                            "status" to PaymentCallbackStatus.EXPIRED.name
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("PAYMENT_FAILED"))
+
+        assertEquals(
+            PaymentAttemptStatus.FAILED,
+            paymentAttemptRepository.findByOrderId(orderId)?.status
+        )
+        val inventory = eventInventoryPlanRepository.findByEventId(event.id)
+            ?.admissionInventory
+            ?.first { it.ticketTypeId == standardTicketTypeId() }
+            ?: error("Inventory not found")
+        assertEquals(0, inventory.held)
+        assertEquals(0, inventory.sold)
+    }
+
     private fun organizationId(): UUID =
         UUID.fromString("223e4567-e89b-12d3-a456-426614174001")
 
@@ -159,7 +219,7 @@ class PaymentControllerIntegrationTests {
         description = "Late evening guided program",
         venueId = UUID.fromString("223e4567-e89b-12d3-a456-426614174006"),
         categoryId = UUID.fromString("223e4567-e89b-12d3-a456-426614174005"),
-        time = java.time.Instant.parse("2032-07-01T19:00:00Z"),
+        time = Instant.parse("2032-07-01T19:00:00Z"),
         venueSpaceId = null,
         id = eventId(),
         organizationId = organizationId()

@@ -15,4 +15,7 @@ class InMemoryOrderRepository : OrderRepository {
     override fun findById(id: UUID): Order? = storage[id]
 
     override fun findAll(): List<Order> = storage.values.toList()
+
+    override fun findPendingByEventId(eventId: UUID): List<Order> =
+        storage.values.filter { it.eventId == eventId && it.status == com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT }
 }

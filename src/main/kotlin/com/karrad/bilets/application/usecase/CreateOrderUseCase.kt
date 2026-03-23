@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.AdmissionQuantity
@@ -28,6 +29,7 @@ data class CreateOrderCommand(
 class CreateOrderUseCase(
     private val eventRepository: EventRepository,
     private val userRepository: UserRepository,
+    private val eventAvailabilityService: EventAvailabilityService,
     private val orderInventoryRepository: OrderInventoryRepository,
     private val orderRepository: OrderRepository,
     private val paymentAttemptRepository: PaymentAttemptRepository,
@@ -40,10 +42,13 @@ class CreateOrderUseCase(
     fun create(command: CreateOrderCommand): Order {
         return eventLockManager.withEventLock(command.eventId) {
             orderFlowTransactionManager.inTransaction {
-                requireNotNull(eventRepository.findById(command.eventId)) { "Event not found: ${command.eventId}" }
+                val event = requireNotNull(eventRepository.findById(command.eventId)) { "Event not found: ${command.eventId}" }
                 requireNotNull(userRepository.findById(command.buyerUserId)) { "User not found: ${command.buyerUserId}" }
 
                 val now = clock.instant()
+                require(eventAvailabilityService.isAvailableForPurchase(event)) {
+                    "Ticket sales are closed for event: ${command.eventId}"
+                }
                 val expiresAt = now.plus(purchaseProperties.holdTtl)
                 val orderId = UUID.randomUUID()
                 val reservedInventory = reserveInventory(

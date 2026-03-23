@@ -16,3 +16,13 @@ order-flow:
 purchase:
   hold-ttl: PT30M
   platform-commission-rate: 0.10
+
+operations:
+  scheduling:
+    enabled: true
+    initial-delay-ms: 300000
+    close-started-sales-delay-ms: 60000
+    stale-payments-delay-ms: 60000
+  batches:
+    auto-close-event-sales-limit: 100
+    stale-payments-limit: 100

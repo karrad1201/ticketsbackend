@@ -4,8 +4,9 @@ import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.application.service.PaymentSettlementService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.entity.Order
-import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.enums.PaymentAttemptStatus
+import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import org.springframework.stereotype.Component
@@ -16,6 +17,7 @@ import java.util.UUID
 class ConfirmOrderPaymentUseCase(
     private val orderRepository: OrderRepository,
     private val paymentAttemptRepository: PaymentAttemptRepository,
+    private val orderInventoryRepository: OrderInventoryRepository,
     private val paymentSettlementService: PaymentSettlementService,
     private val eventLockManager: EventLockManager,
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
@@ -38,6 +40,14 @@ class ConfirmOrderPaymentUseCase(
                     throw IllegalStateException("Order payment is already failed: $orderId")
                 }
                 if (clock.instant().isAfter(freshOrder.expiresAt)) {
+                    orderInventoryRepository.release(freshOrder)
+                    paymentAttemptRepository.findByOrderIdForUpdate(orderId)?.let { attempt ->
+                        if (attempt.status == PaymentAttemptStatus.PENDING) {
+                            paymentAttemptRepository.save(
+                                attempt.markFailed(clock.instant(), "Order expired before payment confirmation")
+                            )
+                        }
+                    }
                     orderRepository.save(freshOrder.markExpired(clock.instant()))
                     throw IllegalStateException("Order payment window expired: $orderId")
                 }

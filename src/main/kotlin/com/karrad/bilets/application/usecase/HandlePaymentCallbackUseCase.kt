@@ -63,6 +63,7 @@ class HandlePaymentCallbackUseCase(
                 when (command.status) {
                     PaymentCallbackStatus.SUCCEEDED -> handleSuccess(freshOrder, freshAttempt, command.receivedAt)
                     PaymentCallbackStatus.FAILED -> handleFailure(freshOrder, freshAttempt, command)
+                    PaymentCallbackStatus.EXPIRED -> handleExpired(freshOrder, freshAttempt, command.receivedAt)
                 }
             }
         }
@@ -109,5 +110,26 @@ class HandlePaymentCallbackUseCase(
             return order
         }
         return paymentSettlementService.failPendingOrder(order, failedAttempt.updatedAt)
+    }
+
+    private fun handleExpired(
+        order: Order,
+        attempt: com.karrad.bilets.domain.entity.PaymentAttempt,
+        receivedAt: Instant
+    ): Order {
+        if (attempt.status == PaymentAttemptStatus.SUCCEEDED || order.status == OrderStatus.PAID) {
+            return order
+        }
+        if (order.status == OrderStatus.EXPIRED) {
+            return order
+        }
+        val failedAttempt = paymentAttemptRepository.save(
+            attempt.markFailed(receivedAt, "Payment session expired")
+        )
+        if (order.status != OrderStatus.PENDING_PAYMENT) {
+            return order
+        }
+        orderInventoryRepository.release(order)
+        return orderRepository.save(order.markPaymentFailed(failedAttempt.updatedAt))
     }
 }

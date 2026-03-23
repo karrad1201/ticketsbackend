@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.application.service.PaymentSettlementService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
@@ -55,6 +56,7 @@ class JdbcDurableOrderFlowTestConfig {
         .setType(EmbeddedDatabaseType.H2)
         .addScript("classpath:db/migration/V1__jdbc_order_flow.sql")
         .addScript("classpath:db/migration/V2__payment_model.sql")
+        .addScript("classpath:db/migration/V3__event_sales_closure.sql")
         .build()
 
     @Bean
@@ -158,4 +160,7 @@ class JdbcDurableOrderFlowTestConfig {
         ticketRepository,
         purchaseProperties
     )
+
+    @Bean
+    fun eventAvailabilityService(clock: Clock): EventAvailabilityService = EventAvailabilityService(clock)
 }

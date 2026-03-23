@@ -86,6 +86,51 @@ class GetEventDiscoveryUseCaseTests {
         assertEquals("size must be between 1 and 50", exception.message)
     }
 
+    @Test
+    fun `should exclude started and manually closed events from discovery`() {
+        categoryRepository.save(Category(code = "rock", label = "Rock", id = rockCategoryId()))
+        venueRepository.save(
+            demoVenue(
+                organizationId = orgOneId(),
+                venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614176208")
+            )
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176216"),
+                label = "Available Tomorrow",
+                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176200"),
+                categoryId = rockCategoryId(),
+                time = LocalDate.now(ZoneOffset.UTC).plusDays(1).atTime(18, 0).toInstant(ZoneOffset.UTC),
+                organizationId = orgOneId()
+            )
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176217"),
+                label = "Closed Tomorrow",
+                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176200"),
+                categoryId = rockCategoryId(),
+                time = LocalDate.now(ZoneOffset.UTC).plusDays(1).atTime(19, 0).toInstant(ZoneOffset.UTC),
+                organizationId = orgOneId()
+            ).closeSales(Instant.parse("2026-03-22T12:00:00Z"))
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176218"),
+                label = "Started Earlier Today",
+                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176200"),
+                categoryId = rockCategoryId(),
+                time = LocalDate.now(ZoneOffset.UTC).atStartOfDay().toInstant(ZoneOffset.UTC),
+                organizationId = orgOneId()
+            )
+        )
+
+        val result = useCase.get(userId = userId(), city = "Ekaterinburg", page = 0, size = 10)
+
+        assertEquals(listOf("Available Tomorrow"), result.tomorrow.map { it.label })
+    }
+
     private fun seedCatalog() {
         categoryRepository.save(Category(code = "rock", label = "Rock", id = rockCategoryId()))
         categoryRepository.save(Category(code = "jazz", label = "Jazz", id = jazzCategoryId()))

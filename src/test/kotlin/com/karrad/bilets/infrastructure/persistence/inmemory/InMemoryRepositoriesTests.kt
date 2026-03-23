@@ -89,9 +89,12 @@ class InMemoryRepositoriesTests {
 
     @Test
     fun `event repository should find events by venue id`() {
-        val repository = InMemoryEventRepository()
+        val venueRepository = InMemoryVenueRepository()
+        val repository = InMemoryEventRepository(venueRepository)
         val venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174110")
         val otherVenueId = UUID.fromString("123e4567-e89b-12d3-a456-426614174111")
+        venueRepository.save(demoVenue(id = venueId))
+        venueRepository.save(demoVenue(id = otherVenueId))
         val first = repository.save(demoEvent(venueId = venueId))
         repository.save(demoEvent(id = UUID.fromString("123e4567-e89b-12d3-a456-426614174112"), venueId = otherVenueId))
 
@@ -102,7 +105,9 @@ class InMemoryRepositoriesTests {
 
     @Test
     fun `event repository should save update list and delete events`() {
-        val repository = InMemoryEventRepository()
+        val venueRepository = InMemoryVenueRepository()
+        venueRepository.save(demoVenue())
+        val repository = InMemoryEventRepository(venueRepository)
         val event = demoEvent()
         val saved = repository.save(event)
         val updated = repository.save(saved.copy(label = "Updated Event"))
@@ -112,6 +117,55 @@ class InMemoryRepositoriesTests {
         assertTrue(repository.deleteById(event.id))
         assertNull(repository.findById(event.id))
         assertFalse(repository.deleteById(event.id))
+    }
+
+    @Test
+    fun `event repository should search available events by city and filters`() {
+        val venueRepository = InMemoryVenueRepository()
+        val firstVenue = demoVenue()
+        val secondVenue = demoVenue(id = UUID.fromString("123e4567-e89b-12d3-a456-426614174113"))
+        venueRepository.save(firstVenue)
+        venueRepository.save(secondVenue.copy(city = City(label = "Perm", subject = Subject(label = "Perm Krai"))))
+        val repository = InMemoryEventRepository(venueRepository)
+        val available = repository.save(
+            demoEvent(venueId = firstVenue.id).copy(
+                label = "Arena Night",
+                time = Instant.parse("2026-04-02T18:00:00Z")
+            )
+        )
+        repository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174114"),
+                venueId = firstVenue.id
+            )
+                .copy(label = "Closed Night")
+                .closeSales(Instant.parse("2026-04-01T10:00:00Z"))
+        )
+        repository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174115"),
+                venueId = secondVenue.id
+            ).copy(
+                label = "Perm Arena",
+                time = Instant.parse("2026-04-02T18:00:00Z")
+            )
+        )
+
+        val byCity = repository.findAvailableByCity("Ekaterinburg", Instant.parse("2026-04-01T12:00:00Z"))
+        val bySearch = repository.searchAvailable(
+            com.karrad.bilets.domain.repository.EventSearchCriteria(
+                query = "arena",
+                city = "Ekaterinburg",
+                categoryId = null,
+                venueId = firstVenue.id,
+                dateFrom = java.time.LocalDate.parse("2026-04-02"),
+                dateTo = java.time.LocalDate.parse("2026-04-02"),
+                now = Instant.parse("2026-04-01T12:00:00Z")
+            )
+        )
+
+        assertEquals(listOf(available), byCity)
+        assertEquals(listOf(available), bySearch)
     }
 
     @Test

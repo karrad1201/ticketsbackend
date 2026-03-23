@@ -84,7 +84,8 @@ create table if not exists events (
     category_id uuid not null,
     event_time timestamp not null,
     venue_space_id uuid null,
-    organization_id uuid null
+    organization_id uuid null,
+    sales_closed_at timestamp null
 );
 
 create table if not exists event_inventory_plans (

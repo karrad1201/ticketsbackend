@@ -129,6 +129,51 @@ class SearchEventsUseCaseTests {
         assertEquals(emptyList(), result)
     }
 
+    @Test
+    fun `should exclude started and manually closed events from search`() {
+        venueRepository.save(demoVenue())
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176306"),
+                label = "Arena Open",
+                venueId = venueId(),
+                categoryId = categoryId(),
+                time = Instant.parse("2026-05-05T18:00:00Z")
+            )
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176307"),
+                label = "Arena Closed",
+                venueId = venueId(),
+                categoryId = categoryId(),
+                time = Instant.parse("2026-05-06T18:00:00Z")
+            ).closeSales(Instant.parse("2026-03-22T12:00:00Z"))
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176308"),
+                label = "Arena Past",
+                venueId = venueId(),
+                categoryId = categoryId(),
+                time = Instant.parse("2026-03-22T18:00:00Z")
+            )
+        )
+
+        val result = useCase.search(
+            query = "arena",
+            city = null,
+            categoryId = null,
+            venueId = null,
+            dateFrom = null,
+            dateTo = null,
+            page = 0,
+            size = 10
+        )
+
+        assertEquals(listOf("Arena Open"), result.map { it.label })
+    }
+
     private fun demoVenue(): Venue =
         Venue(
             label = "Demo Hall",
