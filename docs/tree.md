@@ -21,8 +21,11 @@ ticketsbackend
 │   │   ├── 0005-layout-template-ownership-via-venue.md
 │   │   ├── 0006-sectioned-discovery-and-event-search.md
 │   │   ├── 0007-durable-order-flow-jdbc.md
-│   │   └── 0008-payment-attempt-and-current-user-boundary.md
+│   │   ├── 0008-payment-attempt-and-current-user-boundary.md
+│   │   ├── 0009-operational-automation-for-event-sales-and-stale-payments.md
+│   │   └── 0010-query-backed-event-discovery-and-search.md
 │   ├── contributors.md
+│   ├── current-branch-summary.md
 │   ├── current-state.md
 │   └── product-flow.md
 ├── pom.xml
