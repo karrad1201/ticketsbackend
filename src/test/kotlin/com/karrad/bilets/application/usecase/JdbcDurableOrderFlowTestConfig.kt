@@ -4,6 +4,7 @@ import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.payment.PaymentGateway
+import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
@@ -14,6 +15,7 @@ import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
@@ -81,6 +83,9 @@ class JdbcDurableOrderFlowTestConfig {
     fun eventLockManager(): EventLockManager = object : EventLockManager {
         override fun <T> withEventLock(eventId: java.util.UUID, action: () -> T): T = action()
     }
+
+    @Bean
+    fun categoryRepository(jdbcTemplate: JdbcTemplate): CategoryRepository = JdbcCategoryRepository(jdbcTemplate)
 
     @Bean
     fun userRepository(jdbcTemplate: JdbcTemplate): UserRepository = JdbcUserRepository(jdbcTemplate)

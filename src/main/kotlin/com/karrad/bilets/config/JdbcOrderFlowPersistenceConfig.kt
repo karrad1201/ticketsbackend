@@ -1,6 +1,7 @@
 package com.karrad.bilets.config
 
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
+import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
@@ -11,6 +12,7 @@ import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
@@ -35,6 +37,9 @@ import javax.sql.DataSource
 @Configuration
 @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "jdbc")
 class JdbcOrderFlowPersistenceConfig {
+
+    @Bean
+    fun categoryRepository(jdbcTemplate: JdbcTemplate): CategoryRepository = JdbcCategoryRepository(jdbcTemplate)
 
     @Bean
     fun jdbcOrderFlowSchemaInitializer(dataSource: DataSource): InitializingBean = InitializingBean {

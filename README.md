@@ -42,7 +42,7 @@ __
 
 Что он делает:
 
-- переводит `User`, `Organization`, `OrganizationMember`, `Venue`, `LayoutTemplate`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
+- переводит `User`, `Organization`, `Category`, `OrganizationMember`, `Venue`, `LayoutTemplate`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
 - применяет versioned schema script из `src/main/resources/db/migration/V1__jdbc_order_flow.sql`;
 - оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
 
@@ -60,6 +60,7 @@ SPRING_DATASOURCE_PASSWORD= \
 Профиль сейчас покрывает durable purchase slice:
 
 - ownership check через `OrganizationMember`;
+- category lookup для event creation;
 - venue-backed event creation;
 - layout template storage для seated flow;
 - inventory generation;

@@ -32,6 +32,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - JDBC-реализации для:
   - `UserRepository`
   - `OrganizationRepository`
+  - `CategoryRepository`
   - `OrganizationMemberRepository`
   - `VenueRepository`
   - `LayoutTemplateRepository`
@@ -69,6 +70,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 После расширения профиля durable purchase path включает не только сам `order flow`, но и ближайшие ownership/catalog зависимости:
 
 - membership-проверку через `OrganizationMember`;
+- category lookup через `Category`;
 - создание `Venue`;
 - хранение `LayoutTemplate` для seated inventory;
 - создание `Event` поверх `Venue`;
@@ -81,6 +83,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - purchase flow перестает зависеть от process-local mutex как основной гарантии корректности;
 - появляются durable order/inventory/ticket данные;
 - ownership и venue-backed event creation тоже начинают жить в том же persistence family;
+- event creation в JDBC profile больше не опирается на in-memory `CategoryRepository`;
 - seated catalog перестает зависеть от in-memory `LayoutTemplateRepository` в JDBC profile;
 - concurrency и rollback теперь проверяются тестами против реальной БД;
 - profile можно включать отдельно, не ломая default in-memory режим разработки.

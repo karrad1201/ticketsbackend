@@ -34,6 +34,7 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
@@ -110,6 +111,7 @@ class JdbcOrderFlowProfileIntegrationTests {
     fun `jdbc order flow profile should use jdbc repositories and complete purchase flow`() {
         assertIs<JdbcUserRepository>(userRepository)
         assertIs<JdbcOrganizationRepository>(organizationRepository)
+        assertIs<JdbcCategoryRepository>(categoryRepository)
         assertIs<JdbcOrganizationMemberRepository>(organizationMemberRepository)
         assertIs<JdbcVenueRepository>(venueRepository)
         assertIs<JdbcLayoutTemplateRepository>(layoutTemplateRepository)

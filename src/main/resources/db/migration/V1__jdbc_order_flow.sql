@@ -12,6 +12,12 @@ create table if not exists organizations (
     balance integer not null
 );
 
+create table if not exists categories (
+    id uuid primary key,
+    code varchar(255) not null unique,
+    label varchar(255) not null
+);
+
 create table if not exists organization_members (
     id uuid primary key,
     organization_id uuid not null,

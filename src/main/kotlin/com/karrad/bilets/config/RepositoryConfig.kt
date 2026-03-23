@@ -37,7 +37,7 @@ import org.springframework.context.annotation.Configuration
 class RepositoryConfig {
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun categoryRepository(): CategoryRepository = InMemoryCategoryRepository()
 
     @Bean
