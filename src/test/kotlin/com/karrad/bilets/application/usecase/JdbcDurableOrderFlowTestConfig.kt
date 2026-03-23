@@ -5,6 +5,7 @@ import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
@@ -14,6 +15,7 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
@@ -95,6 +97,10 @@ class JdbcDurableOrderFlowTestConfig {
 
     @Bean
     fun venueRepository(jdbcTemplate: JdbcTemplate): VenueRepository = JdbcVenueRepository(jdbcTemplate)
+
+    @Bean
+    fun layoutTemplateRepository(jdbcTemplate: JdbcTemplate): LayoutTemplateRepository =
+        JdbcLayoutTemplateRepository(jdbcTemplate)
 
     @Bean
     fun orderRepository(jdbcTemplate: JdbcTemplate): OrderRepository = JdbcOrderRepository(jdbcTemplate)

@@ -3,6 +3,7 @@ package com.karrad.bilets.config
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
@@ -12,6 +13,7 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
@@ -70,6 +72,10 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun venueRepository(jdbcTemplate: JdbcTemplate): VenueRepository = JdbcVenueRepository(jdbcTemplate)
+
+    @Bean
+    fun layoutTemplateRepository(jdbcTemplate: JdbcTemplate): LayoutTemplateRepository =
+        JdbcLayoutTemplateRepository(jdbcTemplate)
 
     @Bean
     fun eventInventoryPlanRepository(jdbcTemplate: JdbcTemplate): EventInventoryPlanRepository =

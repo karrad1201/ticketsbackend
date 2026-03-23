@@ -33,6 +33,32 @@ create table if not exists venue_spaces (
     label varchar(255) not null
 );
 
+create table if not exists layout_templates (
+    id uuid primary key,
+    venue_space_id uuid not null,
+    label varchar(255) not null
+);
+
+create table if not exists layout_template_sections (
+    layout_template_id uuid not null,
+    section_key varchar(255) not null,
+    label varchar(255) not null,
+    sort_order integer not null,
+    primary key (layout_template_id, section_key)
+);
+
+create table if not exists layout_template_rows (
+    layout_template_id uuid not null,
+    section_key varchar(255) not null,
+    row_key varchar(255) not null,
+    label varchar(255) not null,
+    start_seat integer not null,
+    end_seat integer not null,
+    price integer not null,
+    sort_order integer not null,
+    primary key (layout_template_id, section_key, row_key)
+);
+
 create table if not exists events (
     id uuid primary key,
     label varchar(255) not null,

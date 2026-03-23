@@ -18,6 +18,9 @@ __
 Разработка должна вестись по tdd системе, общий вид: Тесты-Код-Рефакторинг. 
 Важно делать коммиты и неочевидные решения прописывать в adr
 
+Работа по фичам ведется через отдельные ветки и `PR`, а не напрямую в `main`.
+Подробный процесс разработки вынесен в [docs/contributors.md](docs/contributors.md).
+
 
 Стандартный флоу добавления фич:
 
@@ -39,7 +42,7 @@ __
 
 Что он делает:
 
-- переводит `User`, `Organization`, `OrganizationMember`, `Venue`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
+- переводит `User`, `Organization`, `OrganizationMember`, `Venue`, `LayoutTemplate`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
 - применяет versioned schema script из `src/main/resources/db/migration/V1__jdbc_order_flow.sql`;
 - оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
 
@@ -58,6 +61,7 @@ SPRING_DATASOURCE_PASSWORD= \
 
 - ownership check через `OrganizationMember`;
 - venue-backed event creation;
+- layout template storage для seated flow;
 - inventory generation;
 - order creation, confirm, expire и ticket issuance.
 
