@@ -1,4 +1,4 @@
-# ADR 0007: Introduce JDBC-Backed Durable Order Flow
+# ADR 0007: Introduce JDBC-Backed Durable Purchase Slice
 
 ## Status
 
@@ -23,7 +23,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 
 ## Decision
 
-Для order flow вводим JDBC-backed путь с транзакциями и SQL-атомарностью.
+Для purchase flow вводим JDBC-backed путь с транзакциями и SQL-атомарностью.
 
 Новые опоры решения:
 
@@ -32,6 +32,8 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - JDBC-реализации для:
   - `UserRepository`
   - `OrganizationRepository`
+  - `OrganizationMemberRepository`
+  - `VenueRepository`
   - `EventRepository`
   - `EventInventoryPlanRepository`
   - `OrderRepository`
@@ -63,12 +65,20 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 Профиль переводит на JDBC только те части, которые уже нужны для durable purchase path.
 Схема хранится как versioned migration script `db/migration/V1__jdbc_order_flow.sql` и применяется при старте JDBC-профиля через initializer.
 
+После расширения профиля durable purchase path включает не только сам `order flow`, но и ближайшие ownership/catalog зависимости:
+
+- membership-проверку через `OrganizationMember`;
+- создание `Venue`;
+- создание `Event` поверх `Venue`;
+- inventory generation перед покупкой.
+
 ## Consequences
 
 Плюсы:
 
 - purchase flow перестает зависеть от process-local mutex как основной гарантии корректности;
 - появляются durable order/inventory/ticket данные;
+- ownership и venue-backed event creation тоже начинают жить в том же persistence family;
 - concurrency и rollback теперь проверяются тестами против реальной БД;
 - profile можно включать отдельно, не ломая default in-memory режим разработки.
 
@@ -82,7 +92,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 
 Следующий технический шаг:
 
-1. перевести оставшиеся связанные aggregate/repository на JDBC или явные adapter boundaries;
-2. ввести миграции схемы;
+1. перевести оставшиеся purchase-adjacent aggregate/repository на JDBC или явные adapter boundaries;
+2. ввести полноценный migration framework поверх versioned script;
 3. добавить production datasource вместо локального H2 сценария;
 4. при необходимости вынести scheduler на массовый `expire pending orders`.

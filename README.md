@@ -33,13 +33,13 @@ __
 10. Написание контроллера
 11. Финальный прогон тестов, рефакторинг при необходимости, коммит. Новая фича введена
 
-## JDBC Order Flow Profile
+## JDBC Purchase Slice Profile
 
 Для локальной или стендовой проверки durable purchase flow можно включить профиль `jdbc-order-flow`.
 
 Что он делает:
 
-- переводит `User`, `Organization`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
+- переводит `User`, `Organization`, `OrganizationMember`, `Venue`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
 - применяет versioned schema script из `src/main/resources/db/migration/V1__jdbc_order_flow.sql`;
 - оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
 
@@ -54,5 +54,12 @@ SPRING_DATASOURCE_PASSWORD= \
 ./mvnw spring-boot:run
 ```
 
-Профиль пока целенаправленно покрывает durable order flow и его inventory path, а не весь проект целиком.
+Профиль сейчас покрывает durable purchase slice:
+
+- ownership check через `OrganizationMember`;
+- venue-backed event creation;
+- inventory generation;
+- order creation, confirm, expire и ticket issuance.
+
+Он все еще не делает весь проект полностью JDBC-backed.
 Скрипт хранится в migration-структуре, но в текущем состоянии применяется собственным initializer'ом профиля, а не отдельным migration framework.

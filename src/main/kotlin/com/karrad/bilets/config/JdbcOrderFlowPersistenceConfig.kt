@@ -3,18 +3,22 @@ package com.karrad.bilets.config
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcTicketRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -58,7 +62,14 @@ class JdbcOrderFlowPersistenceConfig {
         JdbcOrganizationRepository(jdbcTemplate)
 
     @Bean
+    fun organizationMemberRepository(jdbcTemplate: JdbcTemplate): OrganizationMemberRepository =
+        JdbcOrganizationMemberRepository(jdbcTemplate)
+
+    @Bean
     fun eventRepository(jdbcTemplate: JdbcTemplate): EventRepository = JdbcEventRepository(jdbcTemplate)
+
+    @Bean
+    fun venueRepository(jdbcTemplate: JdbcTemplate): VenueRepository = JdbcVenueRepository(jdbcTemplate)
 
     @Bean
     fun eventInventoryPlanRepository(jdbcTemplate: JdbcTemplate): EventInventoryPlanRepository =

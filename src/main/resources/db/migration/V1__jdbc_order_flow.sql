@@ -12,6 +12,27 @@ create table if not exists organizations (
     balance integer not null
 );
 
+create table if not exists organization_members (
+    id uuid primary key,
+    organization_id uuid not null,
+    user_id uuid not null,
+    role varchar(64) not null
+);
+
+create table if not exists venues (
+    id uuid primary key,
+    label varchar(255) not null,
+    city_label varchar(255) not null,
+    subject_label varchar(255) not null,
+    organization_id uuid null
+);
+
+create table if not exists venue_spaces (
+    id uuid primary key,
+    venue_id uuid not null,
+    label varchar(255) not null
+);
+
 create table if not exists events (
     id uuid primary key,
     label varchar(255) not null,

@@ -49,7 +49,7 @@ class RepositoryConfig {
     fun organizationApplicationRepository(): OrganizationApplicationRepository = InMemoryOrganizationApplicationRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun organizationMemberRepository(): OrganizationMemberRepository = InMemoryOrganizationMemberRepository()
 
     @Bean
@@ -61,7 +61,7 @@ class RepositoryConfig {
     fun userEventVisitRepository(): UserEventVisitRepository = InMemoryUserEventVisitRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun venueRepository(): VenueRepository = InMemoryVenueRepository()
 
     @Bean

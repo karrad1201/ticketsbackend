@@ -1,23 +1,37 @@
 package com.karrad.bilets.web
 
 import com.karrad.bilets.application.usecase.ConfirmOrderPaymentUseCase
+import com.karrad.bilets.application.usecase.CreateEventUseCase
 import com.karrad.bilets.application.usecase.CreateOrderCommand
 import com.karrad.bilets.application.usecase.CreateOrderUseCase
+import com.karrad.bilets.application.usecase.CreateVenueUseCase
 import com.karrad.bilets.application.usecase.GenerateEventInventoryUseCase
+import com.karrad.bilets.domain.entity.Category
+import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.OrganizationMember
+import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.entity.Venue
+import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -47,13 +61,28 @@ class JdbcOrderFlowProfileIntegrationTests {
     lateinit var organizationRepository: OrganizationRepository
 
     @Autowired
+    lateinit var organizationMemberRepository: OrganizationMemberRepository
+
+    @Autowired
     lateinit var eventRepository: EventRepository
 
     @Autowired
     lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
 
     @Autowired
+    lateinit var venueRepository: VenueRepository
+
+    @Autowired
+    lateinit var categoryRepository: CategoryRepository
+
+    @Autowired
     lateinit var ticketRepository: TicketRepository
+
+    @Autowired
+    lateinit var createVenueUseCase: CreateVenueUseCase
+
+    @Autowired
+    lateinit var createEventUseCase: CreateEventUseCase
 
     @Autowired
     lateinit var generateEventInventoryUseCase: GenerateEventInventoryUseCase
@@ -68,6 +97,8 @@ class JdbcOrderFlowProfileIntegrationTests {
     fun `jdbc order flow profile should use jdbc repositories and complete purchase flow`() {
         assertIs<JdbcUserRepository>(userRepository)
         assertIs<JdbcOrganizationRepository>(organizationRepository)
+        assertIs<JdbcOrganizationMemberRepository>(organizationMemberRepository)
+        assertIs<JdbcVenueRepository>(venueRepository)
         assertIs<JdbcEventRepository>(eventRepository)
         assertIs<JdbcEventInventoryPlanRepository>(eventInventoryPlanRepository)
 
@@ -85,17 +116,57 @@ class JdbcOrderFlowProfileIntegrationTests {
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179121")
             )
         )
-        val event = eventRepository.save(
+        val organizer = userRepository.save(
+            User(
+                email = "jdbc-organizer@example.com",
+                fullName = "Jdbc Organizer",
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179126")
+            )
+        )
+        organizationMemberRepository.save(
+            OrganizationMember(
+                organizationId = organization.id,
+                userId = organizer.id,
+                role = OrganizationMemberRole.OWNER
+            )
+        )
+        categoryRepository.save(
+            Category(
+                code = "festival",
+                label = "Festival",
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179127")
+            )
+        )
+        val venue = createVenueUseCase.create(
+            Venue(
+                label = "Jdbc Arena",
+                city = City(
+                    label = "Ekaterinburg",
+                    subject = Subject("Sverdlovsk Oblast")
+                ),
+                organizationId = organization.id,
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614179122"),
+                spaces = listOf(
+                    VenueSpace(
+                        label = "Main Floor",
+                        id = UUID.fromString("123e4567-e89b-12d3-a456-426614179128")
+                    )
+                )
+            ),
+            organizer.id
+        )
+        val event = createEventUseCase.create(
             Event(
                 label = "Jdbc Festival",
                 description = "Profile-backed purchase flow",
-                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614179122"),
-                categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614179123"),
+                venueId = venue.id,
+                categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614179127"),
                 time = Instant.parse("2026-04-05T18:00:00Z"),
                 venueSpaceId = null,
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179124"),
                 organizationId = organization.id
-            )
+            ),
+            organizer.id
         )
         val ticketType = TicketType(
             label = "Standard",
