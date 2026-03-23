@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.karrad.bilets.application.service.ApplicationServicesTests
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.593 s -- in com.karrad.bilets.application.service.ApplicationServicesTests
