@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.service.ApplicationServicesTestConfig
+import com.karrad.bilets.application.service.PaymentReconciliationService
 import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
@@ -12,11 +13,15 @@ import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.enums.PaymentAttemptStatus
+import com.karrad.bilets.domain.enums.PaymentCallbackStatus
 import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
@@ -38,7 +43,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @SpringJUnitConfig(ApplicationServicesTestConfig::class)
-@Import(CreateOrderUseCase::class, ConfirmOrderPaymentUseCase::class, ExpireOrderUseCase::class)
+@Import(CreateOrderUseCase::class, ConfirmOrderPaymentUseCase::class, ExpireOrderUseCase::class, HandlePaymentCallbackUseCase::class)
 @TestPropertySource(properties = ["purchase.hold-ttl=PT30M", "purchase.platform-commission-rate=0.10"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class PurchaseFlowUseCaseTests {
@@ -62,10 +67,19 @@ class PurchaseFlowUseCaseTests {
     lateinit var ticketRepository: TicketRepository
 
     @Autowired
+    lateinit var paymentAttemptRepository: PaymentAttemptRepository
+
+    @Autowired
+    lateinit var paymentCallbackAuditRepository: PaymentCallbackAuditRepository
+
+    @Autowired
     lateinit var paymentGateway: MockPaymentGateway
 
     @Autowired
     lateinit var clock: MutableClock
+
+    @Autowired
+    lateinit var paymentReconciliationService: PaymentReconciliationService
 
     @Autowired
     lateinit var createOrderUseCase: CreateOrderUseCase
@@ -75,6 +89,9 @@ class PurchaseFlowUseCaseTests {
 
     @Autowired
     lateinit var expireOrderUseCase: ExpireOrderUseCase
+
+    @Autowired
+    lateinit var handlePaymentCallbackUseCase: HandlePaymentCallbackUseCase
 
     @Test
     fun `should create seated order hold seats and start payment`() {
@@ -255,6 +272,102 @@ class PurchaseFlowUseCaseTests {
 
         assertTrue(exception.message!!.contains("expired"))
         assertEquals(OrderStatus.EXPIRED, requireNotNull(orderRepository.findById(order.id)).status)
+    }
+
+    @Test
+    fun `should confirm payment through callback idempotently`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+
+        val first = handlePaymentCallbackUseCase.handle(
+            HandlePaymentCallbackCommand(
+                paymentReference = order.paymentReference,
+                status = PaymentCallbackStatus.SUCCEEDED,
+                receivedAt = clock.instant()
+            )
+        )
+        val second = handlePaymentCallbackUseCase.handle(
+            HandlePaymentCallbackCommand(
+                paymentReference = order.paymentReference,
+                status = PaymentCallbackStatus.SUCCEEDED,
+                receivedAt = clock.instant().plusSeconds(5)
+            )
+        )
+
+        assertEquals(OrderStatus.PAID, first.status)
+        assertEquals(OrderStatus.PAID, second.status)
+        assertEquals(1, ticketRepository.findByOrderId(order.id).size)
+        assertEquals(PaymentAttemptStatus.SUCCEEDED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+        assertEquals(2, paymentCallbackAuditRepository.findByPaymentReference(order.paymentReference).size)
+    }
+
+    @Test
+    fun `should fail payment through callback and release held inventory`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        )
+
+        val failedOrder = handlePaymentCallbackUseCase.handle(
+            HandlePaymentCallbackCommand(
+                paymentReference = order.paymentReference,
+                status = PaymentCallbackStatus.FAILED,
+                receivedAt = clock.instant(),
+                failureReason = "Card declined"
+            )
+        )
+
+        assertEquals(OrderStatus.PAYMENT_FAILED, failedOrder.status)
+        assertEquals(PaymentAttemptStatus.FAILED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+        assertEquals(
+            SeatStatus.AVAILABLE,
+            requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+                .seatInventory.first { it.seatNumber == 1 }.status
+        )
+    }
+
+    @Test
+    fun `should list stale pending payment attempts for reconciliation`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+
+        clock.advanceByMinutes(31)
+
+        val staleAttempts = paymentReconciliationService.findStalePendingAttempts(clock.instant())
+
+        assertEquals(listOf(order.id), staleAttempts.map { it.orderId })
     }
 
     @Test

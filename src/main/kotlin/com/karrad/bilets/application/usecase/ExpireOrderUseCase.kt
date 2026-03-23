@@ -4,6 +4,7 @@ import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import org.springframework.stereotype.Component
@@ -13,6 +14,7 @@ import java.util.UUID
 @Component
 class ExpireOrderUseCase(
     private val orderRepository: OrderRepository,
+    private val paymentAttemptRepository: PaymentAttemptRepository,
     private val orderInventoryRepository: OrderInventoryRepository,
     private val eventLockManager: EventLockManager,
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
@@ -28,10 +30,20 @@ class ExpireOrderUseCase(
                 if (freshOrder.status == OrderStatus.EXPIRED) {
                     return@inTransaction freshOrder
                 }
+                if (freshOrder.status == OrderStatus.PAYMENT_FAILED) {
+                    return@inTransaction freshOrder
+                }
                 check(freshOrder.status == OrderStatus.PENDING_PAYMENT) { "Only pending order can expire" }
                 check(!clock.instant().isBefore(freshOrder.expiresAt)) { "Order is not expired yet: $orderId" }
 
                 orderInventoryRepository.release(freshOrder)
+                paymentAttemptRepository.findByOrderIdForUpdate(orderId)?.let { attempt ->
+                    if (attempt.status == com.karrad.bilets.domain.enums.PaymentAttemptStatus.PENDING) {
+                        paymentAttemptRepository.save(
+                            attempt.markFailed(clock.instant(), "Order expired before payment confirmation")
+                        )
+                    }
+                }
                 orderRepository.save(freshOrder.markExpired(clock.instant()))
             }
         }

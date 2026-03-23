@@ -1,9 +1,17 @@
 spring:
   application:
     name: bilets
+  datasource:
+    url: jdbc:h2:file:./data/bilets;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
 server:
   address: 0.0.0.0
+
+order-flow:
+  persistence: jdbc
 
 purchase:
   hold-ttl: PT30M

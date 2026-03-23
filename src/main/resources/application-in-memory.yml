@@ -6,7 +6,3 @@ spring:
 
 order-flow:
   persistence: in-memory
-
-purchase:
-  hold-ttl: PT30M
-  platform-commission-rate: 0.10

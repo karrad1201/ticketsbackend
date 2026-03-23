@@ -72,11 +72,11 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
                             )
@@ -123,11 +123,11 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "admissionItems" to listOf(
                                 mapOf("ticketTypeId" to standardTicketTypeId(), "quantity" to 2)
                             )
@@ -146,7 +146,7 @@ class OrderControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/users/${buyerUserId()}/tickets"))
+        mockMvc.perform(get("/api/tickets/me").header("X-User-Id", buyerUserId().toString()))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].ticketTypeId").value(standardTicketTypeId().toString()))
@@ -168,11 +168,11 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 2)
                             )
@@ -206,8 +206,9 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(mapOf("buyerUserId" to buyerUserId())))
+                .content(objectMapper.writeValueAsString(emptyMap<String, Any>()))
         )
             .andExpect(status().isBadRequest)
     }
@@ -223,11 +224,11 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
                             ),
@@ -255,11 +256,11 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
                             )
@@ -281,11 +282,11 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
                             )
@@ -316,11 +317,11 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
+                .header("X-User-Id", buyerUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "buyerUserId" to buyerUserId(),
                             "seatKeys" to listOf(
                                 mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
                             )

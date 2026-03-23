@@ -16,7 +16,8 @@ data class Order(
     val status: OrderStatus = OrderStatus.PENDING_PAYMENT,
     val id: UUID = UUID.randomUUID(),
     val createdAt: Instant = Instant.now(),
-    val paidAt: Instant? = null
+    val paidAt: Instant? = null,
+    val failedAt: Instant? = null
 ) {
     init {
         require(amount >= 0) { "Order amount must not be negative" }
@@ -29,7 +30,12 @@ data class Order(
 
     fun markPaid(paidAt: Instant): Order {
         check(status == OrderStatus.PENDING_PAYMENT) { "Only pending order can be paid" }
-        return copy(status = OrderStatus.PAID, paidAt = paidAt)
+        return copy(status = OrderStatus.PAID, paidAt = paidAt, failedAt = null)
+    }
+
+    fun markPaymentFailed(failedAt: Instant): Order {
+        check(status == OrderStatus.PENDING_PAYMENT) { "Only pending order can fail payment" }
+        return copy(status = OrderStatus.PAYMENT_FAILED, failedAt = failedAt)
     }
 
     fun markExpired(now: Instant): Order {

@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/venues")
 class VenueController(
     private val createVenueUseCase: CreateVenueUseCase,
-    private val venueService: VenueService
+    private val venueService: VenueService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @PostMapping
@@ -25,7 +26,7 @@ class VenueController(
     fun create(
         @RequestBody request: CreateVenueRequest
     ): Venue {
-        return createVenueUseCase.create(request.toDomain(), request.creatorUserId)
+        return createVenueUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
     }
 
     @GetMapping

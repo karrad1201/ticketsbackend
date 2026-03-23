@@ -5,7 +5,6 @@ import com.karrad.bilets.application.usecase.ReviewOrganizationApplicationUseCas
 import com.karrad.bilets.application.usecase.SubmitOrganizationApplicationUseCase
 import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.web.dto.CreateOrganizationApplicationRequest
-import com.karrad.bilets.web.dto.ReviewOrganizationApplicationRequest
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -21,13 +20,14 @@ import java.util.UUID
 class OrganizationApplicationController(
     private val submitOrganizationApplicationUseCase: SubmitOrganizationApplicationUseCase,
     private val reviewOrganizationApplicationUseCase: ReviewOrganizationApplicationUseCase,
-    private val organizationApplicationService: OrganizationApplicationService
+    private val organizationApplicationService: OrganizationApplicationService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@RequestBody request: CreateOrganizationApplicationRequest): OrganizationApplication {
-        return submitOrganizationApplicationUseCase.submit(request.toDomain())
+        return submitOrganizationApplicationUseCase.submit(request.toDomain(currentUserProvider.requireUserId()))
     }
 
     @GetMapping
@@ -39,18 +39,16 @@ class OrganizationApplicationController(
             ?: throw NoSuchElementException("OrganizationApplication not found: $applicationId")
 
     @PostMapping("/{applicationId}/approve")
-    fun approve(
-        @PathVariable applicationId: UUID,
-        @RequestBody request: ReviewOrganizationApplicationRequest
-    ): OrganizationApplication {
-        return reviewOrganizationApplicationUseCase.approve(applicationId = applicationId, adminUserId = request.adminUserId)
-    }
+    fun approve(@PathVariable applicationId: UUID): OrganizationApplication =
+        reviewOrganizationApplicationUseCase.approve(
+            applicationId = applicationId,
+            adminUserId = currentUserProvider.requireAdmin().id
+        )
 
     @PostMapping("/{applicationId}/reject")
-    fun reject(
-        @PathVariable applicationId: UUID,
-        @RequestBody request: ReviewOrganizationApplicationRequest
-    ): OrganizationApplication {
-        return reviewOrganizationApplicationUseCase.reject(applicationId = applicationId, adminUserId = request.adminUserId)
-    }
+    fun reject(@PathVariable applicationId: UUID): OrganizationApplication =
+        reviewOrganizationApplicationUseCase.reject(
+            applicationId = applicationId,
+            adminUserId = currentUserProvider.requireAdmin().id
+        )
 }

@@ -61,11 +61,11 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications")
+                .header("X-User-Id", applicant.id.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "applicantUserId" to applicant.id,
                             "organizationCode" to "ural-live",
                             "organizationName" to "Ural Live Events"
                         )
@@ -83,8 +83,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications/${application.id}/approve")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(mapOf("adminUserId" to admin.id)))
+                .header("X-User-Id", admin.id.toString())
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
@@ -108,11 +107,11 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications")
+                .header("X-User-Id", applicant.id.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "applicantUserId" to applicant.id,
                             "organizationCode" to "ural-live",
                             "organizationName" to "Ural Live Events"
                         )
@@ -125,8 +124,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications/${application.id}/approve")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(mapOf("adminUserId" to applicant.id)))
+                .header("X-User-Id", applicant.id.toString())
         )
             .andExpect(status().isBadRequest)
     }

@@ -6,11 +6,10 @@ import com.karrad.bilets.domain.entity.SeatKey
 import java.util.UUID
 
 data class CreateOrderRequest(
-    val buyerUserId: UUID,
     val seatKeys: List<SeatKeyRequest>? = null,
     val admissionItems: List<AdmissionInventoryItemRequest>? = null
 ) {
-    fun toCommand(eventId: UUID): CreateOrderCommand {
+    fun toCommand(eventId: UUID, buyerUserId: UUID): CreateOrderCommand {
         return CreateOrderCommand(
             eventId = eventId,
             buyerUserId = buyerUserId,

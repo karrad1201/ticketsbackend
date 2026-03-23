@@ -1,12 +1,15 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.service.PaymentSettlementService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
@@ -20,6 +23,8 @@ import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcPaymentAttemptRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcPaymentCallbackAuditRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
@@ -49,6 +54,7 @@ class JdbcDurableOrderFlowTestConfig {
     fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
         .setType(EmbeddedDatabaseType.H2)
         .addScript("classpath:db/migration/V1__jdbc_order_flow.sql")
+        .addScript("classpath:db/migration/V2__payment_model.sql")
         .build()
 
     @Bean
@@ -120,6 +126,14 @@ class JdbcDurableOrderFlowTestConfig {
         JdbcLayoutTemplateRepository(jdbcTemplate)
 
     @Bean
+    fun paymentAttemptRepository(jdbcTemplate: JdbcTemplate): PaymentAttemptRepository =
+        JdbcPaymentAttemptRepository(jdbcTemplate)
+
+    @Bean
+    fun paymentCallbackAuditRepository(jdbcTemplate: JdbcTemplate): PaymentCallbackAuditRepository =
+        JdbcPaymentCallbackAuditRepository(jdbcTemplate)
+
+    @Bean
     fun orderRepository(jdbcTemplate: JdbcTemplate): OrderRepository = JdbcOrderRepository(jdbcTemplate)
 
     @Bean
@@ -127,4 +141,21 @@ class JdbcDurableOrderFlowTestConfig {
 
     @Bean
     fun orderInventoryRepository(jdbcTemplate: JdbcTemplate): OrderInventoryRepository = JdbcOrderInventoryRepository(jdbcTemplate)
+
+    @Bean
+    fun paymentSettlementService(
+        orderRepository: OrderRepository,
+        orderInventoryRepository: OrderInventoryRepository,
+        eventRepository: EventRepository,
+        organizationRepository: OrganizationRepository,
+        ticketRepository: TicketRepository,
+        purchaseProperties: PurchaseProperties
+    ): PaymentSettlementService = PaymentSettlementService(
+        orderRepository,
+        orderInventoryRepository,
+        eventRepository,
+        organizationRepository,
+        ticketRepository,
+        purchaseProperties
+    )
 }

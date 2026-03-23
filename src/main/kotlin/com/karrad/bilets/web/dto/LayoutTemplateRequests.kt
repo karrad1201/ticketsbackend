@@ -6,7 +6,6 @@ import com.karrad.bilets.domain.entity.Section
 import java.util.UUID
 
 data class CreateLayoutTemplateRequest(
-    val creatorUserId: UUID,
     val venueSpaceId: UUID,
     val label: String,
     val sections: List<SectionRequest> = emptyList()
