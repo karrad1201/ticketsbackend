@@ -55,6 +55,7 @@ class JdbcDurableOrderFlowTestConfig {
         .setType(EmbeddedDatabaseType.H2)
         .addScript("classpath:db/migration/V1__jdbc_order_flow.sql")
         .addScript("classpath:db/migration/V2__payment_model.sql")
+        .addScript("classpath:db/migration/V3__event_sales_closure.sql")
         .build()
 
     @Bean

@@ -137,6 +137,24 @@ class JdbcDurableOrderFlowTests {
     }
 
     @Test
+    fun `should reject order creation for manually closed event in jdbc mode`() {
+        insertAdmissionInventory(generalAdmissionEvent().id, standardTicketTypeId(), price = 1500, capacity = 100)
+        eventRepository.save(generalAdmissionEvent().closeSales(clock.instant()))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = generalAdmissionEvent().id,
+                    buyerUserId = buyer().id,
+                    admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Ticket sales are closed"))
+    }
+
+    @Test
     fun `should reject second purchase for already held seat`() {
         insertSeat(seatedEvent().id, seat(1), 2000)
 

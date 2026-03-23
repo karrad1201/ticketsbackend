@@ -14,7 +14,7 @@ class JdbcEventRepository(
         val updated = jdbcTemplate.update(
             """
             update events
-            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?
+            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?
             where id = ?
             """.trimIndent(),
             event.label,
@@ -24,13 +24,14 @@ class JdbcEventRepository(
             Timestamp.from(event.time),
             event.venueSpaceId,
             event.organizationId,
+            instantToTimestamp(event.salesClosedAt),
             event.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
                 """
-                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id)
-                values (?, ?, ?, ?, ?, ?, ?, ?)
+                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 event.id,
                 event.label,
@@ -39,7 +40,8 @@ class JdbcEventRepository(
                 event.categoryId,
                 Timestamp.from(event.time),
                 event.venueSpaceId,
-                event.organizationId
+                event.organizationId,
+                instantToTimestamp(event.salesClosedAt)
             )
         }
         return event
@@ -47,7 +49,7 @@ class JdbcEventRepository(
 
     override fun findById(id: UUID): Event? = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
         from events
         where id = ?
         """.trimIndent(),
@@ -60,7 +62,8 @@ class JdbcEventRepository(
                 time = rs.instant("event_time"),
                 venueSpaceId = rs.nullableUuid("venue_space_id"),
                 id = rs.uuid("id"),
-                organizationId = rs.nullableUuid("organization_id")
+                organizationId = rs.nullableUuid("organization_id"),
+                salesClosedAt = rs.nullableInstant("sales_closed_at")
             )
         },
         id
@@ -68,7 +71,7 @@ class JdbcEventRepository(
 
     override fun findAll(): List<Event> = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
         from events
         order by event_time, id
         """.trimIndent()
@@ -81,13 +84,14 @@ class JdbcEventRepository(
             time = rs.instant("event_time"),
             venueSpaceId = rs.nullableUuid("venue_space_id"),
             id = rs.uuid("id"),
-            organizationId = rs.nullableUuid("organization_id")
+            organizationId = rs.nullableUuid("organization_id"),
+            salesClosedAt = rs.nullableInstant("sales_closed_at")
         )
     }
 
     override fun findByVenueId(venueId: UUID): List<Event> = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
         from events
         where venue_id = ?
         order by event_time, id
@@ -101,7 +105,8 @@ class JdbcEventRepository(
                 time = rs.instant("event_time"),
                 venueSpaceId = rs.nullableUuid("venue_space_id"),
                 id = rs.uuid("id"),
-                organizationId = rs.nullableUuid("organization_id")
+                organizationId = rs.nullableUuid("organization_id"),
+                salesClosedAt = rs.nullableInstant("sales_closed_at")
             )
         },
         venueId

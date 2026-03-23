@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.springframework.stereotype.Component
+import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
@@ -11,7 +12,8 @@ import java.util.UUID
 @Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
-    private val venueRepository: VenueRepository
+    private val venueRepository: VenueRepository,
+    private val clock: Clock
 ) {
     fun search(
         query: String?,
@@ -30,13 +32,15 @@ class SearchEventsUseCase(
 
         val normalizedQuery = query?.trim()?.lowercase().orEmpty()
         val normalizedCity = city?.trim()?.lowercase()
+        val now = clock.instant()
 
         val filtered = eventRepository.findAll()
             .filter { event ->
                 val venue = venueRepository.findById(event.venueId) ?: return@filter false
                 val eventDate = event.time.atOffset(ZoneOffset.UTC).toLocalDate()
 
-                (normalizedQuery.isBlank() || event.label.lowercase().contains(normalizedQuery)) &&
+                !event.isSalesClosed(now) &&
+                    (normalizedQuery.isBlank() || event.label.lowercase().contains(normalizedQuery)) &&
                     (normalizedCity == null || venue.city.label.lowercase() == normalizedCity) &&
                     (categoryId == null || event.categoryId == categoryId) &&
                     (venueId == null || event.venueId == venueId) &&

@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRepositoriesTests
--------------------------------------------------------------------------------
-Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.102 s -- in com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRepositoriesTests

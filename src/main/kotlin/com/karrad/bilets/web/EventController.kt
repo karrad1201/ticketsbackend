@@ -1,6 +1,7 @@
 package com.karrad.bilets.web
 
 import com.karrad.bilets.application.service.EventService
+import com.karrad.bilets.application.usecase.CloseEventSalesUseCase
 import com.karrad.bilets.application.usecase.CreateEventUseCase
 import com.karrad.bilets.application.usecase.SearchEventsUseCase
 import com.karrad.bilets.domain.entity.Event
@@ -21,6 +22,7 @@ import java.util.UUID
 @RequestMapping("/api/events")
 class EventController(
     private val createEventUseCase: CreateEventUseCase,
+    private val closeEventSalesUseCase: CloseEventSalesUseCase,
     private val eventService: EventService,
     private val searchEventsUseCase: SearchEventsUseCase,
     private val currentUserProvider: CurrentUserProvider
@@ -33,6 +35,10 @@ class EventController(
     ): Event {
         return createEventUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
     }
+
+    @PostMapping("/{eventId}/close-sales")
+    fun closeSales(@PathVariable eventId: UUID): Event =
+        closeEventSalesUseCase.closeByOrganizer(eventId, currentUserProvider.requireUserId())
 
     @GetMapping
     fun list(): List<Event> = eventService.list()

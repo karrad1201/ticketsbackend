@@ -12,10 +12,20 @@ data class Event(
     val time: Instant,
     val venueSpaceId: UUID? = null,
     val id: UUID = UUID.randomUUID(),
-    val organizationId: UUID? = null
+    val organizationId: UUID? = null,
+    val salesClosedAt: Instant? = null
 ) {
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }
         require(description.isNotBlank()) { "Event description must not be blank" }
+    }
+
+    fun isSalesClosed(now: Instant): Boolean = salesClosedAt != null || !time.isAfter(now)
+
+    fun closeSales(closedAt: Instant): Event {
+        if (salesClosedAt != null) {
+            return this
+        }
+        return copy(salesClosedAt = closedAt)
     }
 }

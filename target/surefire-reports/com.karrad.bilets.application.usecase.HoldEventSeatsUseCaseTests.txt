@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: com.karrad.bilets.application.usecase.HoldEventSeatsUseCaseTests
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.karrad.bilets.application.usecase.HoldEventSeatsUseCaseTests

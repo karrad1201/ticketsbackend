@@ -40,10 +40,11 @@ class CreateOrderUseCase(
     fun create(command: CreateOrderCommand): Order {
         return eventLockManager.withEventLock(command.eventId) {
             orderFlowTransactionManager.inTransaction {
-                requireNotNull(eventRepository.findById(command.eventId)) { "Event not found: ${command.eventId}" }
+                val event = requireNotNull(eventRepository.findById(command.eventId)) { "Event not found: ${command.eventId}" }
                 requireNotNull(userRepository.findById(command.buyerUserId)) { "User not found: ${command.buyerUserId}" }
 
                 val now = clock.instant()
+                require(!event.isSalesClosed(now)) { "Ticket sales are closed for event: ${command.eventId}" }
                 val expiresAt = now.plus(purchaseProperties.holdTtl)
                 val orderId = UUID.randomUUID()
                 val reservedInventory = reserveInventory(

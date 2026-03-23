@@ -272,6 +272,11 @@ class PurchaseFlowUseCaseTests {
 
         assertTrue(exception.message!!.contains("expired"))
         assertEquals(OrderStatus.EXPIRED, requireNotNull(orderRepository.findById(order.id)).status)
+        assertEquals(PaymentAttemptStatus.FAILED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+        val inventory = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+            .admissionInventory
+            .first { it.ticketTypeId == standardTicketTypeId() }
+        assertEquals(0, inventory.held)
     }
 
     @Test
@@ -345,6 +350,82 @@ class PurchaseFlowUseCaseTests {
             requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
                 .seatInventory.first { it.seatNumber == 1 }.status
         )
+    }
+
+    @Test
+    fun `should expire payment through callback and release held inventory`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
+
+        val order = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = event.id,
+                buyerUserId = buyerUserId(),
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            )
+        )
+
+        val expiredOrder = handlePaymentCallbackUseCase.handle(
+            HandlePaymentCallbackCommand(
+                paymentReference = order.paymentReference,
+                status = PaymentCallbackStatus.EXPIRED,
+                receivedAt = clock.instant()
+            )
+        )
+
+        assertEquals(OrderStatus.PAYMENT_FAILED, expiredOrder.status)
+        assertEquals(PaymentAttemptStatus.FAILED, requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status)
+        assertEquals(
+            SeatStatus.AVAILABLE,
+            requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
+                .seatInventory.first { it.seatNumber == 1 }.status
+        )
+    }
+
+    @Test
+    fun `should reject order creation for started event`() {
+        val event = generalAdmissionEvent().copy(time = clock.instant())
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = buyerUserId(),
+                    admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Ticket sales are closed"))
+    }
+
+    @Test
+    fun `should reject order creation for manually closed event`() {
+        val event = generalAdmissionEvent().closeSales(clock.instant())
+        eventRepository.save(event)
+        organizationRepository.save(organization())
+        userRepository.save(buyer())
+        eventInventoryPlanRepository.save(generalAdmissionPlan(event))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            createOrderUseCase.create(
+                CreateOrderCommand(
+                    eventId = event.id,
+                    buyerUserId = buyerUserId(),
+                    admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+                )
+            )
+        }
+
+        assertTrue(exception.message!!.contains("Ticket sales are closed"))
     }
 
     @Test
