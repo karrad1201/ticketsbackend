@@ -18,7 +18,7 @@ class JdbcOrderRepository(
             """
             update orders
             set event_id = ?, buyer_user_id = ?, amount = ?, expires_at = ?, payment_reference = ?, payment_url = ?,
-                status = ?, created_at = ?, paid_at = ?
+                status = ?, created_at = ?, paid_at = ?, failed_at = ?
             where id = ?
             """.trimIndent(),
             order.eventId,
@@ -30,14 +30,15 @@ class JdbcOrderRepository(
             order.status.name,
             Timestamp.from(order.createdAt),
             instantToTimestamp(order.paidAt),
+            instantToTimestamp(order.failedAt),
             order.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
                 """
                 insert into orders (
-                    id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at
-                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
+                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 order.id,
                 order.eventId,
@@ -48,7 +49,8 @@ class JdbcOrderRepository(
                 order.paymentUrl,
                 order.status.name,
                 Timestamp.from(order.createdAt),
-                instantToTimestamp(order.paidAt)
+                instantToTimestamp(order.paidAt),
+                instantToTimestamp(order.failedAt)
             )
         }
 
@@ -84,7 +86,7 @@ class JdbcOrderRepository(
 
     override fun findById(id: UUID): Order? = jdbcTemplate.query(
         """
-        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at
+        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
         from orders
         where id = ?
         """.trimIndent(),
@@ -102,7 +104,8 @@ class JdbcOrderRepository(
                 status = OrderStatus.valueOf(rs.getString("status")),
                 id = orderId,
                 createdAt = rs.instant("created_at"),
-                paidAt = rs.nullableInstant("paid_at")
+                paidAt = rs.nullableInstant("paid_at"),
+                failedAt = rs.nullableInstant("failed_at")
             )
         },
         id
@@ -110,7 +113,7 @@ class JdbcOrderRepository(
 
     override fun findByIdForUpdate(id: UUID): Order? = jdbcTemplate.query(
         """
-        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at
+        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
         from orders
         where id = ?
         for update
@@ -129,7 +132,8 @@ class JdbcOrderRepository(
                 status = OrderStatus.valueOf(rs.getString("status")),
                 id = orderId,
                 createdAt = rs.instant("created_at"),
-                paidAt = rs.nullableInstant("paid_at")
+                paidAt = rs.nullableInstant("paid_at"),
+                failedAt = rs.nullableInstant("failed_at")
             )
         },
         id
@@ -137,7 +141,7 @@ class JdbcOrderRepository(
 
     override fun findAll(): List<Order> = jdbcTemplate.query(
         """
-        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at
+        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
         from orders
         order by created_at, id
         """.trimIndent()
@@ -155,7 +159,8 @@ class JdbcOrderRepository(
             status = OrderStatus.valueOf(rs.getString("status")),
             id = orderId,
             createdAt = rs.instant("created_at"),
-            paidAt = rs.nullableInstant("paid_at")
+            paidAt = rs.nullableInstant("paid_at"),
+            failedAt = rs.nullableInstant("failed_at")
         )
     }
 

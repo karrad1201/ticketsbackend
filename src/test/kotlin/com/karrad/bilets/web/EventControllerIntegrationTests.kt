@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Subject
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
@@ -13,6 +14,7 @@ import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -55,6 +57,9 @@ class EventControllerIntegrationTests {
     @Autowired
     lateinit var eventRepository: EventRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -70,13 +75,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Hamlet",
                             "description" to "Evening show",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
@@ -102,13 +107,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Open Festival",
                             "description" to "Standing event",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
@@ -130,13 +135,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Hamlet",
                             "description" to "Evening show",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to "123e4567-e89b-12d3-a456-426614174421",
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z"
@@ -157,13 +162,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Hamlet",
                             "description" to "Evening show",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
@@ -183,13 +188,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Hamlet",
                             "description" to "Evening show",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to venue.id,
                             "categoryId" to "123e4567-e89b-12d3-a456-426614174444",
                             "time" to "2026-04-10T18:00:00Z",
@@ -211,13 +216,13 @@ class EventControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
                             "label" to "Hamlet",
                             "description" to "Evening show",
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
@@ -250,6 +255,7 @@ class EventControllerIntegrationTests {
 
     private fun seedOrganizationAccess() {
         organizationRepository.save(demoOrganization())
+        userRepository.save(demoCreator())
         organizationMemberRepository.save(
             OrganizationMember(
                 organizationId = demoOrganization().id,
@@ -269,4 +275,10 @@ class EventControllerIntegrationTests {
 
     private fun demoCreatorUserId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614174446")
+
+    private fun demoCreator(): User = User(
+        email = "event-creator@example.com",
+        fullName = "Event Creator",
+        id = demoCreatorUserId()
+    )
 }

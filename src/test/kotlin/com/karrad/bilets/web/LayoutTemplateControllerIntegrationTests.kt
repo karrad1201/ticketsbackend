@@ -5,12 +5,14 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.Subject
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,6 +52,9 @@ class LayoutTemplateControllerIntegrationTests {
     @Autowired
     lateinit var layoutTemplateRepository: LayoutTemplateRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -63,11 +68,11 @@ class LayoutTemplateControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/layout-templates")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueSpaceId" to venue.spaces.first().id,
                             "label" to "Theatre Layout",
                             "sections" to listOf(
@@ -97,13 +102,14 @@ class LayoutTemplateControllerIntegrationTests {
 
     @Test
     fun `should reject layout template creation when venue space is missing`() {
+        userRepository.save(demoCreator())
         mockMvc.perform(
             post("/api/layout-templates")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueSpaceId" to "123e4567-e89b-12d3-a456-426614174521",
                             "label" to "Theatre Layout",
                             "sections" to emptyList<Any>()
@@ -118,14 +124,15 @@ class LayoutTemplateControllerIntegrationTests {
     fun `should reject layout template creation when creator is not organization member`() {
         organizationRepository.save(demoOrganization())
         venueRepository.save(demoVenue())
+        userRepository.save(demoCreator())
 
         mockMvc.perform(
             post("/api/layout-templates")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
                         mapOf(
-                            "creatorUserId" to demoCreatorUserId(),
                             "venueSpaceId" to demoVenue().spaces.first().id,
                             "label" to "Theatre Layout",
                             "sections" to emptyList<Any>()
@@ -138,6 +145,7 @@ class LayoutTemplateControllerIntegrationTests {
 
     private fun seedOrganizationAccess() {
         organizationRepository.save(demoOrganization())
+        userRepository.save(demoCreator())
         organizationMemberRepository.save(
             OrganizationMember(
                 organizationId = demoOrganization().id,
@@ -157,6 +165,12 @@ class LayoutTemplateControllerIntegrationTests {
 
     private fun demoCreatorUserId(): UUID =
         UUID.fromString("123e4567-e89b-12d3-a456-426614174532")
+
+    private fun demoCreator(): User = User(
+        email = "layout-creator@example.com",
+        fullName = "Layout Creator",
+        id = demoCreatorUserId()
+    )
 
     private fun demoVenue(): Venue {
         return Venue(

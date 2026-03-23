@@ -5,9 +5,11 @@ import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.Order
+import com.karrad.bilets.domain.entity.PaymentAttempt
 import com.karrad.bilets.domain.entity.SeatKey
 import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.UserRepository
@@ -28,6 +30,7 @@ class CreateOrderUseCase(
     private val userRepository: UserRepository,
     private val orderInventoryRepository: OrderInventoryRepository,
     private val orderRepository: OrderRepository,
+    private val paymentAttemptRepository: PaymentAttemptRepository,
     private val paymentGateway: PaymentGateway,
     private val eventLockManager: EventLockManager,
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
@@ -67,7 +70,17 @@ class CreateOrderUseCase(
                     createdAt = now
                 )
 
-                orderRepository.save(order)
+                val savedOrder = orderRepository.save(order)
+                paymentAttemptRepository.save(
+                    PaymentAttempt(
+                        orderId = savedOrder.id,
+                        reference = payment.reference,
+                        amount = reservedInventory.amount,
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+                savedOrder
             }
         }
     }

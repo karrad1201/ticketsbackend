@@ -12,11 +12,28 @@ create table if not exists organizations (
     balance integer not null
 );
 
+create table if not exists categories (
+    id uuid primary key,
+    code varchar(255) not null unique,
+    label varchar(255) not null
+);
+
 create table if not exists organization_members (
     id uuid primary key,
     organization_id uuid not null,
     user_id uuid not null,
     role varchar(64) not null
+);
+
+create table if not exists organization_applications (
+    id uuid primary key,
+    applicant_user_id uuid not null,
+    organization_code varchar(255) not null,
+    organization_name varchar(255) not null,
+    status varchar(64) not null,
+    reviewed_by_user_id uuid null,
+    reviewed_at timestamp null,
+    organization_id uuid null
 );
 
 create table if not exists venues (
@@ -115,6 +132,13 @@ create table if not exists tickets (
     seat_number integer null,
     ticket_type_id uuid null,
     issued_at timestamp not null
+);
+
+create table if not exists user_event_visits (
+    id uuid primary key,
+    user_id uuid not null,
+    event_id uuid not null,
+    visited_at timestamp not null
 );
 
 create table if not exists event_seat_inventory (

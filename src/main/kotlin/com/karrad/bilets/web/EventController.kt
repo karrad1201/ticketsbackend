@@ -22,7 +22,8 @@ import java.util.UUID
 class EventController(
     private val createEventUseCase: CreateEventUseCase,
     private val eventService: EventService,
-    private val searchEventsUseCase: SearchEventsUseCase
+    private val searchEventsUseCase: SearchEventsUseCase,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @PostMapping
@@ -30,7 +31,7 @@ class EventController(
     fun create(
         @RequestBody request: CreateEventRequest
     ): Event {
-        return createEventUseCase.create(request.toDomain(), request.creatorUserId)
+        return createEventUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
     }
 
     @GetMapping

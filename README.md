@@ -21,6 +21,16 @@ __
 Работа по фичам ведется через отдельные ветки и `PR`, а не напрямую в `main`.
 Подробный процесс разработки вынесен в [docs/contributors.md](docs/contributors.md).
 
+## Development Tooling
+
+- Перед первой работой в клоне установить локальные git hooks:
+  - `make install-hooks`
+- Генерация дерева проекта:
+  - `make tree`
+- `post-commit` hook обновляет [docs/tree.md](docs/tree.md) после каждого локального коммита.
+- Генератор дерева явно игнорирует `target/`, `.idea/`, `.git/` и сам `docs/tree.md`.
+  Это намеренно оставляет обновленное дерево в рабочем дереве. Если нужно включить его в текущий commit, запускаем `make tree` до commit.
+
 
 Стандартный флоу добавления фич:
 
@@ -36,20 +46,21 @@ __
 10. Написание контроллера
 11. Финальный прогон тестов, рефакторинг при необходимости, коммит. Новая фича введена
 
-## JDBC Purchase Slice Profile
+## Persistence Modes
 
-Для локальной или стендовой проверки durable purchase flow можно включить профиль `jdbc-order-flow`.
+Основной runtime теперь рассчитан на JDBC-backed запуск.
+По умолчанию приложение поднимает H2 datasource и применяет Flyway migrations из `src/main/resources/db/migration`.
 
-Что он делает:
+Что сейчас уже работает в JDBC contour:
 
-- переводит `User`, `Organization`, `OrganizationMember`, `Venue`, `LayoutTemplate`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
-- применяет versioned schema script из `src/main/resources/db/migration/V1__jdbc_order_flow.sql`;
-- оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
+- `User`, `Organization`, `OrganizationApplication`, `Category`, `OrganizationMember`;
+- `Venue`, `LayoutTemplate`, `Event`, `EventInventoryPlan`, `UserEventVisit`;
+- `Order`, `Ticket`, `OrderInventory`;
+- `PaymentAttempt`, `PaymentCallbackAudit`.
 
-Минимальный запуск:
+Минимальный запуск default режима:
 
 ```bash
-SPRING_PROFILES_ACTIVE=jdbc-order-flow \
 SPRING_DATASOURCE_URL=jdbc:h2:mem:bilets;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false \
 SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
 SPRING_DATASOURCE_USERNAME=sa \
@@ -57,13 +68,47 @@ SPRING_DATASOURCE_PASSWORD= \
 ./mvnw spring-boot:run
 ```
 
-Профиль сейчас покрывает durable purchase slice:
+Для легкой локальной разработки без datasource есть отдельный профиль `in-memory`:
+
+```bash
+SPRING_PROFILES_ACTIVE=in-memory ./mvnw spring-boot:run
+```
+
+JDBC contour сейчас покрывает durable purchase slice и его ближайшие зависимости:
 
 - ownership check через `OrganizationMember`;
+- organization application storage и review flow;
+- category lookup для event creation;
 - venue-backed event creation;
 - layout template storage для seated flow;
+- visit history storage для discovery;
 - inventory generation;
-- order creation, confirm, expire и ticket issuance.
+- order creation, confirm, expire и ticket issuance;
+- payment callback audit и reconciliation-ready `PaymentAttempt`.
 
-Он все еще не делает весь проект полностью JDBC-backed.
-Скрипт хранится в migration-структуре, но в текущем состоянии применяется собственным initializer'ом профиля, а не отдельным migration framework.
+## Payment Flow
+
+Пока нет реальной внешней PSP-интеграции, но бизнес-модель оплаты уже отделена от order lifecycle:
+
+- `PaymentGateway` отвечает за создание payment session;
+- `PaymentAttempt` хранит попытку оплаты и ее статус;
+- `HandlePaymentCallbackUseCase` обрабатывает внешнее подтверждение/ошибку;
+- `PaymentCallbackAudit` хранит входящие callback события;
+- `PaymentReconciliationService` позволяет находить устаревшие pending попытки.
+
+Для тестового и локального контура есть mock callback endpoint:
+
+- `POST /api/payments/callbacks/mock`
+
+Он нужен для проверки внешнего confirm/fail пути без реальной платежки.
+
+## Identity Boundary
+
+Публичные write/read endpoints больше не принимают `userId` как источник истины.
+Минимальная boundary сейчас такая:
+
+- текущий пользователь берется из `X-User-Id`;
+- admin endpoints проверяют, что этот пользователь действительно `ADMIN`;
+- `Order`, `Ticket`, `Discovery`, `Venue`, `Event`, `LayoutTemplate`, `OrganizationApplication` используют именно current user context.
+
+Это еще не полноценная auth-система, а минимальный шаг, чтобы прекратить доверять произвольному `userId` из тела запроса.

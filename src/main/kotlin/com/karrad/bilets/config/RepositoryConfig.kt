@@ -5,6 +5,8 @@ import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -18,6 +20,8 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRep
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentAttemptRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentCallbackAuditRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
@@ -37,7 +41,7 @@ import org.springframework.context.annotation.Configuration
 class RepositoryConfig {
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun categoryRepository(): CategoryRepository = InMemoryCategoryRepository()
 
     @Bean
@@ -45,7 +49,7 @@ class RepositoryConfig {
     fun organizationRepository(): OrganizationRepository = InMemoryOrganizationRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun organizationApplicationRepository(): OrganizationApplicationRepository = InMemoryOrganizationApplicationRepository()
 
     @Bean
@@ -57,7 +61,7 @@ class RepositoryConfig {
     fun userRepository(): UserRepository = InMemoryUserRepository()
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun userEventVisitRepository(): UserEventVisitRepository = InMemoryUserEventVisitRepository()
 
     @Bean
@@ -67,6 +71,14 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun layoutTemplateRepository(): LayoutTemplateRepository = InMemoryLayoutTemplateRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun paymentAttemptRepository(): PaymentAttemptRepository = InMemoryPaymentAttemptRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun paymentCallbackAuditRepository(): PaymentCallbackAuditRepository = InMemoryPaymentCallbackAuditRepository()
 
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)

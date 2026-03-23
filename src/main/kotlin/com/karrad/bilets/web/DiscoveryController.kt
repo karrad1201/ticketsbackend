@@ -11,13 +11,13 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/discovery")
 class DiscoveryController(
-    private val getEventDiscoveryUseCase: GetEventDiscoveryUseCase
+    private val getEventDiscoveryUseCase: GetEventDiscoveryUseCase,
+    private val currentUserProvider: CurrentUserProvider
 ) {
     @GetMapping
     fun get(
-        @RequestParam userId: UUID,
         @RequestParam city: String,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): EventDiscoveryResponse = getEventDiscoveryUseCase.get(userId, city, page, size)
+    ): EventDiscoveryResponse = getEventDiscoveryUseCase.get(currentUserProvider.requireUserId(), city, page, size)
 }

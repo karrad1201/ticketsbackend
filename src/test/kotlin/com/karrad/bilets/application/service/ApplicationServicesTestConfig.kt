@@ -8,6 +8,8 @@ import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -23,6 +25,8 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRep
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentAttemptRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentCallbackAuditRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
@@ -69,6 +73,12 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun layoutTemplateRepository(): LayoutTemplateRepository = InMemoryLayoutTemplateRepository()
+
+    @Bean
+    fun paymentAttemptRepository(): PaymentAttemptRepository = InMemoryPaymentAttemptRepository()
+
+    @Bean
+    fun paymentCallbackAuditRepository(): PaymentCallbackAuditRepository = InMemoryPaymentCallbackAuditRepository()
 
     @Bean
     fun eventRepository(): EventRepository = InMemoryEventRepository()
@@ -142,4 +152,27 @@ class ApplicationServicesTestConfig {
     @Bean
     fun inventoryPlanService(eventInventoryPlanRepository: EventInventoryPlanRepository): InventoryPlanService =
         InventoryPlanService(eventInventoryPlanRepository)
+
+    @Bean
+    fun paymentSettlementService(
+        orderRepository: OrderRepository,
+        orderInventoryRepository: OrderInventoryRepository,
+        eventRepository: EventRepository,
+        organizationRepository: OrganizationRepository,
+        ticketRepository: TicketRepository,
+        purchaseProperties: PurchaseProperties
+    ): PaymentSettlementService = PaymentSettlementService(
+        orderRepository,
+        orderInventoryRepository,
+        eventRepository,
+        organizationRepository,
+        ticketRepository,
+        purchaseProperties
+    )
+
+    @Bean
+    fun paymentReconciliationService(
+        paymentAttemptRepository: PaymentAttemptRepository,
+        orderRepository: OrderRepository
+    ): PaymentReconciliationService = PaymentReconciliationService(paymentAttemptRepository, orderRepository)
 }

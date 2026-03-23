@@ -11,11 +11,12 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api")
 class TicketController(
-    private val ticketService: TicketService
+    private val ticketService: TicketService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
-    @GetMapping("/users/{userId}/tickets")
-    fun listUserTickets(@PathVariable userId: UUID): List<Ticket> =
-        ticketService.listByUserId(userId)
+    @GetMapping("/tickets/me")
+    fun listCurrentUserTickets(): List<Ticket> =
+        ticketService.listByUserId(currentUserProvider.requireUserId())
 
     @GetMapping("/orders/{orderId}/tickets")
     fun listOrderTickets(@PathVariable orderId: UUID): List<Ticket> =

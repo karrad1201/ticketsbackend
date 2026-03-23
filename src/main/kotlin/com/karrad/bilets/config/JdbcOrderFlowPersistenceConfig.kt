@@ -1,46 +1,59 @@
 package com.karrad.bilets.config
 
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
+import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
+import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.VenueRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcPaymentAttemptRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcPaymentCallbackAuditRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrderRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcTicketRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
+import org.flywaydb.core.Flyway
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator
 import org.springframework.transaction.support.TransactionTemplate
-import org.springframework.beans.factory.InitializingBean
 import javax.sql.DataSource
 
 @Configuration
 @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "jdbc")
 class JdbcOrderFlowPersistenceConfig {
 
+    @Bean(initMethod = "migrate")
+    @ConditionalOnMissingBean(Flyway::class)
+    fun flyway(dataSource: DataSource): Flyway = Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .load()
+
     @Bean
-    fun jdbcOrderFlowSchemaInitializer(dataSource: DataSource): InitializingBean = InitializingBean {
-        ResourceDatabasePopulator(ClassPathResource("db/migration/V1__jdbc_order_flow.sql"))
-            .execute(dataSource)
-    }
+    fun categoryRepository(jdbcTemplate: JdbcTemplate): CategoryRepository = JdbcCategoryRepository(jdbcTemplate)
 
     @Bean
     fun orderFlowDataSourceTransactionManager(dataSource: DataSource): DataSourceTransactionManager =
@@ -60,8 +73,16 @@ class JdbcOrderFlowPersistenceConfig {
     fun userRepository(jdbcTemplate: JdbcTemplate): UserRepository = JdbcUserRepository(jdbcTemplate)
 
     @Bean
+    fun userEventVisitRepository(jdbcTemplate: JdbcTemplate): UserEventVisitRepository =
+        JdbcUserEventVisitRepository(jdbcTemplate)
+
+    @Bean
     fun organizationRepository(jdbcTemplate: JdbcTemplate): OrganizationRepository =
         JdbcOrganizationRepository(jdbcTemplate)
+
+    @Bean
+    fun organizationApplicationRepository(jdbcTemplate: JdbcTemplate): OrganizationApplicationRepository =
+        JdbcOrganizationApplicationRepository(jdbcTemplate)
 
     @Bean
     fun organizationMemberRepository(jdbcTemplate: JdbcTemplate): OrganizationMemberRepository =
@@ -76,6 +97,14 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun layoutTemplateRepository(jdbcTemplate: JdbcTemplate): LayoutTemplateRepository =
         JdbcLayoutTemplateRepository(jdbcTemplate)
+
+    @Bean
+    fun paymentAttemptRepository(jdbcTemplate: JdbcTemplate): PaymentAttemptRepository =
+        JdbcPaymentAttemptRepository(jdbcTemplate)
+
+    @Bean
+    fun paymentCallbackAuditRepository(jdbcTemplate: JdbcTemplate): PaymentCallbackAuditRepository =
+        JdbcPaymentCallbackAuditRepository(jdbcTemplate)
 
     @Bean
     fun eventInventoryPlanRepository(jdbcTemplate: JdbcTemplate): EventInventoryPlanRepository =

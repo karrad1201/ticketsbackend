@@ -22,14 +22,15 @@ class OrderController(
     private val createOrderUseCase: CreateOrderUseCase,
     private val confirmOrderPaymentUseCase: ConfirmOrderPaymentUseCase,
     private val expireOrderUseCase: ExpireOrderUseCase,
-    private val orderService: OrderService
+    private val orderService: OrderService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
     @PostMapping("/events/{eventId}/orders")
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @PathVariable eventId: UUID,
         @RequestBody request: CreateOrderRequest
-    ): Order = createOrderUseCase.create(request.toCommand(eventId))
+    ): Order = createOrderUseCase.create(request.toCommand(eventId, currentUserProvider.requireUserId()))
 
     @PostMapping("/orders/{orderId}/confirm-payment")
     fun confirmPayment(@PathVariable orderId: UUID): Order =

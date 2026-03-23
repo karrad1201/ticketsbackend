@@ -3,9 +3,11 @@ package com.karrad.bilets.web
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.entity.OrganizationMember
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -41,6 +43,9 @@ class VenueControllerIntegrationTests {
     @Autowired
     lateinit var venueRepository: VenueRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -52,6 +57,7 @@ class VenueControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -62,7 +68,6 @@ class VenueControllerIntegrationTests {
                                 "subject" to mapOf("label" to "Sverdlovsk Oblast")
                             ),
                             "organizationId" to demoOrganization().id,
-                            "creatorUserId" to demoCreatorUserId(),
                             "spaces" to listOf(
                                 mapOf("label" to "Main Hall"),
                                 mapOf("label" to "Small Hall")
@@ -84,6 +89,7 @@ class VenueControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -94,7 +100,6 @@ class VenueControllerIntegrationTests {
                                 "subject" to mapOf("label" to "Sverdlovsk Oblast")
                             ),
                             "organizationId" to demoOrganization().id,
-                            "creatorUserId" to demoCreatorUserId(),
                             "spaces" to listOf(
                                 mapOf(
                                     "label" to "Main Hall",
@@ -115,9 +120,11 @@ class VenueControllerIntegrationTests {
     @Test
     fun `should reject venue over http when creator is not organization member`() {
         organizationRepository.save(demoOrganization())
+        userRepository.save(demoCreator())
 
         mockMvc.perform(
             post("/api/venues")
+                .header("X-User-Id", demoCreatorUserId().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -128,7 +135,6 @@ class VenueControllerIntegrationTests {
                                 "subject" to mapOf("label" to "Sverdlovsk Oblast")
                             ),
                             "organizationId" to demoOrganization().id,
-                            "creatorUserId" to demoCreatorUserId(),
                             "spaces" to listOf(mapOf("label" to "Main Hall"))
                         )
                     )
@@ -139,6 +145,7 @@ class VenueControllerIntegrationTests {
 
     private fun seedOrganizationAccess() {
         organizationRepository.save(demoOrganization())
+        userRepository.save(demoCreator())
         organizationMemberRepository.save(
             OrganizationMember(
                 organizationId = demoOrganization().id,
@@ -158,4 +165,10 @@ class VenueControllerIntegrationTests {
 
     private fun demoCreatorUserId(): java.util.UUID =
         java.util.UUID.fromString("123e4567-e89b-12d3-a456-426614174630")
+
+    private fun demoCreator(): User = User(
+        email = "venue-creator@example.com",
+        fullName = "Venue Creator",
+        id = demoCreatorUserId()
+    )
 }

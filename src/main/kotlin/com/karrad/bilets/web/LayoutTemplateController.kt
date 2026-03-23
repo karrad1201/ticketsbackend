@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/layout-templates")
 class LayoutTemplateController(
     private val createLayoutTemplateUseCase: CreateLayoutTemplateUseCase,
-    private val layoutTemplateService: LayoutTemplateService
+    private val layoutTemplateService: LayoutTemplateService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @PostMapping
@@ -26,7 +27,7 @@ class LayoutTemplateController(
     fun create(
         @RequestBody request: CreateLayoutTemplateRequest
     ): LayoutTemplate {
-        return createLayoutTemplateUseCase.create(request.toDomain(), request.creatorUserId)
+        return createLayoutTemplateUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
     }
 
     @GetMapping

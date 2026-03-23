@@ -7,7 +7,6 @@ import java.util.UUID
 data class CreateEventRequest(
     val label: String,
     val description: String,
-    val creatorUserId: UUID,
     val venueId: UUID,
     val categoryId: UUID,
     val time: Instant,
