@@ -1,0 +1,8 @@
+order-flow:
+  persistence: jdbc
+
+spring:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/jdbc-order-flow-schema.sql

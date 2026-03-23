@@ -1,14 +1,16 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.Ticket
 import com.karrad.bilets.domain.enums.OrderStatus
-import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.ReservedInventory
 import com.karrad.bilets.domain.repository.TicketRepository
 import org.springframework.stereotype.Component
 import java.time.Clock
@@ -18,44 +20,40 @@ import kotlin.math.roundToInt
 @Component
 class ConfirmOrderPaymentUseCase(
     private val orderRepository: OrderRepository,
-    private val eventInventoryPlanRepository: EventInventoryPlanRepository,
+    private val orderInventoryRepository: OrderInventoryRepository,
     private val eventRepository: EventRepository,
     private val organizationRepository: OrganizationRepository,
     private val ticketRepository: TicketRepository,
     private val eventLockManager: EventLockManager,
+    private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock,
     private val purchaseProperties: PurchaseProperties
 ) {
     fun confirm(orderId: UUID): Order {
         val order = requireNotNull(orderRepository.findById(orderId)) { "Order not found: $orderId" }
         return eventLockManager.withEventLock(order.eventId) {
-            val freshOrder = requireNotNull(orderRepository.findById(orderId)) { "Order not found: $orderId" }
-            if (freshOrder.status == OrderStatus.EXPIRED) {
-                throw IllegalStateException("Order is already expired: $orderId")
-            }
-            if (freshOrder.status == OrderStatus.PAID) {
-                throw IllegalStateException("Order is already paid: $orderId")
-            }
-            if (clock.instant().isAfter(freshOrder.expiresAt)) {
-                ExpireOrderUseCase(orderRepository, eventInventoryPlanRepository, eventLockManager, clock).expire(orderId)
-                throw IllegalStateException("Order payment window expired: $orderId")
-            }
+            orderFlowTransactionManager.inTransaction {
+                val freshOrder = requireNotNull(orderRepository.findByIdForUpdate(orderId)) {
+                    "Order not found: $orderId"
+                }
+                if (freshOrder.status == OrderStatus.EXPIRED) {
+                    throw IllegalStateException("Order is already expired: $orderId")
+                }
+                if (freshOrder.status == OrderStatus.PAID) {
+                    throw IllegalStateException("Order is already paid: $orderId")
+                }
+                if (clock.instant().isAfter(freshOrder.expiresAt)) {
+                    orderInventoryRepository.release(freshOrder)
+                    orderRepository.save(freshOrder.markExpired(clock.instant()))
+                    throw IllegalStateException("Order payment window expired: $orderId")
+                }
 
-            val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(freshOrder.eventId)) {
-                "EventInventoryPlan not found for event: ${freshOrder.eventId}"
+                val confirmedInventory = orderInventoryRepository.confirm(freshOrder)
+                val paidOrder = orderRepository.save(freshOrder.markPaid(clock.instant()))
+                creditOrganizationBalance(paidOrder)
+                ticketRepository.saveAll(issueTickets(paidOrder, confirmedInventory))
+                paidOrder
             }
-
-            val updatedPlan = when {
-                freshOrder.seatKeys.isNotEmpty() -> plan.sellSeats(freshOrder.seatKeys)
-                freshOrder.admissionItems.isNotEmpty() -> plan.sellAdmission(freshOrder.admissionItems)
-                else -> throw IllegalStateException("Order does not contain inventory items")
-            }
-
-            eventInventoryPlanRepository.save(updatedPlan)
-            val paidOrder = orderRepository.save(freshOrder.markPaid(clock.instant()))
-            creditOrganizationBalance(paidOrder)
-            ticketRepository.saveAll(issueTickets(paidOrder, plan))
-            paidOrder
         }
     }
 
@@ -76,40 +74,18 @@ class ConfirmOrderPaymentUseCase(
         return (amount * (1 - rate)).roundToInt()
     }
 
-    private fun issueTickets(order: Order, plan: com.karrad.bilets.domain.entity.EventInventoryPlan): List<Ticket> {
-        return when {
-            order.seatKeys.isNotEmpty() -> {
-                val seatsByKey = plan.seatInventory.associateBy { it.seatKey }
-                order.seatKeys.map { seatKey ->
-                    Ticket(
-                        orderId = order.id,
-                        eventId = order.eventId,
-                        userId = order.buyerUserId,
-                        price = requireNotNull(seatsByKey[seatKey]) { "Seat not found: $seatKey" }.price,
-                        seatKey = seatKey
-                    )
-                }
+    private fun issueTickets(order: Order, reservedInventory: ReservedInventory): List<Ticket> {
+        return reservedInventory.items.flatMap { item ->
+            (1..item.quantity).map {
+                Ticket(
+                    orderId = order.id,
+                    eventId = order.eventId,
+                    userId = order.buyerUserId,
+                    price = item.price,
+                    seatKey = item.seatKey,
+                    ticketTypeId = item.ticketTypeId
+                )
             }
-
-            order.admissionItems.isNotEmpty() -> {
-                val inventoryByTicketType = plan.admissionInventory.associateBy { it.ticketTypeId }
-                order.admissionItems.flatMap { item ->
-                    val price = requireNotNull(inventoryByTicketType[item.ticketTypeId]) {
-                        "Ticket type not found in inventory: ${item.ticketTypeId}"
-                    }.price
-                    (1..item.quantity).map {
-                        Ticket(
-                            orderId = order.id,
-                            eventId = order.eventId,
-                            userId = order.buyerUserId,
-                            price = price,
-                            ticketTypeId = item.ticketTypeId
-                        )
-                    }
-                }
-            }
-
-            else -> throw IllegalStateException("Order does not contain inventory items")
         }
     }
 }

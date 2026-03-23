@@ -32,3 +32,26 @@ __
 9. Написание интеграционных тестов
 10. Написание контроллера
 11. Финальный прогон тестов, рефакторинг при необходимости, коммит. Новая фича введена
+
+## JDBC Order Flow Profile
+
+Для локальной или стендовой проверки durable purchase flow можно включить профиль `jdbc-order-flow`.
+
+Что он делает:
+
+- переводит `User`, `Organization`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
+- включает SQL schema init из `src/main/resources/sql/jdbc-order-flow-schema.sql`;
+- оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
+
+Минимальный запуск:
+
+```bash
+SPRING_PROFILES_ACTIVE=jdbc-order-flow \
+SPRING_DATASOURCE_URL=jdbc:h2:mem:bilets;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false \
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.h2.Driver \
+SPRING_DATASOURCE_USERNAME=sa \
+SPRING_DATASOURCE_PASSWORD= \
+./mvnw spring-boot:run
+```
+
+Профиль пока целенаправленно покрывает durable order flow и его inventory path, а не весь проект целиком.

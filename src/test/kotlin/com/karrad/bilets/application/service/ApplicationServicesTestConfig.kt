@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.service
 
 import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
@@ -11,6 +12,7 @@ import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
@@ -25,6 +27,7 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizatio
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrderRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrderInventoryRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
@@ -77,6 +80,11 @@ class ApplicationServicesTestConfig {
     fun orderRepository(): OrderRepository = InMemoryOrderRepository()
 
     @Bean
+    fun orderInventoryRepository(
+        eventInventoryPlanRepository: EventInventoryPlanRepository
+    ): OrderInventoryRepository = InMemoryOrderInventoryRepository(eventInventoryPlanRepository)
+
+    @Bean
     fun ticketRepository(): TicketRepository = InMemoryTicketRepository()
 
     @Bean
@@ -87,6 +95,11 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun eventLockManager(): EventLockManager = InMemoryEventLockManager()
+
+    @Bean
+    fun orderFlowTransactionManager(): OrderFlowTransactionManager = object : OrderFlowTransactionManager {
+        override fun <T> inTransaction(action: () -> T): T = action()
+    }
 
     @Bean
     fun clock(): Clock = MutableClock(Instant.parse("2026-03-23T00:00:00Z"))
