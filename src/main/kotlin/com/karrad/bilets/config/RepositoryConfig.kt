@@ -7,6 +7,8 @@ import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
@@ -17,6 +19,8 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryLayoutTempl
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrderRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
@@ -55,4 +59,10 @@ class RepositoryConfig {
 
     @Bean
     fun eventInventoryPlanRepository(): EventInventoryPlanRepository = InMemoryEventInventoryPlanRepository()
+
+    @Bean
+    fun orderRepository(): OrderRepository = InMemoryOrderRepository()
+
+    @Bean
+    fun ticketRepository(): TicketRepository = InMemoryTicketRepository()
 }

@@ -1,5 +1,7 @@
 package com.karrad.bilets.application.service
 
+import com.karrad.bilets.application.lock.EventLockManager
+import com.karrad.bilets.application.payment.PaymentGateway
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
@@ -7,9 +9,13 @@ import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
+import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
+import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
@@ -17,11 +23,16 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryLayoutTempl
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationMemberRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizationRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrderRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.support.MutableClock
 import org.springframework.context.annotation.Bean
 import org.springframework.boot.test.context.TestConfiguration
+import java.time.Clock
+import java.time.Instant
 
 @TestConfiguration
 class ApplicationServicesTestConfig {
@@ -55,6 +66,27 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun eventInventoryPlanRepository(): EventInventoryPlanRepository = InMemoryEventInventoryPlanRepository()
+
+    @Bean
+    fun orderRepository(): OrderRepository = InMemoryOrderRepository()
+
+    @Bean
+    fun ticketRepository(): TicketRepository = InMemoryTicketRepository()
+
+    @Bean
+    fun paymentGateway(): PaymentGateway = MockPaymentGateway()
+
+    @Bean
+    fun mockPaymentGateway(): MockPaymentGateway = paymentGateway() as MockPaymentGateway
+
+    @Bean
+    fun eventLockManager(): EventLockManager = InMemoryEventLockManager()
+
+    @Bean
+    fun clock(): Clock = MutableClock(Instant.parse("2026-03-23T00:00:00Z"))
+
+    @Bean
+    fun mutableClock(): MutableClock = clock() as MutableClock
 
     @Bean
     fun categoryService(categoryRepository: CategoryRepository): CategoryService = CategoryService(categoryRepository)
