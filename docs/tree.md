@@ -38,6 +38,8 @@ ticketsbackend
     │   │               ├── application
     │   │               │   ├── lock
     │   │               │   │   └── EventLockManager.kt
+    │   │               │   ├── ops
+    │   │               │   │   └── OperationsScheduler.kt
     │   │               │   ├── service
     │   │               │   │   ├── CategoryService.kt
     │   │               │   │   ├── EventAvailabilityService.kt
@@ -73,6 +75,7 @@ ticketsbackend
     │   │               │       ├── HoldEventSeatsUseCase.kt
     │   │               │       ├── HoldGeneralAdmissionUseCase.kt
     │   │               │       ├── ProcessStalePaymentAttemptsUseCase.kt
+    │   │               │       ├── ProcessStartedEventSalesUseCase.kt
     │   │               │       ├── ReleaseEventSeatsUseCase.kt
     │   │               │       ├── ReleaseGeneralAdmissionUseCase.kt
     │   │               │       ├── ReviewOrganizationApplicationUseCase.kt
@@ -83,6 +86,7 @@ ticketsbackend
     │   │               ├── config
     │   │               │   ├── JacksonConfig.kt
     │   │               │   ├── JdbcOrderFlowPersistenceConfig.kt
+    │   │               │   ├── OperationsProperties.kt
     │   │               │   ├── PurchaseProperties.kt
     │   │               │   ├── RepositoryConfig.kt
     │   │               │   └── TimeConfig.kt
@@ -199,6 +203,7 @@ ticketsbackend
     │   │                   ├── EventInventoryController.kt
     │   │                   ├── InventoryPlanController.kt
     │   │                   ├── LayoutTemplateController.kt
+    │   │                   ├── OperationsController.kt
     │   │                   ├── OrderController.kt
     │   │                   ├── OrganizationApplicationController.kt
     │   │                   ├── OrganizationController.kt
@@ -214,6 +219,7 @@ ticketsbackend
     │   │                       ├── EventRequests.kt
     │   │                       ├── InventoryGenerationRequest.kt
     │   │                       ├── LayoutTemplateRequests.kt
+    │   │                       ├── OperationsBatchResponse.kt
     │   │                       ├── OrderRequests.kt
     │   │                       ├── OrganizationApplicationRequests.kt
     │   │                       ├── OrganizationRequests.kt
@@ -283,6 +289,7 @@ ticketsbackend
         │                   ├── GeneralAdmissionInventoryLifecycleIntegrationTests.kt
         │                   ├── JdbcOrderFlowProfileIntegrationTests.kt
         │                   ├── LayoutTemplateControllerIntegrationTests.kt
+        │                   ├── OperationsControllerIntegrationTests.kt
         │                   ├── OrderControllerIntegrationTests.kt
         │                   ├── OrganizationApplicationControllerIntegrationTests.kt
         │                   ├── OrganizationControllerIntegrationTests.kt
