@@ -61,6 +61,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 - `jdbc-order-flow`
 
 Профиль переводит на JDBC только те части, которые уже нужны для durable purchase path.
+Схема хранится как versioned migration script `db/migration/V1__jdbc_order_flow.sql` и применяется при старте JDBC-профиля через initializer.
 
 ## Consequences
 
@@ -75,7 +76,7 @@ Process-local lock на `ConcurrentHashMap` решает только часть
 
 - проект временно живет в смешанном режиме: durable order flow и часть остальной системы все еще разделены по persistence strategy;
 - `jdbc-order-flow` пока не делает весь backend полностью JDBC-backed;
-- schema сейчас ведется как SQL init, а не через миграции.
+- migration script уже versioned, но отдельный migration framework пока не подключен.
 
 ## Next Step
 

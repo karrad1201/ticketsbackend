@@ -40,7 +40,7 @@ __
 Что он делает:
 
 - переводит `User`, `Organization`, `Event`, `EventInventoryPlan`, `Order`, `Ticket` и order inventory на JDBC-адаптеры;
-- включает SQL schema init из `src/main/resources/sql/jdbc-order-flow-schema.sql`;
+- применяет versioned schema script из `src/main/resources/db/migration/V1__jdbc_order_flow.sql`;
 - оставляет остальную часть системы в текущем режиме, если для нее не введены отдельные JDBC-адаптеры.
 
 Минимальный запуск:
@@ -55,3 +55,4 @@ SPRING_DATASOURCE_PASSWORD= \
 ```
 
 Профиль пока целенаправленно покрывает durable order flow и его inventory path, а не весь проект целиком.
+Скрипт хранится в migration-структуре, но в текущем состоянии применяется собственным initializer'ом профиля, а не отдельным migration framework.

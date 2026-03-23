@@ -36,7 +36,7 @@ class JdbcDurableOrderFlowTestConfig {
     @Bean
     fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
         .setType(EmbeddedDatabaseType.H2)
-        .addScript("classpath:sql/jdbc-order-flow-schema.sql")
+        .addScript("classpath:db/migration/V1__jdbc_order_flow.sql")
         .build()
 
     @Bean

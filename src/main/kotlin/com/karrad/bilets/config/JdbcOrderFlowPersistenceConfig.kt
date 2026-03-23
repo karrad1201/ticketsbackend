@@ -18,14 +18,23 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator
 import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.beans.factory.InitializingBean
 import javax.sql.DataSource
 
 @Configuration
 @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "jdbc")
 class JdbcOrderFlowPersistenceConfig {
+
+    @Bean
+    fun jdbcOrderFlowSchemaInitializer(dataSource: DataSource): InitializingBean = InitializingBean {
+        ResourceDatabasePopulator(ClassPathResource("db/migration/V1__jdbc_order_flow.sql"))
+            .execute(dataSource)
+    }
 
     @Bean
     fun orderFlowDataSourceTransactionManager(dataSource: DataSource): DataSourceTransactionManager =
