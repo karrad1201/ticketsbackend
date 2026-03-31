@@ -1,15 +1,15 @@
-CREATE TABLE subjects (
-    id   UUID        NOT NULL PRIMARY KEY,
-    label VARCHAR(255) NOT NULL
+create table if not exists subjects (
+    id    uuid         not null primary key,
+    label varchar(255) not null
 );
 
-CREATE TABLE cities (
-    id         UUID        NOT NULL PRIMARY KEY,
-    label      VARCHAR(255) NOT NULL,
-    subject_id UUID        NOT NULL REFERENCES subjects(id)
+create table if not exists cities (
+    id         uuid         not null primary key,
+    label      varchar(255) not null,
+    subject_id uuid         not null references subjects(id)
 );
 
-INSERT INTO subjects (id, label) VALUES
+insert into subjects (id, label) values
     ('a0000000-0000-0000-0000-000000000001', 'Москва'),
     ('a0000000-0000-0000-0000-000000000002', 'Санкт-Петербург'),
     ('a0000000-0000-0000-0000-000000000003', 'Республика Калмыкия'),
@@ -33,7 +33,7 @@ INSERT INTO subjects (id, label) VALUES
     ('a0000000-0000-0000-0000-000000000021', 'Приморский край'),
     ('a0000000-0000-0000-0000-000000000022', 'Иркутская область');
 
-INSERT INTO cities (id, label, subject_id) VALUES
+insert into cities (id, label, subject_id) values
     ('b0000000-0000-0000-0000-000000000001', 'Москва',           'a0000000-0000-0000-0000-000000000001'),
     ('b0000000-0000-0000-0000-000000000002', 'Санкт-Петербург',  'a0000000-0000-0000-0000-000000000002'),
     ('b0000000-0000-0000-0000-000000000003', 'Элиста',           'a0000000-0000-0000-0000-000000000003'),
