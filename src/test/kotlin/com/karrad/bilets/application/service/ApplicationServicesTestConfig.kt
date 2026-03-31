@@ -17,10 +17,16 @@ import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
+import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
@@ -61,6 +67,18 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun organizationMemberRepository(): OrganizationMemberRepository = InMemoryOrganizationMemberRepository()
+
+    @Bean
+    fun smsCodeRepository(): SmsCodeRepository = InMemorySmsCodeRepository()
+
+    @Bean
+    fun authTokenRepository(): AuthTokenRepository = InMemoryAuthTokenRepository()
+
+    @Bean
+    fun smsGateway(): SmsGateway = MockSmsGateway()
+
+    @Bean
+    fun mockSmsGateway(): MockSmsGateway = smsGateway() as MockSmsGateway
 
     @Bean
     fun userRepository(): UserRepository = InMemoryUserRepository()

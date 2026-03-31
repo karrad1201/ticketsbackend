@@ -12,82 +12,48 @@ class JdbcUserRepository(
 
     override fun save(user: User): User {
         val updated = jdbcTemplate.update(
-            """
-            update users
-            set email = ?, full_name = ?, role = ?
-            where id = ?
-            """.trimIndent(),
-            user.email,
-            user.fullName,
-            user.role.name,
-            user.id
+            "update users set email = ?, phone = ?, full_name = ?, role = ? where id = ?",
+            user.email, user.phone, user.fullName, user.role.name, user.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
-                """
-                insert into users (id, email, full_name, role)
-                values (?, ?, ?, ?)
-                """.trimIndent(),
-                user.id,
-                user.email,
-                user.fullName,
-                user.role.name
+                "insert into users (id, email, phone, full_name, role) values (?, ?, ?, ?, ?)",
+                user.id, user.email, user.phone, user.fullName, user.role.name
             )
         }
         return user
     }
 
     override fun findById(id: UUID): User? = jdbcTemplate.query(
-        """
-        select id, email, full_name, role
-        from users
-        where id = ?
-        """.trimIndent(),
-        { rs, _ ->
-            User(
-                email = rs.getString("email"),
-                fullName = rs.getString("full_name"),
-                role = UserRole.valueOf(rs.getString("role")),
-                id = rs.uuid("id")
-            )
-        },
+        "select id, email, phone, full_name, role from users where id = ?",
+        { rs, _ -> rs.toUser() },
         id
     ).singleOrNull()
 
     override fun findByEmail(email: String): User? = jdbcTemplate.query(
-        """
-        select id, email, full_name, role
-        from users
-        where email = ?
-        """.trimIndent(),
-        { rs, _ ->
-            User(
-                email = rs.getString("email"),
-                fullName = rs.getString("full_name"),
-                role = UserRole.valueOf(rs.getString("role")),
-                id = rs.uuid("id")
-            )
-        },
+        "select id, email, phone, full_name, role from users where email = ?",
+        { rs, _ -> rs.toUser() },
         email
     ).singleOrNull()
 
-    override fun findAll(): List<User> = jdbcTemplate.query(
-        """
-        select id, email, full_name, role
-        from users
-        order by email, id
-        """.trimIndent()
-    ) { rs, _ ->
-        User(
-            email = rs.getString("email"),
-            fullName = rs.getString("full_name"),
-            role = UserRole.valueOf(rs.getString("role")),
-            id = rs.uuid("id")
-        )
-    }
+    override fun findByPhone(phone: String): User? = jdbcTemplate.query(
+        "select id, email, phone, full_name, role from users where phone = ?",
+        { rs, _ -> rs.toUser() },
+        phone
+    ).singleOrNull()
 
-    override fun deleteById(id: UUID): Boolean = jdbcTemplate.update(
-        "delete from users where id = ?",
-        id
-    ) > 0
+    override fun findAll(): List<User> = jdbcTemplate.query(
+        "select id, email, phone, full_name, role from users order by full_name, id"
+    ) { rs, _ -> rs.toUser() }
+
+    override fun deleteById(id: UUID): Boolean =
+        jdbcTemplate.update("delete from users where id = ?", id) > 0
+
+    private fun java.sql.ResultSet.toUser() = User(
+        id = uuid("id"),
+        fullName = getString("full_name"),
+        email = getString("email"),
+        phone = getString("phone"),
+        role = UserRole.valueOf(getString("role"))
+    )
 }

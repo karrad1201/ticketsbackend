@@ -87,7 +87,7 @@ class ReadApiIntegrationTests {
     @Test
     fun `should expose list and get endpoints for current domain entities`() {
         val category = Category(code = "theatre", label = "Theatre", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175100"))
-        val user = User(email = "user@example.com", fullName = "Regular User", role = UserRole.USER, id = UUID.fromString("123e4567-e89b-12d3-a456-426614175098"))
+        val user = User(fullName = "Regular User", email = "user@example.com", role = UserRole.USER, id = UUID.fromString("123e4567-e89b-12d3-a456-426614175098"))
         val application = OrganizationApplication(
             applicantUserId = user.id,
             organizationCode = "ural-live",

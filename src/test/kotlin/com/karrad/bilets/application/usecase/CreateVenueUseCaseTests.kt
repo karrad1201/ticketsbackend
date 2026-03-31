@@ -106,6 +106,22 @@ class CreateVenueUseCaseTests {
         assertTrue(exception.message!!.contains("Organization not found"))
     }
 
+    @Test
+    fun `should reject venue when organizationId is null`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                Venue(
+                    label = "No Org Hall",
+                    city = City(label = "Ekaterinburg", subject = Subject(label = "Sverdlovsk Oblast")),
+                    organizationId = null
+                ),
+                UUID.fromString("123e4567-e89b-12d3-a456-426614174616")
+            )
+        }
+
+        assertTrue(exception.message!!.contains("organizationId must be provided"))
+    }
+
     private fun seedOrganizationAccess(actorUserId: UUID) {
         organizationRepository.save(demoOrganization())
         organizationMemberRepository.save(

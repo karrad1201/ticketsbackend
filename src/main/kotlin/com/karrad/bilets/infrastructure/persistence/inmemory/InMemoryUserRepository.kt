@@ -16,6 +16,8 @@ class InMemoryUserRepository : UserRepository {
 
     override fun findByEmail(email: String): User? = storage.values.firstOrNull { it.email == email }
 
+    override fun findByPhone(phone: String): User? = storage.values.firstOrNull { it.phone == phone }
+
     override fun findAll(): List<User> = storage.values.toList()
 
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null

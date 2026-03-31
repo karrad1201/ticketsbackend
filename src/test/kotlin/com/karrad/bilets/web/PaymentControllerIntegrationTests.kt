@@ -130,7 +130,7 @@ class PaymentControllerIntegrationTests {
 
         mockMvc.perform(get("/api/tickets/me"))
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.detail").value("Missing X-User-Id header"))
+            .andExpect(jsonPath("$.detail").value("Missing authorization: provide Bearer token or X-User-Id header"))
     }
 
     @Test

@@ -30,7 +30,13 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrderInvent
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.infrastructure.sms.MockSmsGateway
+import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.SmsCodeRepository
+import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.infrastructure.transaction.NoOpOrderFlowTransactionManager
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -101,6 +107,18 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun ticketRepository(): TicketRepository = InMemoryTicketRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun smsCodeRepository(): SmsCodeRepository = InMemorySmsCodeRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun authTokenRepository(): AuthTokenRepository = InMemoryAuthTokenRepository()
+
+    @Bean
+    @ConditionalOnMissingBean(SmsGateway::class)
+    fun smsGateway(): SmsGateway = MockSmsGateway()
 
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
