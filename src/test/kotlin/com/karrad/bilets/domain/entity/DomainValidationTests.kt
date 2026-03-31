@@ -47,12 +47,20 @@ class DomainValidationTests {
     @Test
     fun `should reject invalid user fields`() {
         assertEquals(
+            "User phone must not be blank",
+            assertFailsWith<IllegalArgumentException> { User(fullName = "Buyer", phone = "") }.message
+        )
+        assertEquals(
             "User email must not be blank",
-            assertFailsWith<IllegalArgumentException> { User(email = "", fullName = "Buyer") }.message
+            assertFailsWith<IllegalArgumentException> { User(fullName = "Buyer", email = "") }.message
         )
         assertEquals(
             "User fullName must not be blank",
-            assertFailsWith<IllegalArgumentException> { User(email = "buyer@example.com", fullName = "") }.message
+            assertFailsWith<IllegalArgumentException> { User(fullName = "", email = "buyer@example.com") }.message
+        )
+        assertEquals(
+            "User must have at least phone or email",
+            assertFailsWith<IllegalArgumentException> { User(fullName = "Buyer") }.message
         )
     }
 

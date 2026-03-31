@@ -8,5 +8,5 @@ data class CreateUserRequest(
     val fullName: String,
     val role: UserRole = UserRole.USER
 ) {
-    fun toDomain(): User = User(email = email, fullName = fullName, role = role)
+    fun toDomain(): User = User(fullName = fullName, email = email, role = role)
 }

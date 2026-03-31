@@ -9,8 +9,15 @@ class CreateUserUseCase(
     private val userRepository: UserRepository
 ) {
     fun create(user: User): User {
-        require(userRepository.findByEmail(user.email) == null) {
-            "User email already exists: ${user.email}"
+        user.email?.let { email ->
+            require(userRepository.findByEmail(email) == null) {
+                "User email already exists: $email"
+            }
+        }
+        user.phone?.let { phone ->
+            require(userRepository.findByPhone(phone) == null) {
+                "User phone already exists: $phone"
+            }
         }
         return userRepository.save(user)
     }

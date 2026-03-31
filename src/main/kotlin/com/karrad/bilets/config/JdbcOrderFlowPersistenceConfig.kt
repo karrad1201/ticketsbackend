@@ -13,10 +13,16 @@ import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.TicketRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.VenueRepository
+import com.karrad.bilets.domain.sms.SmsGateway
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcSmsCodeRepository
+import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcLayoutTemplateRepository
@@ -119,4 +125,14 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun orderInventoryRepository(jdbcTemplate: JdbcTemplate): OrderInventoryRepository =
         JdbcOrderInventoryRepository(jdbcTemplate)
+
+    @Bean
+    fun smsCodeRepository(jdbcTemplate: JdbcTemplate): SmsCodeRepository = JdbcSmsCodeRepository(jdbcTemplate)
+
+    @Bean
+    fun authTokenRepository(jdbcTemplate: JdbcTemplate): AuthTokenRepository = JdbcAuthTokenRepository(jdbcTemplate)
+
+    @Bean
+    @ConditionalOnMissingBean(SmsGateway::class)
+    fun smsGateway(): SmsGateway = MockSmsGateway()
 }

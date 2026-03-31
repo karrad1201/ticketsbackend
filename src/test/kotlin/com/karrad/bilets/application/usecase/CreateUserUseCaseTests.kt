@@ -25,19 +25,38 @@ class CreateUserUseCaseTests {
     lateinit var useCase: CreateUserUseCase
 
     @Test
-    fun `should create user`() {
-        val result = useCase.create(User(email = "user@example.com", fullName = "Regular User"))
+    fun `should create user with email`() {
+        val result = useCase.create(User(fullName = "Regular User", email = "user@example.com"))
 
         assertEquals("user@example.com", result.email)
         assertNotNull(userRepository.findById(result.id))
     }
 
     @Test
+    fun `should create user with phone`() {
+        val result = useCase.create(User(fullName = "Phone User", phone = "+79001234567"))
+
+        assertEquals("+79001234567", result.phone)
+        assertNotNull(userRepository.findById(result.id))
+    }
+
+    @Test
     fun `should reject duplicate user email`() {
-        useCase.create(User(email = "user@example.com", fullName = "Regular User"))
+        useCase.create(User(fullName = "Regular User", email = "user@example.com"))
 
         val exception = assertFailsWith<IllegalArgumentException> {
-            useCase.create(User(email = "user@example.com", fullName = "Second User"))
+            useCase.create(User(fullName = "Second User", email = "user@example.com"))
+        }
+
+        assertTrue(exception.message!!.contains("already exists"))
+    }
+
+    @Test
+    fun `should reject duplicate user phone`() {
+        useCase.create(User(fullName = "First User", phone = "+79001234567"))
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(User(fullName = "Second User", phone = "+79001234567"))
         }
 
         assertTrue(exception.message!!.contains("already exists"))

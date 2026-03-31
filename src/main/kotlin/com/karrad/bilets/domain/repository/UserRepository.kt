@@ -7,6 +7,7 @@ interface UserRepository {
     fun save(user: User): User
     fun findById(id: UUID): User?
     fun findByEmail(email: String): User?
+    fun findByPhone(phone: String): User?
     fun findAll(): List<User>
     fun deleteById(id: UUID): Boolean
 }
