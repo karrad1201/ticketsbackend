@@ -15,7 +15,7 @@ class JdbcEventRepository(
         val updated = jdbcTemplate.update(
             """
             update events
-            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?
+            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?, image_url = ?, min_price = ?
             where id = ?
             """.trimIndent(),
             event.label,
@@ -26,13 +26,15 @@ class JdbcEventRepository(
             event.venueSpaceId,
             event.organizationId,
             instantToTimestamp(event.salesClosedAt),
+            event.imageUrl,
+            event.minPrice,
             event.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
                 """
-                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 event.id,
                 event.label,
@@ -42,7 +44,9 @@ class JdbcEventRepository(
                 Timestamp.from(event.time),
                 event.venueSpaceId,
                 event.organizationId,
-                instantToTimestamp(event.salesClosedAt)
+                instantToTimestamp(event.salesClosedAt),
+                event.imageUrl,
+                event.minPrice
             )
         }
         return event
@@ -50,7 +54,7 @@ class JdbcEventRepository(
 
     override fun findById(id: UUID): Event? = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price
         from events
         where id = ?
         """.trimIndent(),
@@ -64,7 +68,9 @@ class JdbcEventRepository(
                 venueSpaceId = rs.nullableUuid("venue_space_id"),
                 id = rs.uuid("id"),
                 organizationId = rs.nullableUuid("organization_id"),
-                salesClosedAt = rs.nullableInstant("sales_closed_at")
+                salesClosedAt = rs.nullableInstant("sales_closed_at"),
+                imageUrl = rs.getString("image_url"),
+                minPrice = rs.getObject("min_price") as Int?
             )
         },
         id
@@ -72,7 +78,7 @@ class JdbcEventRepository(
 
     override fun findAll(): List<Event> = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price
         from events
         order by event_time, id
         """.trimIndent()
@@ -92,7 +98,7 @@ class JdbcEventRepository(
 
     override fun findByVenueId(venueId: UUID): List<Event> = jdbcTemplate.query(
         """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price
         from events
         where venue_id = ?
         order by event_time, id
@@ -107,7 +113,9 @@ class JdbcEventRepository(
                 venueSpaceId = rs.nullableUuid("venue_space_id"),
                 id = rs.uuid("id"),
                 organizationId = rs.nullableUuid("organization_id"),
-                salesClosedAt = rs.nullableInstant("sales_closed_at")
+                salesClosedAt = rs.nullableInstant("sales_closed_at"),
+                imageUrl = rs.getString("image_url"),
+                minPrice = rs.getObject("min_price") as Int?
             )
         },
         venueId
@@ -115,7 +123,7 @@ class JdbcEventRepository(
 
     override fun findAvailableByCity(city: String, now: java.time.Instant): List<Event> = jdbcTemplate.query(
         """
-        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at
+        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price
         from events e
         join venues v on v.id = e.venue_id
         where lower(v.city_label) = ?
@@ -133,7 +141,9 @@ class JdbcEventRepository(
                 venueSpaceId = rs.nullableUuid("venue_space_id"),
                 id = rs.uuid("id"),
                 organizationId = rs.nullableUuid("organization_id"),
-                salesClosedAt = rs.nullableInstant("sales_closed_at")
+                salesClosedAt = rs.nullableInstant("sales_closed_at"),
+                imageUrl = rs.getString("image_url"),
+                minPrice = rs.getObject("min_price") as Int?
             )
         },
         city.trim().lowercase(),
@@ -143,7 +153,7 @@ class JdbcEventRepository(
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price
             from events e
             join venues v on v.id = e.venue_id
             where e.sales_closed_at is null

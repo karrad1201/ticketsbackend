@@ -16,26 +16,28 @@ class JdbcVenueRepository(
         val updated = jdbcTemplate.update(
             """
             update venues
-            set label = ?, city_label = ?, subject_label = ?, organization_id = ?
+            set label = ?, city_label = ?, subject_label = ?, organization_id = ?, address = ?
             where id = ?
             """.trimIndent(),
             venue.label,
             venue.city.label,
             venue.city.subject.label,
             venue.organizationId,
+            venue.address,
             venue.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
                 """
-                insert into venues (id, label, city_label, subject_label, organization_id)
-                values (?, ?, ?, ?, ?)
+                insert into venues (id, label, city_label, subject_label, organization_id, address)
+                values (?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 venue.id,
                 venue.label,
                 venue.city.label,
                 venue.city.subject.label,
-                venue.organizationId
+                venue.organizationId,
+                venue.address
             )
         }
 
@@ -57,7 +59,7 @@ class JdbcVenueRepository(
 
     override fun findById(id: UUID): Venue? = jdbcTemplate.query(
         """
-        select id, label, city_label, subject_label, organization_id
+        select id, label, city_label, subject_label, organization_id, address
         from venues
         where id = ?
         """.trimIndent(),
@@ -67,7 +69,7 @@ class JdbcVenueRepository(
 
     override fun findBySpaceId(spaceId: UUID): Venue? = jdbcTemplate.query(
         """
-        select v.id, v.label, v.city_label, v.subject_label, v.organization_id
+        select v.id, v.label, v.city_label, v.subject_label, v.organization_id, v.address
         from venues v
         join venue_spaces s on s.venue_id = v.id
         where s.id = ?
@@ -78,7 +80,7 @@ class JdbcVenueRepository(
 
     override fun findAll(): List<Venue> = jdbcTemplate.query(
         """
-        select id, label, city_label, subject_label, organization_id
+        select id, label, city_label, subject_label, organization_id, address
         from venues
         order by label, id
         """.trimIndent()
@@ -99,7 +101,8 @@ class JdbcVenueRepository(
             ),
             organizationId = rs.nullableUuid("organization_id"),
             id = venueId,
-            spaces = findSpaces(venueId)
+            spaces = findSpaces(venueId),
+            address = rs.getString("address")
         )
     }
 
