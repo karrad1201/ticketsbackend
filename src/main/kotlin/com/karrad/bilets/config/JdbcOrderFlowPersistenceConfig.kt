@@ -17,9 +17,11 @@ import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
+import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCityRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcSmsCodeRepository
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
@@ -131,6 +133,9 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun authTokenRepository(jdbcTemplate: JdbcTemplate): AuthTokenRepository = JdbcAuthTokenRepository(jdbcTemplate)
+
+    @Bean
+    fun cityRepository(jdbcTemplate: JdbcTemplate): CityRepository = JdbcCityRepository(jdbcTemplate)
 
     @Bean
     @ConditionalOnMissingBean(SmsGateway::class)
