@@ -55,6 +55,20 @@ class SearchEventsUseCaseTests {
     }
 
     @Test
+    fun `should accept search with only dateFrom set`() {
+        venueRepository.save(demoVenue())
+        eventRepository.save(demoEvent(label = "Future Event", venueId = venueId(), categoryId = categoryId(), time = Instant.parse("2026-06-01T18:00:00Z")))
+
+        val result = useCase.search(
+            query = null, city = null, categoryId = null, venueId = null,
+            dateFrom = LocalDate.parse("2026-05-01"), dateTo = null,
+            page = 0, size = 10
+        )
+
+        assertEquals(listOf("Future Event"), result.map { it.label })
+    }
+
+    @Test
     fun `should reject invalid search date range`() {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.search(

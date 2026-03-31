@@ -87,4 +87,17 @@ class RegisterWithPhoneUseCaseTests {
         }
         assertTrue(ex.message!!.contains("expired"))
     }
+
+    @Test
+    fun `should fail on already used code`() {
+        val code = smsCodeRepository.save(
+            SmsCode(phone = phone, code = "654321", expiresAt = mutableClock.instant().plusSeconds(300))
+        )
+        smsCodeRepository.markUsed(code.id)
+
+        val ex = assertFailsWith<IllegalArgumentException> {
+            useCase.register(phone, "654321", "User")
+        }
+        assertTrue(ex.message!!.contains("used"))
+    }
 }
