@@ -34,6 +34,7 @@ class JdbcOrganizationApprovalTransactionTests {
             .addScript("classpath:db/migration/V2__payment_model.sql")
             .addScript("classpath:db/migration/V3__event_sales_closure.sql")
             .addScript("classpath:db/migration/V4__phone_auth.sql")
+            .addScript("classpath:db/migration/V6__event_image_url_venue_address.sql")
             .build()
         try {
             val jdbcTemplate = JdbcTemplate(dataSource)

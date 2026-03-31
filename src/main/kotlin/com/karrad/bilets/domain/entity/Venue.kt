@@ -7,7 +7,8 @@ data class Venue(
     val city: City,
     val organizationId: UUID? = null,
     val id: UUID = UUID.randomUUID(),
-    val spaces: List<VenueSpace> = emptyList()
+    val spaces: List<VenueSpace> = emptyList(),
+    val address: String? = null
 ) {
     init {
         require(label.isNotBlank()) { "Venue label must not be blank" }

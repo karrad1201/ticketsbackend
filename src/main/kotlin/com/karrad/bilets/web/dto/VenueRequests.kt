@@ -10,14 +10,16 @@ data class CreateVenueRequest(
     val label: String,
     val city: CityRequest,
     val organizationId: UUID,
-    val spaces: List<VenueSpaceRequest> = emptyList()
+    val spaces: List<VenueSpaceRequest> = emptyList(),
+    val address: String? = null
 ) {
     fun toDomain(): Venue {
         return Venue(
             label = label,
             city = city.toDomain(),
             organizationId = organizationId,
-            spaces = spaces.map { it.toDomain() }
+            spaces = spaces.map { it.toDomain() },
+            address = address
         )
     }
 }
