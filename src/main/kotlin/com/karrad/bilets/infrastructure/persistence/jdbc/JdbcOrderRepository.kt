@@ -64,7 +64,7 @@ class JdbcOrderRepository(
                 order.id,
                 seatKey.sectionKey,
                 seatKey.rowKey,
-                seatKey.seatNumber
+                seatKey.seatKey
             )
         }
 
@@ -203,7 +203,7 @@ class JdbcOrderRepository(
             SeatKey(
                 sectionKey = rs.getString("section_key"),
                 rowKey = rs.getString("row_key"),
-                seatNumber = rs.getInt("seat_number")
+                seatKey = rs.getString("seat_number")
             )
         },
         orderId

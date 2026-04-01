@@ -52,14 +52,14 @@ class HoldEventSeatsUseCaseTests {
         val result = useCase.hold(
             eventId = event.id,
             seatKeys = listOf(
-                SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1),
-                SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 2)
+                SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"),
+                SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "2")
             )
         )
 
-        assertEquals(SeatStatus.HELD, result.seatInventory.first { it.seatNumber == 1 }.status)
-        assertEquals(SeatStatus.HELD, result.seatInventory.first { it.seatNumber == 2 }.status)
-        assertEquals(SeatStatus.AVAILABLE, result.seatInventory.first { it.seatNumber == 3 }.status)
+        assertEquals(SeatStatus.HELD, result.seatInventory.first { it.seatNumber == "1" }.status)
+        assertEquals(SeatStatus.HELD, result.seatInventory.first { it.seatNumber == "2" }.status)
+        assertEquals(SeatStatus.AVAILABLE, result.seatInventory.first { it.seatNumber == "3" }.status)
         assertEquals(result, eventInventoryPlanRepository.findByEventId(plan.eventId))
     }
 
@@ -68,7 +68,7 @@ class HoldEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.hold(
                 eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174701"),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         }
 
@@ -88,7 +88,7 @@ class HoldEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.hold(
                 eventId = event.id,
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 99))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "99"))
             )
         }
 
@@ -105,7 +105,7 @@ class HoldEventSeatsUseCaseTests {
             seatInventory = com.karrad.bilets.domain.entity.EventInventoryPlan.seated(event, layoutTemplate)
                 .seatInventory
                 .map {
-                    if (it.seatNumber == 1) it.copy(status = SeatStatus.HELD) else it
+                    if (it.seatNumber == "1") it.copy(status = SeatStatus.HELD) else it
                 }
         )
         eventInventoryPlanRepository.save(heldPlan)
@@ -113,7 +113,7 @@ class HoldEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.hold(
                 eventId = event.id,
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         }
 
@@ -134,7 +134,7 @@ class HoldEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.hold(
                 eventId = event.id,
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         }
 

@@ -248,7 +248,7 @@ class JdbcDurableOrderFlowTests {
             eventId,
             seatKey.sectionKey,
             seatKey.rowKey,
-            seatKey.seatNumber,
+            seatKey.seatKey,
             price,
             SeatStatus.AVAILABLE.name,
             null,
@@ -279,7 +279,7 @@ class JdbcDurableOrderFlowTests {
         eventId,
         seatKey.sectionKey,
         seatKey.rowKey,
-        seatKey.seatNumber
+        seatKey.seatKey
     )!!
 
     private fun heldOrderId(eventId: UUID, seatKey: SeatKey): UUID? = jdbcTemplate.query(
@@ -292,7 +292,7 @@ class JdbcDurableOrderFlowTests {
         eventId,
         seatKey.sectionKey,
         seatKey.rowKey,
-        seatKey.seatNumber
+        seatKey.seatKey
     ).single()
 
     private fun admissionHeld(eventId: UUID, ticketTypeId: UUID): Int = jdbcTemplate.queryForObject(
@@ -309,7 +309,7 @@ class JdbcDurableOrderFlowTests {
         ticketTypeId
     )!!
 
-    private fun seat(number: Int): SeatKey = SeatKey("parter", "r1", number)
+    private fun seat(number: Int): SeatKey = SeatKey("parter", "r1", number.toString())
 
     private fun standardTicketTypeId(): UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614179010")
 

@@ -34,13 +34,13 @@ data class HoldSeatsRequest(
 data class SeatKeyRequest(
     val sectionKey: String,
     val rowKey: String,
-    val seatNumber: Int
+    val seatKey: String
 ) {
     fun toDomain(): SeatKey {
         return SeatKey(
             sectionKey = sectionKey,
             rowKey = rowKey,
-            seatNumber = seatNumber
+            seatKey = seatKey
         )
     }
 }

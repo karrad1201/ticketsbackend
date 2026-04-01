@@ -33,7 +33,7 @@ class JdbcOrderInventoryRepository(
                 eventId,
                 seatKey.sectionKey,
                 seatKey.rowKey,
-                seatKey.seatNumber
+                seatKey.seatKey
             )
             if (updated == 0) {
                 failSeatReservation(eventId, seatKey)
@@ -107,7 +107,7 @@ class JdbcOrderInventoryRepository(
                 order.eventId,
                 seatKey.sectionKey,
                 seatKey.rowKey,
-                seatKey.seatNumber,
+                seatKey.seatKey,
                 order.id
             )
             require(updated == 1) { "Seats must be held before sale: [$seatKey]" }
@@ -153,7 +153,7 @@ class JdbcOrderInventoryRepository(
                 order.eventId,
                 seatKey.sectionKey,
                 seatKey.rowKey,
-                seatKey.seatNumber,
+                seatKey.seatKey,
                 order.id
             )
             require(updated == 1) { "Seats are not held: [$seatKey]" }
@@ -189,7 +189,7 @@ class JdbcOrderInventoryRepository(
         eventId,
         seatKey.sectionKey,
         seatKey.rowKey,
-        seatKey.seatNumber
+        seatKey.seatKey
     ).single()
 
     private fun admissionPrice(eventId: UUID, ticketTypeId: UUID): Int = jdbcTemplate.query(
@@ -214,7 +214,7 @@ class JdbcOrderInventoryRepository(
             eventId,
             seatKey.sectionKey,
             seatKey.rowKey,
-            seatKey.seatNumber
+            seatKey.seatKey
         ).singleOrNull()
 
         when (state) {

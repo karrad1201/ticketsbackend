@@ -40,6 +40,8 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.MigrationVersion
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -55,9 +57,13 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean(initMethod = "migrate")
     @ConditionalOnMissingBean(Flyway::class)
-    fun flyway(dataSource: DataSource): Flyway = Flyway.configure()
+    fun flyway(
+        dataSource: DataSource,
+        @Value("\${spring.flyway.target:latest}") flywayTarget: String
+    ): Flyway = Flyway.configure()
         .dataSource(dataSource)
         .locations("classpath:db/migration")
+        .target(MigrationVersion.fromVersion(flywayTarget))
         .load()
 
     @Bean

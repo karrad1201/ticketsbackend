@@ -48,7 +48,7 @@ class JdbcEventInventoryPlanRepository(
                 plan.eventId,
                 seat.sectionKey,
                 seat.rowKey,
-                seat.seatNumber,
+                seat.seatKey.seatKey,
                 seat.price,
                 seat.status.name,
                 null,
@@ -130,7 +130,7 @@ class JdbcEventInventoryPlanRepository(
                 seatKey = SeatKey(
                     sectionKey = rs.getString("section_key"),
                     rowKey = rs.getString("row_key"),
-                    seatNumber = rs.getInt("seat_number")
+                    seatKey = rs.getString("seat_number")
                 ),
                 price = rs.getInt("price"),
                 status = SeatStatus.valueOf(rs.getString("status"))

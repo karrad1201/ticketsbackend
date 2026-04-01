@@ -19,6 +19,6 @@ data class EventSeat(
     val rowKey: String
         get() = seatKey.rowKey
 
-    val seatNumber: Int
-        get() = seatKey.seatNumber
+    val seatNumber: String
+        get() = seatKey.seatKey
 }

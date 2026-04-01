@@ -66,8 +66,8 @@ class EventSeatHoldControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1),
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 2)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1"),
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "2")
                             )
                         )
                     )
@@ -93,7 +93,7 @@ class EventSeatHoldControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 99)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "99")
                             )
                         )
                     )

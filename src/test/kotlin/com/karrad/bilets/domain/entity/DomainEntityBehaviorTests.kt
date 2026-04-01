@@ -506,7 +506,7 @@ class DomainEntityBehaviorTests {
         )
 
     private fun demoSeatKey(seatNumber: Int): SeatKey =
-        SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = seatNumber)
+        SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = seatNumber.toString())
 
     private fun admissionInventory(
         eventId: UUID = uuid("133"),

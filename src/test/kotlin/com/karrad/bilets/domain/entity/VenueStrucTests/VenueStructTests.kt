@@ -102,7 +102,7 @@ class VenueStructTests {
 
     @Test
     fun `seat key should provide canonical string representation`() {
-        val seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 7)
+        val seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "7")
 
         assertEquals("parter:r1:7", seatKey.toString())
     }
@@ -110,18 +110,18 @@ class VenueStructTests {
     @Test
     fun `seat template should expose seat number from seat key`() {
         val template = SeatTemplate(
-            seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 12),
+            seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "12"),
             price = 2500
         )
 
-        assertEquals(12, template.seatNumber)
+        assertEquals("12", template.seatNumber)
     }
 
     @Test
     fun `seat template should reject negative price`() {
         val exception = assertFailsWith<IllegalArgumentException> {
             SeatTemplate(
-                seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 12),
+                seatKey = SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "12"),
                 price = -1
             )
         }
@@ -133,14 +133,14 @@ class VenueStructTests {
     fun `event seat should expose derived seat coordinates from seat key`() {
         val eventSeat = EventSeat(
             eventUuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
-            seatKey = SeatKey(sectionKey = "parter", rowKey = "r2", seatNumber = 4),
+            seatKey = SeatKey(sectionKey = "parter", rowKey = "r2", seatKey = "4"),
             price = 1800,
             status = SeatStatus.HELD
         )
 
         assertEquals("parter", eventSeat.sectionKey)
         assertEquals("r2", eventSeat.rowKey)
-        assertEquals(4, eventSeat.seatNumber)
+        assertEquals("4", eventSeat.seatNumber)
         assertEquals(SeatStatus.HELD, eventSeat.status)
     }
 
@@ -149,7 +149,7 @@ class VenueStructTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             EventSeat(
                 eventUuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174000"),
-                seatKey = SeatKey(sectionKey = "parter", rowKey = "r2", seatNumber = 4),
+                seatKey = SeatKey(sectionKey = "parter", rowKey = "r2", seatKey = "4"),
                 price = -10
             )
         }
@@ -266,7 +266,7 @@ class VenueStructTests {
 
         assertEquals(2, inventoryPlan.seatInventory.size)
         assertEquals(5, templateV2.sections.first().rows.first().endSeat)
-        assertFalse(inventoryPlan.seatInventory.any { it.seatNumber == 5 })
+        assertFalse(inventoryPlan.seatInventory.any { it.seatNumber == "5" })
     }
 
     @Test

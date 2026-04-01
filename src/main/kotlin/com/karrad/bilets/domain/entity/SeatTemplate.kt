@@ -8,6 +8,6 @@ data class SeatTemplate(
         require(price >= 0) { "SeatTemplate price must not be negative" }
     }
 
-    val seatNumber: Int
-        get() = seatKey.seatNumber
+    val seatNumber: String
+        get() = seatKey.seatKey
 }

@@ -21,7 +21,7 @@ data class LayoutTemplate(
                         seatKey = SeatKey(
                             sectionKey = section.key,
                             rowKey = row.key,
-                            seatNumber = seatNumber
+                            seatKey = seatNumber.toString()
                         ),
                         price = row.price
                     )
