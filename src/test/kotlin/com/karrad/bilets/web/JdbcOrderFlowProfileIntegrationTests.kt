@@ -462,8 +462,11 @@ class JdbcOrderFlowProfileIntegrationTests {
             size = 10
         )
 
-        assertEquals(listOf("Jdbc Tomorrow Show"), response.seenOrganizations.map { it.label })
-        assertEquals(listOf("Jdbc Tomorrow Show"), response.favoriteCategories.map { it.label })
+        assertEquals(listOf("Jdbc Tomorrow Show"), response.forYou.map { it.label })
+        assertEquals(
+            listOf("Jdbc Tomorrow Show"),
+            response.byCategory.find { it.category.code == "jdbc-discovery-rock" }?.events?.map { it.label }
+        )
         assertEquals(listOf("Jdbc Tomorrow Show"), response.tomorrow.map { it.label })
     }
 }

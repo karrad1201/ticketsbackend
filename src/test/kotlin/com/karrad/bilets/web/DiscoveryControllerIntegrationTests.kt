@@ -75,8 +75,8 @@ class DiscoveryControllerIntegrationTests {
                 .param("size", "10")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.seenOrganizations[0].label").value("Tomorrow Show"))
-            .andExpect(jsonPath("$.favoriteCategories[0].label").value("Tomorrow Show"))
+            .andExpect(jsonPath("$.forYou[0].label").value("Tomorrow Show"))
+            .andExpect(jsonPath("$.byCategory[0].events[0].label").value("Tomorrow Show"))
             .andExpect(jsonPath("$.tomorrow[0].label").value("Tomorrow Show"))
     }
 

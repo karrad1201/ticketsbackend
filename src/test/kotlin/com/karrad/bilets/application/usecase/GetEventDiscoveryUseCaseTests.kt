@@ -66,12 +66,16 @@ class GetEventDiscoveryUseCaseTests {
         val result = useCase.get(userId = userId(), city = "Ekaterinburg", page = 0, size = 10)
 
         assertEquals(
-            listOf("Rock Tomorrow", "Jazz Reunion"),
-            result.seenOrganizations.map { it.label }
+            listOf("Rock Tomorrow", "Jazz Reunion", "Indie Day After Tomorrow"),
+            result.forYou.map { it.label }
         )
         assertEquals(
-            listOf("Rock Tomorrow", "Indie Day After Tomorrow", "Jazz Reunion"),
-            result.favoriteCategories.map { it.label }
+            listOf("Jazz Reunion"),
+            result.byCategory.find { it.category.code == "jazz" }?.events?.map { it.label }
+        )
+        assertEquals(
+            listOf("Rock Tomorrow", "Indie Day After Tomorrow"),
+            result.byCategory.find { it.category.code == "rock" }?.events?.map { it.label }
         )
         assertEquals(listOf("Rock Tomorrow"), result.tomorrow.map { it.label })
         assertEquals(listOf("Indie Day After Tomorrow"), result.dayAfterTomorrow.map { it.label })
