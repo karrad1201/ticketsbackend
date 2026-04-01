@@ -24,7 +24,7 @@ class JdbcTicketRepository(
             ticket.price,
             ticket.seatKey?.sectionKey,
             ticket.seatKey?.rowKey,
-            ticket.seatKey?.seatNumber,
+            ticket.seatKey?.seatKey,
             ticket.ticketTypeId,
             Timestamp.from(ticket.issuedAt),
             ticket.id
@@ -43,7 +43,7 @@ class JdbcTicketRepository(
                 ticket.price,
                 ticket.seatKey?.sectionKey,
                 ticket.seatKey?.rowKey,
-                ticket.seatKey?.seatNumber,
+                ticket.seatKey?.seatKey,
                 ticket.ticketTypeId,
                 Timestamp.from(ticket.issuedAt)
             )
@@ -78,7 +78,7 @@ class JdbcTicketRepository(
                     SeatKey(
                         sectionKey = it,
                         rowKey = rs.getString("row_key"),
-                        seatNumber = rs.getInt("seat_number")
+                        seatKey = rs.getString("seat_number")
                     )
                 },
                 ticketTypeId = rs.nullableUuid("ticket_type_id"),

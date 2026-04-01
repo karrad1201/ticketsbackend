@@ -64,7 +64,8 @@ import kotlin.test.assertIs
         "spring.datasource.url=jdbc:h2:mem:jdbc-order-flow-profile;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
-        "spring.datasource.password="
+        "spring.datasource.password=",
+        "spring.flyway.target=6"
     ]
 )
 @ActiveProfiles("jdbc-order-flow")
@@ -329,7 +330,7 @@ class JdbcOrderFlowProfileIntegrationTests {
                 eventId = event.id,
                 buyerUserId = buyer.id,
                 seatKeys = listOf(
-                    SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1)
+                    SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1")
                 )
             )
         )
@@ -338,7 +339,7 @@ class JdbcOrderFlowProfileIntegrationTests {
 
         assertEquals(OrderStatus.PAID, paidOrder.status)
         assertEquals(1, ticketRepository.findByOrderId(order.id).size)
-        assertEquals(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1), ticket.seatKey)
+        assertEquals(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"), ticket.seatKey)
         assertEquals(2250, requireNotNull(organizationRepository.findById(organization.id)).balance)
     }
 

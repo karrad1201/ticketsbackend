@@ -59,7 +59,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
         eventRepository.save(event)
         layoutTemplateRepository.save(layoutTemplate)
         val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
-            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
         )
         eventInventoryPlanRepository.save(heldPlan)
 
@@ -70,7 +70,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )
@@ -87,7 +87,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
         eventRepository.save(event)
         layoutTemplateRepository.save(layoutTemplate)
         val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
-            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
         )
         eventInventoryPlanRepository.save(heldPlan)
 
@@ -98,7 +98,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )

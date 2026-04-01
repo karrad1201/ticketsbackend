@@ -78,7 +78,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )
@@ -105,7 +105,7 @@ class OrderControllerIntegrationTests {
             .andExpect(jsonPath("$[0].seatKey.sectionKey").value("parter"))
 
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-        val seat = plan.seatInventory.first { it.seatKey.seatNumber == 1 }
+        val seat = plan.seatInventory.first { it.seatKey.seatKey == "1" }
         org.junit.jupiter.api.Assertions.assertEquals(SeatStatus.SOLD, seat.status)
         org.junit.jupiter.api.Assertions.assertEquals(
             1800,
@@ -174,7 +174,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 2)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "2")
                             )
                         )
                     )
@@ -191,7 +191,7 @@ class OrderControllerIntegrationTests {
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
         org.junit.jupiter.api.Assertions.assertEquals(
             SeatStatus.HELD,
-            plan.seatInventory.first { it.seatKey.seatNumber == 2 }.status
+            plan.seatInventory.first { it.seatKey.seatKey == "2" }.status
         )
     }
 
@@ -230,7 +230,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             ),
                             "admissionItems" to listOf(
                                 mapOf("ticketTypeId" to standardTicketTypeId(), "quantity" to 1)
@@ -250,7 +250,7 @@ class OrderControllerIntegrationTests {
         organizationRepository.save(organization())
         userRepository.save(buyer())
         val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
-            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
         )
         eventInventoryPlanRepository.save(heldPlan)
 
@@ -262,7 +262,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )
@@ -288,7 +288,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )
@@ -323,7 +323,7 @@ class OrderControllerIntegrationTests {
                     objectMapper.writeValueAsString(
                         mapOf(
                             "seatKeys" to listOf(
-                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatNumber" to 1)
+                                mapOf("sectionKey" to "parter", "rowKey" to "r1", "seatKey" to "1")
                             )
                         )
                     )

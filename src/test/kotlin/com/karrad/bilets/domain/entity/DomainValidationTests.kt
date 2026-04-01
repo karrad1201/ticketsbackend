@@ -68,15 +68,15 @@ class DomainValidationTests {
     fun `should reject invalid seat key fields`() {
         assertEquals(
             "SeatKey sectionKey must not be blank",
-            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "", rowKey = "r1", seatNumber = 1) }.message
+            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "", rowKey = "r1", seatKey = "1") }.message
         )
         assertEquals(
             "SeatKey rowKey must not be blank",
-            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "parter", rowKey = "", seatNumber = 1) }.message
+            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "parter", rowKey = "", seatKey = "1") }.message
         )
         assertEquals(
-            "SeatKey seatNumber must be positive",
-            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 0) }.message
+            "SeatKey seatKey must not be blank",
+            assertFailsWith<IllegalArgumentException> { SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "") }.message
         )
     }
 

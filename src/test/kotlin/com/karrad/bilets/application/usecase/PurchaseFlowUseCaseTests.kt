@@ -124,8 +124,8 @@ class PurchaseFlowUseCaseTests {
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
                 seatKeys = listOf(
-                    SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1),
-                    SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 2)
+                    SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"),
+                    SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "2")
                 )
             )
         )
@@ -137,8 +137,8 @@ class PurchaseFlowUseCaseTests {
         assertEquals(1, paymentGateway.createdPayments().size)
 
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-        assertEquals(SeatStatus.HELD, plan.seatInventory.first { it.seatNumber == 1 }.status)
-        assertEquals(SeatStatus.HELD, plan.seatInventory.first { it.seatNumber == 2 }.status)
+        assertEquals(SeatStatus.HELD, plan.seatInventory.first { it.seatNumber == "1" }.status)
+        assertEquals(SeatStatus.HELD, plan.seatInventory.first { it.seatNumber == "2" }.status)
     }
 
     @Test
@@ -189,7 +189,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -198,7 +198,7 @@ class PurchaseFlowUseCaseTests {
 
         assertEquals(OrderStatus.EXPIRED, expired.status)
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-        assertEquals(SeatStatus.AVAILABLE, plan.seatInventory.first { it.seatNumber == 1 }.status)
+        assertEquals(SeatStatus.AVAILABLE, plan.seatInventory.first { it.seatNumber == "1" }.status)
         assertTrue(ticketRepository.findByOrderId(order.id).isEmpty())
     }
 
@@ -246,7 +246,7 @@ class PurchaseFlowUseCaseTests {
                                 CreateOrderCommand(
                                     eventId = event.id,
                                     buyerUserId = buyerUserId(),
-                                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
                                 )
                             )
                 }
@@ -347,7 +347,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -365,7 +365,7 @@ class PurchaseFlowUseCaseTests {
         assertEquals(
             SeatStatus.AVAILABLE,
             requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-                .seatInventory.first { it.seatNumber == 1 }.status
+                .seatInventory.first { it.seatNumber == "1" }.status
         )
     }
 
@@ -382,7 +382,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -399,7 +399,7 @@ class PurchaseFlowUseCaseTests {
         assertEquals(
             SeatStatus.AVAILABLE,
             requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-                .seatInventory.first { it.seatNumber == 1 }.status
+                .seatInventory.first { it.seatNumber == "1" }.status
         )
     }
 
@@ -458,7 +458,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -471,7 +471,7 @@ class PurchaseFlowUseCaseTests {
         assertEquals(
             SeatStatus.AVAILABLE,
             requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-                .seatInventory.first { it.seatNumber == 1 }.status
+                .seatInventory.first { it.seatNumber == "1" }.status
         )
     }
 
@@ -488,7 +488,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 2))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "2"))
             )
         )
 
@@ -616,7 +616,7 @@ class PurchaseFlowUseCaseTests {
                 CreateOrderCommand(
                     eventId = event.id,
                     buyerUserId = buyerUserId(),
-                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1)),
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1")),
                     admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
                 )
             )
@@ -638,7 +638,7 @@ class PurchaseFlowUseCaseTests {
                 CreateOrderCommand(
                     eventId = event.id,
                     buyerUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614176099"),
-                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
                 )
             )
         }
@@ -658,7 +658,7 @@ class PurchaseFlowUseCaseTests {
                 CreateOrderCommand(
                     eventId = event.id,
                     buyerUserId = buyerUserId(),
-                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                    seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
                 )
             )
         }
@@ -704,7 +704,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -753,7 +753,7 @@ class PurchaseFlowUseCaseTests {
             CreateOrderCommand(
                 eventId = event.id,
                 buyerUserId = buyerUserId(),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         )
 
@@ -764,7 +764,7 @@ class PurchaseFlowUseCaseTests {
         assertEquals(OrderStatus.EXPIRED, repeated.status)
         assertEquals(expired.id, repeated.id)
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
-        assertEquals(SeatStatus.AVAILABLE, plan.seatInventory.first { it.seatNumber == 1 }.status)
+        assertEquals(SeatStatus.AVAILABLE, plan.seatInventory.first { it.seatNumber == "1" }.status)
     }
 
     private fun seatedEvent(): Event {

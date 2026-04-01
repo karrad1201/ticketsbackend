@@ -46,16 +46,16 @@ class ReleaseEventSeatsUseCaseTests {
         eventRepository.save(event)
         layoutTemplateRepository.save(layoutTemplate)
         val heldPlan = EventInventoryPlan.seated(event, layoutTemplate).holdSeats(
-            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
         )
         eventInventoryPlanRepository.save(heldPlan)
 
         val result = useCase.release(
             eventId = event.id,
-            seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+            seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
         )
 
-        assertEquals(SeatStatus.AVAILABLE, result.seatInventory.first { it.seatNumber == 1 }.status)
+        assertEquals(SeatStatus.AVAILABLE, result.seatInventory.first { it.seatNumber == "1" }.status)
     }
 
     @Test
@@ -69,7 +69,7 @@ class ReleaseEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.release(
                 eventId = event.id,
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         }
 
@@ -81,7 +81,7 @@ class ReleaseEventSeatsUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.release(
                 eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174815"),
-                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatNumber = 1))
+                seatKeys = listOf(SeatKey(sectionKey = "parter", rowKey = "r1", seatKey = "1"))
             )
         }
 
