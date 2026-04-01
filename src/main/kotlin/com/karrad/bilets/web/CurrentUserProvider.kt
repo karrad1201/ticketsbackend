@@ -42,6 +42,8 @@ class CurrentUserProvider(
         return requireNotNull(userRepository.findById(userId)) { "Authenticated user not found: $userId" }
     }
 
+    fun currentUserId(): UUID? = try { requireUserId() } catch (_: Exception) { null }
+
     fun requireAdmin(): User {
         val user = requireUser()
         require(user.role == UserRole.ADMIN) { "Authenticated user must be admin: ${user.id}" }
