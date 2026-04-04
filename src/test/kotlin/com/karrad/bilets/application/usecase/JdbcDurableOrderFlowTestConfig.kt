@@ -59,6 +59,7 @@ class JdbcDurableOrderFlowTestConfig {
         .addScript("classpath:db/migration/V3__event_sales_closure.sql")
         .addScript("classpath:db/migration/V4__phone_auth.sql")
         .addScript("classpath:db/migration/V6__event_image_url_venue_address.sql")
+        .addScript("classpath:db/migration/V8__ticket_used_at.sql")
         .build()
 
     @Bean

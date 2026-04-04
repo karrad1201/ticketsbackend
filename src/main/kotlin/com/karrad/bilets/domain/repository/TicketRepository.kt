@@ -1,6 +1,7 @@
 package com.karrad.bilets.domain.repository
 
 import com.karrad.bilets.domain.entity.Ticket
+import java.time.Instant
 import java.util.UUID
 
 interface TicketRepository {
@@ -10,4 +11,6 @@ interface TicketRepository {
     fun findAll(): List<Ticket>
     fun findByOrderId(orderId: UUID): List<Ticket>
     fun findByUserId(userId: UUID): List<Ticket>
+    fun findByEventId(eventId: UUID): List<Ticket>
+    fun markAsUsed(ticketId: UUID, usedAt: Instant): Boolean
 }

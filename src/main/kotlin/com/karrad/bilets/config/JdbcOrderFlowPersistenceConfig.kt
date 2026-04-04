@@ -59,10 +59,11 @@ class JdbcOrderFlowPersistenceConfig {
     @ConditionalOnMissingBean(Flyway::class)
     fun flyway(
         dataSource: DataSource,
-        @Value("\${spring.flyway.target:latest}") flywayTarget: String
+        @Value("\${spring.flyway.target:latest}") flywayTarget: String,
+        @Value("\${spring.flyway.locations:classpath:db/migration}") flywayLocations: String
     ): Flyway = Flyway.configure()
         .dataSource(dataSource)
-        .locations("classpath:db/migration")
+        .locations(flywayLocations)
         .target(MigrationVersion.fromVersion(flywayTarget))
         .load()
 

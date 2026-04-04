@@ -11,7 +11,8 @@ data class Ticket(
     val seatKey: SeatKey? = null,
     val ticketTypeId: UUID? = null,
     val id: UUID = UUID.randomUUID(),
-    val issuedAt: Instant = Instant.now()
+    val issuedAt: Instant = Instant.now(),
+    val usedAt: Instant? = null
 ) {
     init {
         require(price >= 0) { "Ticket price must not be negative" }
