@@ -2,6 +2,7 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 
 import com.karrad.bilets.domain.entity.Ticket
 import com.karrad.bilets.domain.repository.TicketRepository
+import java.time.Instant
 import java.util.UUID
 
 class InMemoryTicketRepository : TicketRepository {
@@ -23,4 +24,14 @@ class InMemoryTicketRepository : TicketRepository {
 
     override fun findByUserId(userId: UUID): List<Ticket> =
         storage.values.filter { it.userId == userId }
+
+    override fun findByEventId(eventId: UUID): List<Ticket> =
+        storage.values.filter { it.eventId == eventId }
+
+    override fun markAsUsed(ticketId: UUID, usedAt: Instant): Boolean {
+        val ticket = storage[ticketId] ?: return false
+        if (ticket.usedAt != null) return false
+        storage[ticketId] = ticket.copy(usedAt = usedAt)
+        return true
+    }
 }

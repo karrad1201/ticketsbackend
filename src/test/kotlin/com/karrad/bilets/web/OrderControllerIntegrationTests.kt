@@ -353,7 +353,7 @@ class OrderControllerIntegrationTests {
             description = "Evening show",
             venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614177001"),
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614177002"),
-            time = Instant.parse("2026-04-01T18:00:00Z"),
+            time = Instant.parse("2026-06-01T18:00:00Z"),
             venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614177003"),
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614177004"),
             organizationId = organizationId()
@@ -366,7 +366,7 @@ class OrderControllerIntegrationTests {
             description = "Open floor event",
             venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614177011"),
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614177012"),
-            time = Instant.parse("2026-04-01T20:00:00Z"),
+            time = Instant.parse("2026-06-01T20:00:00Z"),
             venueSpaceId = null,
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614177013"),
             organizationId = organizationId()

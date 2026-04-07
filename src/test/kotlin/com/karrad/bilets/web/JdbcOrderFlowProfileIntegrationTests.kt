@@ -61,11 +61,11 @@ import kotlin.test.assertIs
 
 @SpringBootTest(
     properties = [
-        "spring.datasource.url=jdbc:h2:mem:jdbc-order-flow-profile;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
+        "spring.datasource.url=jdbc:h2:mem:jdbc-order-flow-profile;MODE=PostgreSQL",
         "spring.datasource.driverClassName=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.flyway.target=6"
+        "spring.flyway.locations=classpath:db/h2migration"
     ]
 )
 @ActiveProfiles("jdbc-order-flow")

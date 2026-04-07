@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.Ticket
 import com.karrad.bilets.domain.repository.TicketRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 class JdbcTicketRepository(
@@ -15,16 +16,12 @@ class JdbcTicketRepository(
         val updated = jdbcTemplate.update(
             """
             update tickets
-            set order_id = ?, event_id = ?, user_id = ?, price = ?, section_key = ?, row_key = ?, seat_number = ?, ticket_type_id = ?, issued_at = ?
+            set order_id = ?, event_id = ?, user_id = ?, price = ?,
+                section_key = ?, row_key = ?, seat_number = ?, ticket_type_id = ?, issued_at = ?
             where id = ?
             """.trimIndent(),
-            ticket.orderId,
-            ticket.eventId,
-            ticket.userId,
-            ticket.price,
-            ticket.seatKey?.sectionKey,
-            ticket.seatKey?.rowKey,
-            ticket.seatKey?.seatKey,
+            ticket.orderId, ticket.eventId, ticket.userId, ticket.price,
+            ticket.seatKey?.sectionKey, ticket.seatKey?.rowKey, ticket.seatKey?.seatKey,
             ticket.ticketTypeId,
             Timestamp.from(ticket.issuedAt),
             ticket.id
@@ -33,23 +30,24 @@ class JdbcTicketRepository(
             jdbcTemplate.update(
                 """
                 insert into tickets (
-                    id, order_id, event_id, user_id, price, section_key, row_key, seat_number, ticket_type_id, issued_at
+                    id, order_id, event_id, user_id, price,
+                    section_key, row_key, seat_number, ticket_type_id, issued_at
                 ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
-                ticket.id,
-                ticket.orderId,
-                ticket.eventId,
-                ticket.userId,
-                ticket.price,
-                ticket.seatKey?.sectionKey,
-                ticket.seatKey?.rowKey,
-                ticket.seatKey?.seatKey,
+                ticket.id, ticket.orderId, ticket.eventId, ticket.userId, ticket.price,
+                ticket.seatKey?.sectionKey, ticket.seatKey?.rowKey, ticket.seatKey?.seatKey,
                 ticket.ticketTypeId,
                 Timestamp.from(ticket.issuedAt)
             )
         }
         return ticket
     }
+
+    override fun markAsUsed(ticketId: UUID, usedAt: Instant): Boolean =
+        jdbcTemplate.update(
+            "update tickets set used_at = ? where id = ? and used_at is null",
+            Timestamp.from(usedAt), ticketId
+        ) > 0
 
     override fun saveAll(tickets: List<Ticket>): List<Ticket> = tickets.map(::save)
 
@@ -61,9 +59,12 @@ class JdbcTicketRepository(
 
     override fun findByUserId(userId: UUID): List<Ticket> = queryTickets("where user_id = ?", userId)
 
+    override fun findByEventId(eventId: UUID): List<Ticket> = queryTickets("where event_id = ?", eventId)
+
     private fun queryTickets(whereClause: String, vararg args: Any): List<Ticket> = jdbcTemplate.query(
         """
-        select id, order_id, event_id, user_id, price, section_key, row_key, seat_number, ticket_type_id, issued_at
+        select id, order_id, event_id, user_id, price,
+               section_key, row_key, seat_number, ticket_type_id, issued_at, used_at
         from tickets
         $whereClause
         order by issued_at, id
@@ -83,7 +84,8 @@ class JdbcTicketRepository(
                 },
                 ticketTypeId = rs.nullableUuid("ticket_type_id"),
                 id = rs.uuid("id"),
-                issuedAt = rs.instant("issued_at")
+                issuedAt = rs.instant("issued_at"),
+                usedAt = rs.nullableInstant("used_at")
             )
         },
         *args
