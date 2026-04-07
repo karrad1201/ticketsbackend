@@ -52,6 +52,11 @@ class InMemoryEventRepository(
             .sortedBy { it.time }
     }
 
+    override fun findUpcomingByOrganizationId(organizationId: UUID, now: java.time.Instant): List<Event> =
+        storage.values
+            .filter { it.organizationId == organizationId && it.time.isAfter(now) }
+            .sortedBy { it.time }
+
     override fun findIdsWithStartedOpenSales(now: java.time.Instant, limit: Int): List<UUID> {
         require(limit > 0) { "limit must be positive" }
         return storage.values

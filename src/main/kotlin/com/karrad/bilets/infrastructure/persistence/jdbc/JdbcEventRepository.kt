@@ -209,6 +209,34 @@ class JdbcEventRepository(
         )
     }
 
+    override fun findUpcomingByOrganizationId(organizationId: UUID, now: java.time.Instant): List<Event> =
+        jdbcTemplate.query(
+            """
+            select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price
+            from events
+            where organization_id = ?
+              and event_time > ?
+            order by event_time, id
+            """.trimIndent(),
+            { rs, _ ->
+                Event(
+                    label = rs.getString("label"),
+                    description = rs.getString("description"),
+                    venueId = rs.uuid("venue_id"),
+                    categoryId = rs.uuid("category_id"),
+                    time = rs.instant("event_time"),
+                    venueSpaceId = rs.nullableUuid("venue_space_id"),
+                    id = rs.uuid("id"),
+                    organizationId = rs.nullableUuid("organization_id"),
+                    salesClosedAt = rs.nullableInstant("sales_closed_at"),
+                    imageUrl = rs.getString("image_url"),
+                    minPrice = rs.getObject("min_price") as Int?
+                )
+            },
+            organizationId,
+            Timestamp.from(now)
+        )
+
     override fun findIdsWithStartedOpenSales(now: java.time.Instant, limit: Int): List<UUID> {
         require(limit > 0) { "limit must be positive" }
         return jdbcTemplate.query(
