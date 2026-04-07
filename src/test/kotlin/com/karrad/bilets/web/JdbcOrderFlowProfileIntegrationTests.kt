@@ -204,7 +204,7 @@ class JdbcOrderFlowProfileIntegrationTests {
                 description = "Profile-backed purchase flow",
                 venueId = venue.id,
                 categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614179127"),
-                time = Instant.parse("2026-04-05T18:00:00Z"),
+                time = Instant.parse("2026-07-05T18:00:00Z"),
                 venueSpaceId = null,
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179124"),
                 organizationId = organization.id
@@ -316,7 +316,7 @@ class JdbcOrderFlowProfileIntegrationTests {
                 description = "Profile-backed seated purchase flow",
                 venueId = venue.id,
                 categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614179223"),
-                time = Instant.parse("2026-04-06T18:00:00Z"),
+                time = Instant.parse("2026-07-06T18:00:00Z"),
                 venueSpaceId = venue.spaces.first().id,
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179227"),
                 organizationId = organization.id

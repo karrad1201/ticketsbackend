@@ -22,6 +22,7 @@ interface EventRepository {
     fun findByVenueId(venueId: UUID): List<Event>
     fun findAvailableByCity(city: String, now: Instant): List<Event>
     fun searchAvailable(criteria: EventSearchCriteria): List<Event>
+    fun findUpcomingByOrganizationId(organizationId: UUID, now: Instant): List<Event>
     fun findIdsWithStartedOpenSales(now: Instant, limit: Int): List<UUID>
     fun deleteById(id: UUID): Boolean
 }
