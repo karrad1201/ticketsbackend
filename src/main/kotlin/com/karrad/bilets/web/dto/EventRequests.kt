@@ -11,7 +11,8 @@ data class CreateEventRequest(
     val categoryId: UUID,
     val time: Instant,
     val venueSpaceId: UUID? = null,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val ageRating: String? = null
 ) {
     fun toDomain(): Event {
         return Event(
@@ -21,7 +22,8 @@ data class CreateEventRequest(
             categoryId = categoryId,
             time = time,
             venueSpaceId = venueSpaceId,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            ageRating = ageRating
         )
     }
 }
