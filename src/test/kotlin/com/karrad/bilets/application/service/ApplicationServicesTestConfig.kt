@@ -21,8 +21,10 @@ import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.sms.SmsGateway
+import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
@@ -88,6 +90,9 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun venueRepository(): VenueRepository = InMemoryVenueRepository()
+
+    @Bean
+    fun venueAccessGrantRepository(): VenueAccessGrantRepository = InMemoryVenueAccessGrantRepository()
 
     @Bean
     fun layoutTemplateRepository(): LayoutTemplateRepository = InMemoryLayoutTemplateRepository()

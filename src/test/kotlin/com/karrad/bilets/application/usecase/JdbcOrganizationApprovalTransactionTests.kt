@@ -37,6 +37,7 @@ class JdbcOrganizationApprovalTransactionTests {
             .addScript("classpath:db/migration/V6__event_image_url_venue_address.sql")
             .addScript("classpath:db/migration/V8__ticket_used_at.sql")
             .addScript("classpath:db/migration/V9__event_age_rating.sql")
+            .addScript("classpath:db/migration/V10__venue_access_grants.sql")
             .build()
         try {
             val jdbcTemplate = JdbcTemplate(dataSource)

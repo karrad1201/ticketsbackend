@@ -16,8 +16,10 @@ import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.CityRepository
+import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCityRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
@@ -75,6 +77,10 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun venueRepository(): VenueRepository = InMemoryVenueRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun venueAccessGrantRepository(): VenueAccessGrantRepository = InMemoryVenueAccessGrantRepository()
 
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
