@@ -1,9 +1,11 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.enums.VenueAccessGrantStatus
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.springframework.stereotype.Component
 import java.util.UUID
@@ -13,6 +15,7 @@ class CreateEventUseCase(
     private val categoryRepository: CategoryRepository,
     private val venueRepository: VenueRepository,
     private val organizationMemberRepository: OrganizationMemberRepository,
+    private val venueAccessGrantRepository: VenueAccessGrantRepository,
     private val eventRepository: EventRepository
 ) {
     fun create(event: Event, actorUserId: UUID): Event {
@@ -30,14 +33,24 @@ class CreateEventUseCase(
             }
         }
 
-        val organizationId = requireNotNull(venue.organizationId) {
+        val venueOwnerId = requireNotNull(venue.organizationId) {
             "Venue ${venue.id} is not attached to an organization"
         }
 
-        requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
-            "User $actorUserId is not a member of organization $organizationId"
+        // Case 1: actor is a member of the venue owner's organization
+        if (organizationMemberRepository.findByOrganizationIdAndUserId(venueOwnerId, actorUserId) != null) {
+            return eventRepository.save(event.copy(organizationId = venueOwnerId))
         }
 
-        return eventRepository.save(event.copy(organizationId = organizationId))
+        // Case 2: actor's organization has an approved access grant for this venue
+        val actorOrgId = requireNotNull(
+            organizationMemberRepository.findByUserId(actorUserId).firstOrNull()?.organizationId
+        ) { "User $actorUserId is not a member of any organization" }
+
+        requireNotNull(venueAccessGrantRepository.findApprovedByVenueIdAndOrgId(event.venueId, actorOrgId)) {
+            "User $actorUserId's organization does not have access to venue ${event.venueId}"
+        }
+
+        return eventRepository.save(event.copy(organizationId = actorOrgId))
     }
 }

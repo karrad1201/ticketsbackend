@@ -18,9 +18,11 @@ import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.CityRepository
+import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCityRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcSmsCodeRepository
@@ -108,6 +110,10 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun venueRepository(jdbcTemplate: JdbcTemplate): VenueRepository = JdbcVenueRepository(jdbcTemplate)
+
+    @Bean
+    fun venueAccessGrantRepository(jdbcTemplate: JdbcTemplate): VenueAccessGrantRepository =
+        JdbcVenueAccessGrantRepository(jdbcTemplate)
 
     @Bean
     fun layoutTemplateRepository(jdbcTemplate: JdbcTemplate): LayoutTemplateRepository =
