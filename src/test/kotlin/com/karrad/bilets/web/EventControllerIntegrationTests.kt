@@ -271,6 +271,64 @@ class EventControllerIntegrationTests {
             .andExpect(jsonPath("$.salesClosedAt").isNotEmpty)
     }
 
+    @Test
+    fun `should create event with hasSeatMap true`() {
+        val venue = demoVenue()
+        val category = demoCategory("theatre", "Theatre", UUID.fromString("123e4567-e89b-12d3-a456-426614174447"))
+        seedOrganizationAccess()
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+
+        mockMvc.perform(
+            post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "label" to "Swan Lake",
+                            "description" to "Ballet",
+                            "venueId" to venue.id,
+                            "categoryId" to category.id,
+                            "time" to "2026-05-01T18:00:00Z",
+                            "venueSpaceId" to venue.spaces.first().id,
+                            "hasSeatMap" to true
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.hasSeatMap").value(true))
+    }
+
+    @Test
+    fun `hasSeatMap defaults to false when not provided`() {
+        val venue = demoVenue()
+        val category = demoCategory("cinema", "Cinema", UUID.fromString("123e4567-e89b-12d3-a456-426614174448"))
+        seedOrganizationAccess()
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+
+        mockMvc.perform(
+            post("/api/events")
+                .header("X-User-Id", demoCreatorUserId().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "label" to "Movie Night",
+                            "description" to "Film screening",
+                            "venueId" to venue.id,
+                            "categoryId" to category.id,
+                            "time" to "2026-05-02T20:00:00Z"
+                        )
+                    )
+                )
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.hasSeatMap").value(false))
+    }
+
     private fun demoVenue(): Venue {
         return Venue(
             label = "Demo Hall",
