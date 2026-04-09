@@ -21,6 +21,15 @@ data class Event(
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }
         require(description.isNotBlank()) { "Event description must not be blank" }
+        if (ageRating != null) {
+            require(ageRating in ALLOWED_AGE_RATINGS) {
+                "Event ageRating must be one of $ALLOWED_AGE_RATINGS but was '$ageRating'"
+            }
+        }
+    }
+
+    companion object {
+        val ALLOWED_AGE_RATINGS = setOf("0+", "6+", "12+", "16+", "18+")
     }
 
     fun isSalesClosed(now: Instant): Boolean = salesClosedAt != null || !time.isAfter(now)
