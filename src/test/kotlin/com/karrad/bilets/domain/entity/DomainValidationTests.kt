@@ -165,12 +165,37 @@ class DomainValidationTests {
         )
     }
 
-    private fun demoEvent(label: String, description: String): Event =
+    @Test
+    fun `should reject invalid ageRating`() {
+        assertEquals(
+            "Event ageRating must be one of ${Event.ALLOWED_AGE_RATINGS} but was 'R'",
+            assertFailsWith<IllegalArgumentException> { demoEvent(ageRating = "R") }.message
+        )
+        assertEquals(
+            "Event ageRating must be one of ${Event.ALLOWED_AGE_RATINGS} but was '21+'",
+            assertFailsWith<IllegalArgumentException> { demoEvent(ageRating = "21+") }.message
+        )
+        assertEquals(
+            "Event ageRating must be one of ${Event.ALLOWED_AGE_RATINGS} but was ''",
+            assertFailsWith<IllegalArgumentException> { demoEvent(ageRating = "") }.message
+        )
+    }
+
+    @Test
+    fun `should accept valid ageRating values`() {
+        Event.ALLOWED_AGE_RATINGS.forEach { rating ->
+            demoEvent(ageRating = rating) // не бросает исключение
+        }
+        demoEvent(ageRating = null) // null тоже допустим
+    }
+
+    private fun demoEvent(label: String = "Show", description: String = "Desc", ageRating: String? = null): Event =
         Event(
             label = label,
             description = description,
             venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614178003"),
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614178004"),
-            time = Instant.parse("2026-04-01T18:00:00Z")
+            time = Instant.parse("2026-04-01T18:00:00Z"),
+            ageRating = ageRating
         )
 }
