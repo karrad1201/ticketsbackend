@@ -13,7 +13,7 @@ class FavoriteEventService(
     private val eventRepository: EventRepository
 ) {
     fun add(userId: UUID, eventId: UUID): FavoriteEvent {
-        requireNotNull(eventRepository.findById(eventId)) { "Event not found: $eventId" }
+        if (eventRepository.findById(eventId) == null) throw NoSuchElementException("Event not found: $eventId")
         return favoriteEventRepository.save(FavoriteEvent(userId = userId, eventId = eventId))
     }
 

@@ -76,7 +76,7 @@ class FavoriteEventControllerIntegrationTests {
     }
 
     @Test
-    fun `should return 400 when event does not exist`() {
+    fun `should return 404 when event does not exist`() {
         val unknownEventId = UUID.fromString("ffffffff-0000-0000-0000-000000000001")
         mockMvc.perform(
             post("/api/favorites")
@@ -84,7 +84,7 @@ class FavoriteEventControllerIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to unknownEventId)))
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isNotFound)
     }
 
     @Test
