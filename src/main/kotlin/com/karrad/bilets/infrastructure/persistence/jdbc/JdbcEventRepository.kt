@@ -15,7 +15,7 @@ class JdbcEventRepository(
         val updated = jdbcTemplate.update(
             """
             update events
-            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?, image_url = ?, min_price = ?, age_rating = ?
+            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?, image_url = ?, min_price = ?, age_rating = ?, has_seat_map = ?
             where id = ?
             """.trimIndent(),
             event.label,
@@ -29,13 +29,14 @@ class JdbcEventRepository(
             event.imageUrl,
             event.minPrice,
             event.ageRating,
+            event.hasSeatMap,
             event.id
         )
         if (updated == 0) {
             jdbcTemplate.update(
                 """
-                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 event.id,
                 event.label,
@@ -48,7 +49,8 @@ class JdbcEventRepository(
                 instantToTimestamp(event.salesClosedAt),
                 event.imageUrl,
                 event.minPrice,
-                event.ageRating
+                event.ageRating,
+                event.hasSeatMap
             )
         }
         return event
@@ -66,11 +68,12 @@ class JdbcEventRepository(
         salesClosedAt = rs.nullableInstant("sales_closed_at"),
         imageUrl = rs.getString("image_url"),
         minPrice = rs.getObject("min_price") as Int?,
-        ageRating = rs.getString("age_rating")
+        ageRating = rs.getString("age_rating"),
+        hasSeatMap = rs.getBoolean("has_seat_map")
     )
 
     private val selectAll = """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating
+        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map
         from events
     """.trimIndent()
 
@@ -92,7 +95,7 @@ class JdbcEventRepository(
 
     override fun findAvailableByCity(city: String, now: java.time.Instant): List<Event> = jdbcTemplate.query(
         """
-        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating
+        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
         from events e
         join venues v on v.id = e.venue_id
         where lower(v.city_label) = ?
@@ -108,7 +111,7 @@ class JdbcEventRepository(
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
             from events e
             join venues v on v.id = e.venue_id
             where e.sales_closed_at is null

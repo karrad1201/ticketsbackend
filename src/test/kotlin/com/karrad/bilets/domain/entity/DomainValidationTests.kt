@@ -45,6 +45,18 @@ class DomainValidationTests {
     }
 
     @Test
+    fun `hasSeatMap defaults to false`() {
+        val event = demoEvent()
+        assertEquals(false, event.hasSeatMap)
+    }
+
+    @Test
+    fun `hasSeatMap can be set to true`() {
+        val event = demoEvent(hasSeatMap = true)
+        assertEquals(true, event.hasSeatMap)
+    }
+
+    @Test
     fun `should reject invalid user fields`() {
         assertEquals(
             "User phone must not be blank",
@@ -189,13 +201,19 @@ class DomainValidationTests {
         demoEvent(ageRating = null) // null тоже допустим
     }
 
-    private fun demoEvent(label: String = "Show", description: String = "Desc", ageRating: String? = null): Event =
+    private fun demoEvent(
+        label: String = "Show",
+        description: String = "Desc",
+        ageRating: String? = null,
+        hasSeatMap: Boolean = false
+    ): Event =
         Event(
             label = label,
             description = description,
             venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614178003"),
             categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614178004"),
             time = Instant.parse("2026-04-01T18:00:00Z"),
-            ageRating = ageRating
+            ageRating = ageRating,
+            hasSeatMap = hasSeatMap
         )
 }
