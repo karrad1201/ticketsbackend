@@ -21,9 +21,11 @@ import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.sms.SmsGateway
+import com.karrad.bilets.domain.repository.FavoriteEventRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
@@ -174,6 +176,15 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun eventAvailabilityService(clock: Clock): EventAvailabilityService = EventAvailabilityService(clock)
+
+    @Bean
+    fun favoriteEventRepository(): FavoriteEventRepository = InMemoryFavoriteEventRepository()
+
+    @Bean
+    fun favoriteEventService(
+        favoriteEventRepository: FavoriteEventRepository,
+        eventRepository: EventRepository
+    ): FavoriteEventService = FavoriteEventService(favoriteEventRepository, eventRepository)
 
     @Bean
     fun inventoryPlanService(eventInventoryPlanRepository: EventInventoryPlanRepository): InventoryPlanService =

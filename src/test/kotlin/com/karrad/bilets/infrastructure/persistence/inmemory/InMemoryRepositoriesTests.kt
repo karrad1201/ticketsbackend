@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
+import com.karrad.bilets.domain.entity.FavoriteEvent
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
@@ -247,5 +248,48 @@ class InMemoryRepositoriesTests {
             venueSpaceId = venueSpaceId,
             id = id
         )
+    }
+
+    @Test
+    fun `favorite event repository should save find and delete favorites`() {
+        val repository = InMemoryFavoriteEventRepository()
+        val userId = UUID.fromString("123e4567-e89b-12d3-a456-426614174140")
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174141")
+        val favorite = FavoriteEvent(userId = userId, eventId = eventId)
+
+        repository.save(favorite)
+
+        assertEquals(listOf(favorite), repository.findByUserId(userId))
+        assertEquals(favorite, repository.findByUserIdAndEventId(userId, eventId))
+        assertTrue(repository.deleteByUserIdAndEventId(userId, eventId))
+        assertEquals(emptyList(), repository.findByUserId(userId))
+        assertFalse(repository.deleteByUserIdAndEventId(userId, eventId))
+    }
+
+    @Test
+    fun `favorite event repository duplicate save is idempotent`() {
+        val repository = InMemoryFavoriteEventRepository()
+        val userId = UUID.fromString("123e4567-e89b-12d3-a456-426614174142")
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174143")
+        val favorite = FavoriteEvent(userId = userId, eventId = eventId)
+
+        repository.save(favorite)
+        repository.save(FavoriteEvent(userId = userId, eventId = eventId))
+
+        assertEquals(1, repository.findByUserId(userId).size)
+    }
+
+    @Test
+    fun `favorite event repository should isolate favorites by user`() {
+        val repository = InMemoryFavoriteEventRepository()
+        val userA = UUID.fromString("123e4567-e89b-12d3-a456-426614174144")
+        val userB = UUID.fromString("123e4567-e89b-12d3-a456-426614174145")
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174146")
+
+        repository.save(FavoriteEvent(userId = userA, eventId = eventId))
+
+        assertEquals(1, repository.findByUserId(userA).size)
+        assertEquals(0, repository.findByUserId(userB).size)
+        assertNull(repository.findByUserIdAndEventId(userB, eventId))
     }
 }

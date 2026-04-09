@@ -67,6 +67,9 @@ class ApplicationServicesTests {
     @Autowired
     lateinit var inventoryPlanService: InventoryPlanService
 
+    @Autowired
+    lateinit var favoriteEventService: FavoriteEventService
+
     @Test
     fun `category service should create list get update and delete categories`() {
         val category = demoCategory()
@@ -547,6 +550,47 @@ class ApplicationServicesTests {
             visitedAt = Instant.parse("2026-04-01T18:00:00Z"),
             id = id
         )
+    }
+
+    @Test
+    fun `favorite event service should add and list events`() {
+        val event = demoEvent()
+        eventService.create(event)
+
+        favoriteEventService.add(demoUser().id, event.id)
+
+        val favorites = favoriteEventService.listEvents(demoUser().id)
+        assertEquals(1, favorites.size)
+        assertEquals(event.id, favorites.first().id)
+    }
+
+    @Test
+    fun `favorite event service should throw NoSuchElementException when event not found`() {
+        assertFailsWith<NoSuchElementException> {
+            favoriteEventService.add(demoUser().id, UUID.randomUUID())
+        }
+    }
+
+    @Test
+    fun `favorite event service should remove event from favorites`() {
+        val event = demoEvent()
+        eventService.create(event)
+        favoriteEventService.add(demoUser().id, event.id)
+
+        favoriteEventService.remove(demoUser().id, event.id)
+
+        assertEquals(0, favoriteEventService.listEvents(demoUser().id).size)
+    }
+
+    @Test
+    fun `favorite event service duplicate add is idempotent`() {
+        val event = demoEvent()
+        eventService.create(event)
+
+        favoriteEventService.add(demoUser().id, event.id)
+        favoriteEventService.add(demoUser().id, event.id)
+
+        assertEquals(1, favoriteEventService.listEvents(demoUser().id).size)
     }
 
     private fun standardTicketTypeId(): UUID =
