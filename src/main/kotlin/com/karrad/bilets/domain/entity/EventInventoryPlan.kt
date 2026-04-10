@@ -199,6 +199,7 @@ data class EventInventoryPlan(
                 EventAdmissionInventory(
                     eventId = event.id,
                     ticketTypeId = ticketType.id,
+                    label = ticketType.label,
                     price = ticketType.price,
                     capacity = ticketType.quota ?: 0
                 )

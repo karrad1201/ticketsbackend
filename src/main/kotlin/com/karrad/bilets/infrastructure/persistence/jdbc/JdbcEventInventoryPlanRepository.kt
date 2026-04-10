@@ -60,11 +60,12 @@ class JdbcEventInventoryPlanRepository(
         plan.admissionInventory.forEach { inventory ->
             jdbcTemplate.update(
                 """
-                insert into event_admission_inventory (event_id, ticket_type_id, price, capacity, held, sold)
-                values (?, ?, ?, ?, ?, ?)
+                insert into event_admission_inventory (event_id, ticket_type_id, label, price, capacity, held, sold)
+                values (?, ?, ?, ?, ?, ?, ?)
                 """.trimIndent(),
                 plan.eventId,
                 inventory.ticketTypeId,
+                inventory.label,
                 inventory.price,
                 inventory.capacity,
                 inventory.held,
@@ -141,7 +142,7 @@ class JdbcEventInventoryPlanRepository(
 
     private fun findAdmission(eventId: UUID): List<EventAdmissionInventory> = jdbcTemplate.query(
         """
-        select event_id, ticket_type_id, price, capacity, held, sold
+        select event_id, ticket_type_id, label, price, capacity, held, sold
         from event_admission_inventory
         where event_id = ?
         order by ticket_type_id
@@ -150,6 +151,7 @@ class JdbcEventInventoryPlanRepository(
             EventAdmissionInventory(
                 eventId = rs.uuid("event_id"),
                 ticketTypeId = rs.uuid("ticket_type_id"),
+                label = rs.getString("label"),
                 price = rs.getInt("price"),
                 capacity = rs.getInt("capacity"),
                 held = rs.getInt("held"),

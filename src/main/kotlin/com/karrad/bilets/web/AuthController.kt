@@ -52,6 +52,8 @@ class AuthController(
         fullName = fullName,
         phone = phone,
         email = email,
-        role = role.name
+        role = role.name,
+        avatarUrl = avatarUrl,
+        interests = interests
     )
 }

@@ -19,9 +19,11 @@ class DiscoveryController(
         @RequestParam city: String,
         @RequestParam(required = false) userId: UUID?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "10") size: Int
+        @RequestParam(defaultValue = "10") size: Int,
+        @RequestParam(required = false) date: String?
     ): DiscoveryFeedResponse {
         val resolvedUserId = userId ?: currentUserProvider.currentUserId()
-        return getEventDiscoveryUseCase.get(resolvedUserId, city, page, size)
+        val filterDate = date?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+        return getEventDiscoveryUseCase.get(resolvedUserId, city, page, size, filterDate)
     }
 }
