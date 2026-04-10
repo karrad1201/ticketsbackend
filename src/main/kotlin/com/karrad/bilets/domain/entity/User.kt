@@ -8,7 +8,9 @@ data class User(
     val role: UserRole = UserRole.USER,
     val id: UUID = UUID.randomUUID(),
     val phone: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val avatarUrl: String? = null,
+    val interests: List<String> = emptyList()
 ) {
     init {
         require(fullName.isNotBlank()) { "User fullName must not be blank" }

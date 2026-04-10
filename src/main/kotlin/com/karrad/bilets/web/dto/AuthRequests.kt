@@ -13,5 +13,7 @@ data class UserResponse(
     val fullName: String,
     val phone: String?,
     val email: String?,
-    val role: String
+    val role: String,
+    val avatarUrl: String? = null,
+    val interests: List<String> = emptyList()
 )

@@ -63,6 +63,8 @@ class JdbcDurableOrderFlowTestConfig {
         .addScript("classpath:db/migration/V9__event_age_rating.sql")
         .addScript("classpath:db/migration/V10__venue_access_grants.sql")
         .addScript("classpath:db/migration/V11__event_has_seat_map.sql")
+        .addScript("classpath:db/migration/V13__user_profile_fields.sql")
+        .addScript("classpath:db/migration/V14__admission_inventory_label.sql")
         .build()
 
     @Bean

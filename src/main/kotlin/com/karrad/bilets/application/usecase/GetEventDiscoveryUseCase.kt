@@ -19,27 +19,33 @@ class GetEventDiscoveryUseCase(
     private val categoryRepository: CategoryRepository,
     private val eventAvailabilityService: EventAvailabilityService
 ) {
-    fun get(userId: UUID?, city: String, page: Int, size: Int): DiscoveryFeedResponse {
+    fun get(userId: UUID?, city: String, page: Int, size: Int, date: LocalDate? = null): DiscoveryFeedResponse {
         validatePagination(page, size)
 
         val today = LocalDate.now(ZoneOffset.UTC)
-        val upcomingEvents = eventRepository.findAvailableByCity(city, eventAvailabilityService.now())
+        val allUpcoming = eventRepository.findAvailableByCity(city, eventAvailabilityService.now())
             .filter { event -> !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) }
+
+        val upcomingEvents = if (date != null) {
+            allUpcoming.filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == date }
+        } else {
+            allUpcoming
+        }
 
         val forYou = buildForYou(userId, upcomingEvents, page, size)
 
         val byCategory = buildByCategory(upcomingEvents, page, size)
 
-        val tomorrow = paginate(
-            upcomingEvents
+        val tomorrow = if (date != null) emptyList() else paginate(
+            allUpcoming
                 .filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == today.plusDays(1) }
                 .sortedBy { it.time },
             page = page,
             size = size
         )
 
-        val dayAfterTomorrow = paginate(
-            upcomingEvents
+        val dayAfterTomorrow = if (date != null) emptyList() else paginate(
+            allUpcoming
                 .filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == today.plusDays(2) }
                 .sortedBy { it.time },
             page = page,

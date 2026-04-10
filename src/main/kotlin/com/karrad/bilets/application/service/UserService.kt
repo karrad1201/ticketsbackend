@@ -21,4 +21,19 @@ class UserService(
     }
 
     fun deleteById(id: UUID): Boolean = userRepository.deleteById(id)
+
+    fun updateProfile(userId: UUID, fullName: String?, interests: List<String>?): User {
+        val user = requireNotNull(userRepository.findById(userId)) { "User not found: $userId" }
+        return userRepository.save(
+            user.copy(
+                fullName = fullName?.trim()?.ifBlank { user.fullName } ?: user.fullName,
+                interests = interests ?: user.interests
+            )
+        )
+    }
+
+    fun updateAvatar(userId: UUID, avatarUrl: String): User {
+        val user = requireNotNull(userRepository.findById(userId)) { "User not found: $userId" }
+        return userRepository.save(user.copy(avatarUrl = avatarUrl))
+    }
 }

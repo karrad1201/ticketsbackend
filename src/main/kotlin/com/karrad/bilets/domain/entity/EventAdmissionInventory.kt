@@ -5,6 +5,7 @@ import java.util.UUID
 data class EventAdmissionInventory(
     val eventId: UUID,
     val ticketTypeId: UUID,
+    val label: String,
     val price: Int,
     val capacity: Int,
     val held: Int = 0,

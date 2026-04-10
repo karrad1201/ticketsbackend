@@ -519,6 +519,7 @@ class DomainEntityBehaviorTests {
         EventAdmissionInventory(
             eventId = eventId,
             ticketTypeId = ticketTypeId,
+            label = "Standard",
             price = price,
             capacity = capacity,
             held = held,
