@@ -1,5 +1,6 @@
 package com.karrad.bilets.web
 
+import com.karrad.bilets.application.service.OrderService
 import com.karrad.bilets.application.service.TicketService
 import com.karrad.bilets.application.usecase.TicketValidationResult
 import com.karrad.bilets.application.usecase.ValidateTicketUseCase
@@ -18,6 +19,7 @@ import java.util.UUID
 @RequestMapping("/api")
 class TicketController(
     private val ticketService: TicketService,
+    private val orderService: OrderService,
     private val validateTicketUseCase: ValidateTicketUseCase,
     private val currentUserProvider: CurrentUserProvider
 ) {
@@ -26,8 +28,12 @@ class TicketController(
         ticketService.listByUserId(currentUserProvider.requireUserId())
 
     @GetMapping("/orders/{orderId}/tickets")
-    fun listOrderTickets(@PathVariable orderId: UUID): List<Ticket> =
-        ticketService.listByOrderId(orderId)
+    fun listOrderTickets(@PathVariable orderId: UUID): List<Ticket> {
+        val userId = currentUserProvider.requireUserId()
+        val order = orderService.getById(orderId) ?: throw NoSuchElementException("Order not found: $orderId")
+        if (order.buyerUserId != userId) throw SecurityException("Access denied")
+        return ticketService.listByOrderId(orderId)
+    }
 
     @PostMapping("/events/{eventId}/tickets/{ticketId}/validate")
     fun validateTicket(

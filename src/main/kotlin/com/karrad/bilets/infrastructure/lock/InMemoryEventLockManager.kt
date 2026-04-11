@@ -7,6 +7,17 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+/**
+ * Single-JVM implementation of [EventLockManager] using in-process ReentrantLocks.
+ *
+ * LIMITATION (#41): This lock is NOT distributed. In a multi-instance deployment
+ * (horizontal scaling, blue-green) two JVMs can acquire the "same" event lock
+ * simultaneously, leading to double-sell or inventory inconsistency.
+ *
+ * If multi-instance support is needed, replace with a database-backed lock
+ * (e.g. SELECT … FOR UPDATE on an `event_locks` table) or a distributed lock
+ * service (Redis SETNX / Redlock).
+ */
 @Component
 class InMemoryEventLockManager : EventLockManager {
     private val locks = ConcurrentHashMap<UUID, ReentrantLock>()

@@ -112,7 +112,7 @@ class AuthControllerIntegrationTests {
 
         mockMvc.perform(
             get("/auth/me")
-                .header("X-User-Id", user.id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(user.id)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(user.id.toString()))

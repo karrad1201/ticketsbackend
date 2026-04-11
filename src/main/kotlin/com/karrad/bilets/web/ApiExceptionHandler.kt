@@ -22,4 +22,9 @@ class ApiExceptionHandler {
     fun handleNotFound(exception: NoSuchElementException): ProblemDetail {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.message ?: "Not found")
     }
+
+    @ExceptionHandler(SecurityException::class)
+    fun handleForbidden(exception: SecurityException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.message ?: "Forbidden")
+    }
 }

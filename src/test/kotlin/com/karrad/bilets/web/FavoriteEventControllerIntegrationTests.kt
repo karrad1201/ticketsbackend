@@ -11,6 +11,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
@@ -49,6 +50,7 @@ class FavoriteEventControllerIntegrationTests {
     @Autowired lateinit var organizationRepository: OrganizationRepository
     @Autowired lateinit var organizationMemberRepository: OrganizationMemberRepository
     @Autowired lateinit var favoriteEventRepository: FavoriteEventRepository
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
 
     private val userId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001")
     private val eventId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001")
@@ -66,7 +68,7 @@ class FavoriteEventControllerIntegrationTests {
     fun `should add event to favorites`() {
         mockMvc.perform(
             post("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
         )
@@ -80,7 +82,7 @@ class FavoriteEventControllerIntegrationTests {
         val unknownEventId = UUID.fromString("ffffffff-0000-0000-0000-000000000001")
         mockMvc.perform(
             post("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to unknownEventId)))
         )
@@ -91,14 +93,14 @@ class FavoriteEventControllerIntegrationTests {
     fun `should list favorite events`() {
         mockMvc.perform(
             post("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
         ).andExpect(status().isCreated)
 
         mockMvc.perform(
             get("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
@@ -109,19 +111,19 @@ class FavoriteEventControllerIntegrationTests {
     fun `should remove event from favorites`() {
         mockMvc.perform(
             post("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
         ).andExpect(status().isCreated)
 
         mockMvc.perform(
             delete("/api/favorites/$eventId")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         ).andExpect(status().isNoContent)
 
         mockMvc.perform(
             get("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -131,7 +133,7 @@ class FavoriteEventControllerIntegrationTests {
     fun `should return empty list when no favorites`() {
         mockMvc.perform(
             get("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -142,7 +144,7 @@ class FavoriteEventControllerIntegrationTests {
         repeat(2) {
             mockMvc.perform(
                 post("/api/favorites")
-                    .header("X-User-Id", userId.toString())
+                    .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
             ).andExpect(status().isCreated)
@@ -150,7 +152,7 @@ class FavoriteEventControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/favorites")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))

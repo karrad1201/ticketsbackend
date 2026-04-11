@@ -13,6 +13,7 @@ import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
@@ -38,6 +39,7 @@ class OrderControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -72,7 +74,7 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -98,7 +100,10 @@ class OrderControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/orders/$orderId/tickets"))
+        mockMvc.perform(
+            get("/api/orders/$orderId/tickets")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
+        )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].userId").value(buyerUserId().toString()))
@@ -123,7 +128,7 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -146,7 +151,7 @@ class OrderControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/tickets/me").header("X-User-Id", buyerUserId().toString()))
+        mockMvc.perform(get("/api/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].ticketTypeId").value(standardTicketTypeId().toString()))
@@ -168,7 +173,7 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -206,7 +211,7 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emptyMap<String, Any>()))
         )
@@ -224,7 +229,7 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -256,7 +261,7 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -282,7 +287,7 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -317,7 +322,7 @@ class OrderControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -334,7 +339,10 @@ class OrderControllerIntegrationTests {
 
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
-        mockMvc.perform(get("/api/orders/$orderId"))
+        mockMvc.perform(
+            get("/api/orders/$orderId")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
+        )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(orderId))
             .andExpect(jsonPath("$.status").value("PENDING_PAYMENT"))

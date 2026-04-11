@@ -41,6 +41,10 @@ class OrderController(
         expireOrderUseCase.expire(orderId)
 
     @GetMapping("/orders/{orderId}")
-    fun getById(@PathVariable orderId: UUID): Order =
-        orderService.getById(orderId) ?: throw NoSuchElementException("Order not found: $orderId")
+    fun getById(@PathVariable orderId: UUID): Order {
+        val order = orderService.getById(orderId) ?: throw NoSuchElementException("Order not found: $orderId")
+        val userId = currentUserProvider.requireUserId()
+        if (order.buyerUserId != userId) throw SecurityException("Access denied")
+        return order
+    }
 }

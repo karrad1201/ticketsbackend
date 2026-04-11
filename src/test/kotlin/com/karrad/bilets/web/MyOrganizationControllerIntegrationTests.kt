@@ -10,6 +10,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -42,6 +43,7 @@ class MyOrganizationControllerIntegrationTests {
     @Autowired lateinit var eventRepository: EventRepository
     @Autowired lateinit var venueRepository: VenueRepository
     @Autowired lateinit var categoryRepository: CategoryRepository
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
 
     private val userId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001")
     private val otherUserId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002")
@@ -60,7 +62,7 @@ class MyOrganizationControllerIntegrationTests {
     fun `should return empty list when user has no organization membership`() {
         mockMvc.perform(
             get("/api/my/organization/events")
-                .header("X-User-Id", otherUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(otherUserId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -72,7 +74,7 @@ class MyOrganizationControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/my/organization/events")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
@@ -88,7 +90,7 @@ class MyOrganizationControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/my/organization/events")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))

@@ -12,11 +12,11 @@ import org.slf4j.LoggerFactory
 class MockSmsGateway : SmsGateway() {
     private val log = LoggerFactory.getLogger(MockSmsGateway::class.java)
 
-    /** phone → last code sent */
-    val sentCodes = mutableMapOf<String, String>()
+    /** phone → last code sent; thread-safe for concurrent test/dev requests */
+    val sentCodes = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     override fun sendCode(phone: String, code: String) {
         sentCodes[phone] = code
-        log.info("[MOCK SMS] Sending code $code to $phone")
+        log.info("[MOCK SMS] Code sent to ...${phone.takeLast(4)}")
     }
 }

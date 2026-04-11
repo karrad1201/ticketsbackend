@@ -9,6 +9,7 @@ import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -41,6 +42,7 @@ class InventoryPlanControllerIntegrationTests {
     @Autowired lateinit var venueRepository: VenueRepository
     @Autowired lateinit var organizationRepository: OrganizationRepository
     @Autowired lateinit var categoryRepository: CategoryRepository
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
 
     private val userId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001")
     private val orgId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000001")
@@ -57,7 +59,7 @@ class InventoryPlanControllerIntegrationTests {
     fun `should return empty list when no inventory plans`() {
         mockMvc.perform(
             get("/api/inventory-plans")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -69,7 +71,7 @@ class InventoryPlanControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/inventory-plans/$unknownEventId")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         ).andExpect(status().isNotFound)
     }
 
@@ -85,7 +87,7 @@ class InventoryPlanControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/inventory-plans/$eventId")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventId").value(eventId.toString()))
@@ -103,7 +105,7 @@ class InventoryPlanControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/inventory-plans")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))

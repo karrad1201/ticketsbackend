@@ -82,9 +82,9 @@ class HandlePaymentCallbackUseCase(
         }
         if (clock.instant().isAfter(order.expiresAt)) {
             orderInventoryRepository.release(order)
-            orderRepository.save(order.markExpired(clock.instant()))
+            val expiredOrder = orderRepository.save(order.markExpired(clock.instant()))
             paymentAttemptRepository.save(attempt.markFailed(receivedAt, "Payment callback received after expiration"))
-            return orderRepository.findById(order.id)!!
+            return expiredOrder
         }
         if (attempt.status != PaymentAttemptStatus.SUCCEEDED) {
             paymentAttemptRepository.save(attempt.markSucceeded(receivedAt))

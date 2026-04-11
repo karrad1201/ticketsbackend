@@ -11,7 +11,8 @@ data class OperationsProperties(
         val enabled: Boolean = true,
         val initialDelayMs: Long = 300_000,
         val closeStartedSalesDelayMs: Long = 60_000,
-        val stalePaymentsDelayMs: Long = 60_000
+        val stalePaymentsDelayMs: Long = 60_000,
+        val expireOrdersDelayMs: Long = 60_000
     )
 
     data class Batches(

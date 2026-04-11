@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.repository.OrderRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 class JdbcOrderRepository(
@@ -190,6 +191,34 @@ class JdbcOrderRepository(
             )
         },
         eventId
+    )
+
+    override fun findExpiredPending(now: Instant): List<Order> = jdbcTemplate.query(
+        """
+        select id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
+        from orders
+        where status = 'PENDING_PAYMENT' and expires_at < ?
+        order by expires_at, id
+        """.trimIndent(),
+        { rs, _ ->
+            val orderId = rs.uuid("id")
+            Order(
+                eventId = rs.uuid("event_id"),
+                buyerUserId = rs.uuid("buyer_user_id"),
+                amount = rs.getInt("amount"),
+                expiresAt = rs.instant("expires_at"),
+                seatKeys = findSeatKeys(orderId),
+                admissionItems = findAdmissionItems(orderId),
+                paymentReference = rs.getString("payment_reference"),
+                paymentUrl = rs.getString("payment_url"),
+                status = OrderStatus.valueOf(rs.getString("status")),
+                id = orderId,
+                createdAt = rs.instant("created_at"),
+                paidAt = rs.nullableInstant("paid_at"),
+                failedAt = rs.nullableInstant("failed_at")
+            )
+        },
+        Timestamp.from(now)
     )
 
     private fun findSeatKeys(orderId: UUID): List<SeatKey> = jdbcTemplate.query(

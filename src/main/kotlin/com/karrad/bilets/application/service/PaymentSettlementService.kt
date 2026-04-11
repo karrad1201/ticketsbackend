@@ -41,6 +41,12 @@ class PaymentSettlementService(
         return orderRepository.save(order.markPaymentFailed(failedAt))
     }
 
+    // NOTE (#47): read-modify-write race condition.
+    // Two concurrent payments for the same organization will both read the same balance
+    // and potentially lose one credit. This is already protected at the event level by
+    // EventLockManager (single-JVM), but if InMemoryEventLockManager is replaced with a
+    // distributed lock, this method must also be replaced with a SQL atomic increment:
+    //   UPDATE organizations SET balance = balance + ? WHERE id = ?
     private fun creditOrganizationBalance(order: Order) {
         val event = requireNotNull(eventRepository.findById(order.eventId)) { "Event not found: ${order.eventId}" }
         val organizationId = requireNotNull(event.organizationId) {
