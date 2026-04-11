@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
@@ -28,6 +29,7 @@ class VenueControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -57,7 +59,7 @@ class VenueControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -89,7 +91,7 @@ class VenueControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -124,7 +126,7 @@ class VenueControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
@@ -29,6 +30,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -61,7 +63,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications")
-                .header("X-User-Id", applicant.id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -83,7 +85,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications/${application.id}/approve")
-                .header("X-User-Id", admin.id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
@@ -107,7 +109,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications")
-                .header("X-User-Id", applicant.id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -124,7 +126,7 @@ class OrganizationApplicationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/organization-applications/${application.id}/approve")
-                .header("X-User-Id", applicant.id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
         )
             .andExpect(status().isBadRequest)
     }

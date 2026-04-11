@@ -52,4 +52,23 @@ class SendSmsCodeUseCaseTests {
 
         assertFailsWith<IllegalArgumentException> { useCase.send("  ") }
     }
+
+    @Test
+    fun `should reject second send to same phone within rate limit window`() {
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+
+        useCase.send("+79001234567")
+        assertFailsWith<IllegalStateException> { useCase.send("+79001234567") }
+    }
+
+    @Test
+    fun `should allow send after rate limit window expires`() {
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+
+        useCase.send("+79001234567")
+        mutableClock.advanceByMinutes(2)
+        useCase.send("+79001234567")
+
+        assertNotNull(smsCodeRepository.findLatestByPhone("+79001234567"))
+    }
 }

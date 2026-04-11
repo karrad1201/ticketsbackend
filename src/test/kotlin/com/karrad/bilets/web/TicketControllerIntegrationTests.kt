@@ -1,6 +1,9 @@
 package com.karrad.bilets.web
 
 import com.karrad.bilets.domain.entity.Category
+import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.Organization
@@ -11,6 +14,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -46,6 +50,8 @@ class TicketControllerIntegrationTests {
     @Autowired lateinit var organizationMemberRepository: OrganizationMemberRepository
     @Autowired lateinit var venueRepository: VenueRepository
     @Autowired lateinit var categoryRepository: CategoryRepository
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
+    @Autowired lateinit var orderRepository: OrderRepository
 
     private val userId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001")
     private val staffUserId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000002")
@@ -66,7 +72,7 @@ class TicketControllerIntegrationTests {
     fun `should return empty list of tickets for current user`() {
         mockMvc.perform(
             get("/api/tickets/me")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(0))
@@ -78,7 +84,7 @@ class TicketControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/tickets/me")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
@@ -87,11 +93,24 @@ class TicketControllerIntegrationTests {
 
     @Test
     fun `should return tickets by order id`() {
+        orderRepository.save(
+            Order(
+                id = orderId,
+                eventId = eventId,
+                buyerUserId = userId,
+                amount = 1500,
+                expiresAt = Instant.parse("2027-01-01T18:00:00Z"),
+                paymentReference = "test-ref",
+                paymentUrl = "https://pay.example.com/test",
+                status = OrderStatus.PAID,
+                admissionItems = listOf(com.karrad.bilets.domain.entity.AdmissionQuantity(ticketTypeId = ticketTypeId, quantity = 1))
+            )
+        )
         ticketRepository.save(demoTicket())
 
         mockMvc.perform(
             get("/api/orders/$orderId/tickets")
-                .header("X-User-Id", userId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
@@ -103,7 +122,7 @@ class TicketControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/$eventId/tickets/${ticket.id}/validate")
-                .header("X-User-Id", staffUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("VALID"))
@@ -117,7 +136,7 @@ class TicketControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/$eventId/tickets/$unknownTicketId/validate")
-                .header("X-User-Id", staffUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.status").value("NOT_FOUND"))
@@ -130,13 +149,13 @@ class TicketControllerIntegrationTests {
         // First validation
         mockMvc.perform(
             post("/api/events/$eventId/tickets/${ticket.id}/validate")
-                .header("X-User-Id", staffUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         ).andExpect(status().isOk)
 
         // Second validation
         mockMvc.perform(
             post("/api/events/$eventId/tickets/${ticket.id}/validate")
-                .header("X-User-Id", staffUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.status").value("ALREADY_USED"))
@@ -150,7 +169,7 @@ class TicketControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/$eventId/tickets/${ticket.id}/validate")
-                .header("X-User-Id", outsiderId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(outsiderId)}")
         )
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.status").value("UNAUTHORIZED"))

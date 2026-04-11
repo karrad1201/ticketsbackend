@@ -11,6 +11,7 @@ import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
@@ -36,6 +37,7 @@ class OperationsControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -84,7 +86,7 @@ class OperationsControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/ops/close-started-event-sales")
-                .header("X-User-Id", admin().id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin().id)}")
                 .param("limit", "10")
         )
             .andExpect(status().isOk)
@@ -111,7 +113,7 @@ class OperationsControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/ops/process-stale-payments")
-                .header("X-User-Id", admin().id.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin().id)}")
                 .param("limit", "10")
         )
             .andExpect(status().isOk)
@@ -133,7 +135,7 @@ class OperationsControllerIntegrationTests {
         description = "Future event for stale payment ops",
         venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176703"),
         categoryId = UUID.fromString("123e4567-e89b-12d3-a456-426614176704"),
-        time = Instant.parse("2026-04-10T18:00:00Z"),
+        time = Instant.parse("2027-04-10T18:00:00Z"),
         venueSpaceId = null,
         id = UUID.fromString("123e4567-e89b-12d3-a456-426614176705"),
         organizationId = organization().id

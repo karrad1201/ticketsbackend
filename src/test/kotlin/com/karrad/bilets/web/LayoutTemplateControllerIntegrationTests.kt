@@ -10,6 +10,7 @@ import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
@@ -34,6 +35,7 @@ class LayoutTemplateControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -68,7 +70,7 @@ class LayoutTemplateControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/layout-templates")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -105,7 +107,7 @@ class LayoutTemplateControllerIntegrationTests {
         userRepository.save(demoCreator())
         mockMvc.perform(
             post("/api/layout-templates")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -128,7 +130,7 @@ class LayoutTemplateControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/layout-templates")
-                .header("X-User-Id", demoCreatorUserId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

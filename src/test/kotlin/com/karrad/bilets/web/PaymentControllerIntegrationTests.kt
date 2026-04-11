@@ -10,6 +10,7 @@ import com.karrad.bilets.domain.enums.PaymentCallbackStatus
 import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
@@ -37,6 +38,7 @@ class PaymentControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -73,7 +75,7 @@ class PaymentControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -110,7 +112,7 @@ class PaymentControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/tickets/me").header("X-User-Id", buyerId().toString()))
+        mockMvc.perform(get("/api/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
 
@@ -130,7 +132,7 @@ class PaymentControllerIntegrationTests {
 
         mockMvc.perform(get("/api/tickets/me"))
             .andExpect(status().isBadRequest)
-            .andExpect(jsonPath("$.detail").value("Missing authorization: provide Bearer token or X-User-Id header"))
+            .andExpect(jsonPath("$.detail").value("Missing authorization: provide Bearer token"))
     }
 
     @Test
@@ -143,7 +145,7 @@ class PaymentControllerIntegrationTests {
 
         val createResponse = mockMvc.perform(
             post("/api/events/${event.id}/orders")
-                .header("X-User-Id", buyerId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

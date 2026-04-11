@@ -10,6 +10,7 @@ import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueAccessGrant
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
@@ -43,6 +44,7 @@ class VenueAccessGrantControllerIntegrationTests {
     @Autowired lateinit var organizationRepository: OrganizationRepository
     @Autowired lateinit var organizationMemberRepository: OrganizationMemberRepository
     @Autowired lateinit var venueAccessGrantRepository: VenueAccessGrantRepository
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
 
     // Venue owner
     private val ownerUserId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000001")
@@ -63,7 +65,7 @@ class VenueAccessGrantControllerIntegrationTests {
     fun `should request venue access`() {
         mockMvc.perform(
             post("/api/venues/$venueId/access-requests")
-                .header("X-User-Id", requesterUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(requesterUserId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("requestingOrgId" to requesterOrgId)))
         )
@@ -81,7 +83,7 @@ class VenueAccessGrantControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/venues/$venueId/access-requests")
-                .header("X-User-Id", ownerUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
@@ -96,7 +98,7 @@ class VenueAccessGrantControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues/$venueId/access-requests/${grant.id}/approve")
-                .header("X-User-Id", ownerUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
@@ -111,7 +113,7 @@ class VenueAccessGrantControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/venues/$venueId/access-requests/${grant.id}/reject")
-                .header("X-User-Id", ownerUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("REJECTED"))
@@ -121,7 +123,7 @@ class VenueAccessGrantControllerIntegrationTests {
     fun `should return 400 when requesting access to own venue`() {
         mockMvc.perform(
             post("/api/venues/$venueId/access-requests")
-                .header("X-User-Id", ownerUserId.toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("requestingOrgId" to ownerOrgId)))
         ).andExpect(status().isBadRequest)

@@ -31,15 +31,7 @@ class CurrentUserProvider(
             }
         }
 
-        // Fallback: X-User-Id header (legacy dev header)
-        val userIdHeader = request.getHeader("X-User-Id")
-            ?: throw IllegalArgumentException("Missing authorization: provide Bearer token or X-User-Id header")
-        val userId = try {
-            UUID.fromString(userIdHeader)
-        } catch (_: IllegalArgumentException) {
-            throw IllegalArgumentException("Invalid X-User-Id header: $userIdHeader")
-        }
-        return requireNotNull(userRepository.findById(userId)) { "Authenticated user not found: $userId" }
+        throw IllegalArgumentException("Missing authorization: provide Bearer token")
     }
 
     fun currentUserId(): UUID? = try { requireUserId() } catch (_: Exception) { null }

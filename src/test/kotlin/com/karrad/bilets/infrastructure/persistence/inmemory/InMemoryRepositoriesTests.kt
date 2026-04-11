@@ -1,11 +1,13 @@
 package com.karrad.bilets.infrastructure.persistence.inmemory
 
+import com.karrad.bilets.domain.entity.AdmissionQuantity
 import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.FavoriteEvent
 import com.karrad.bilets.domain.entity.LayoutTemplate
+import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.Subject
@@ -13,6 +15,8 @@ import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.OrderStatus
+import com.karrad.bilets.domain.repository.OrderRepository
 import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.UUID
@@ -277,6 +281,47 @@ class InMemoryRepositoriesTests {
         repository.save(FavoriteEvent(userId = userId, eventId = eventId))
 
         assertEquals(1, repository.findByUserId(userId).size)
+    }
+
+    @Test
+    fun `order repository default implementations filter by event and expiry`() {
+        val storage = mutableListOf<Order>()
+        val repository = object : OrderRepository {
+            override fun save(order: Order): Order { storage.add(order); return order }
+            override fun findById(id: UUID): Order? = storage.firstOrNull { it.id == id }
+            override fun findAll(): List<Order> = storage.toList()
+        }
+        val eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174211")
+        val now = Instant.parse("2026-04-11T00:00:00Z")
+        val ticketTypeId = UUID.fromString("123e4567-e89b-12d3-a456-426614174214")
+
+        val expired = repository.save(
+            Order(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174212"),
+                eventId = eventId,
+                buyerUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174215"),
+                amount = 1000,
+                expiresAt = Instant.parse("2026-03-01T00:00:00Z"),
+                paymentReference = "ref-1",
+                paymentUrl = "https://pay.example.com/1",
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = ticketTypeId, quantity = 1))
+            )
+        )
+        val active = repository.save(
+            Order(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614174213"),
+                eventId = eventId,
+                buyerUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174215"),
+                amount = 1000,
+                expiresAt = Instant.parse("2026-12-31T00:00:00Z"),
+                paymentReference = "ref-2",
+                paymentUrl = "https://pay.example.com/2",
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = ticketTypeId, quantity = 1))
+            )
+        )
+
+        assertEquals(listOf(expired), repository.findExpiredPending(now))
+        assertEquals(listOf(expired, active), repository.findPendingByEventId(eventId))
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
@@ -35,6 +36,7 @@ class DiscoveryControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
 
+    @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
 
@@ -69,7 +71,7 @@ class DiscoveryControllerIntegrationTests {
 
         mockMvc.perform(
             get("/api/discovery")
-                .header("X-User-Id", userId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId())}")
                 .param("city", "Ekaterinburg")
                 .param("page", "0")
                 .param("size", "10")
@@ -84,7 +86,7 @@ class DiscoveryControllerIntegrationTests {
     fun `should reject oversized discovery page size`() {
         mockMvc.perform(
             get("/api/discovery")
-                .header("X-User-Id", userId().toString())
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId())}")
                 .param("city", "Ekaterinburg")
                 .param("size", "51")
         )
