@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Instant
@@ -52,6 +53,8 @@ class ValidateTicketUseCase(
     private val userRepository: UserRepository,
     private val clock: Clock
 ) {
+    private val log = LoggerFactory.getLogger(ValidateTicketUseCase::class.java)
+
     /**
      * @param ticketId  UUID из QR-кода
      * @param eventId   ивент, выбранный менеджером перед сканированием
@@ -99,6 +102,7 @@ class ValidateTicketUseCase(
 
         val now = clock.instant()
         ticketRepository.markAsUsed(ticket.id, now)
+        log.info("TICKET_VALIDATED ticketId={} eventId={} scannerId={}", ticketId, eventId, callerId)
 
         return TicketValidationResult.Valid(
             ticketId = ticket.id,

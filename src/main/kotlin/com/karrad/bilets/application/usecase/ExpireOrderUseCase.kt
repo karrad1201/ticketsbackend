@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -20,6 +21,8 @@ class ExpireOrderUseCase(
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
+    private val log = LoggerFactory.getLogger(ExpireOrderUseCase::class.java)
+
     fun expire(orderId: UUID): Order {
         val order = requireNotNull(orderRepository.findById(orderId)) { "Order not found: $orderId" }
         return eventLockManager.withEventLock(order.eventId) {
@@ -44,6 +47,7 @@ class ExpireOrderUseCase(
                         )
                     }
                 }
+                log.info("ORDER_EXPIRED orderId={} eventId={}", orderId, freshOrder.eventId)
                 orderRepository.save(freshOrder.markExpired(clock.instant()))
             }
         }

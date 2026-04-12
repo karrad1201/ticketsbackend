@@ -14,6 +14,7 @@ import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -39,6 +40,8 @@ class CreateOrderUseCase(
     private val clock: Clock,
     private val purchaseProperties: PurchaseProperties
 ) {
+    private val log = LoggerFactory.getLogger(CreateOrderUseCase::class.java)
+
     fun create(command: CreateOrderCommand): Order {
         return eventLockManager.withEventLock(command.eventId) {
             orderFlowTransactionManager.inTransaction {
@@ -85,6 +88,8 @@ class CreateOrderUseCase(
                         updatedAt = now
                     )
                 )
+                log.info("ORDER_CREATED orderId={} eventId={} userId={} amount={}",
+                    savedOrder.id, command.eventId, command.buyerUserId, reservedInventory.amount)
                 savedOrder
             }
         }

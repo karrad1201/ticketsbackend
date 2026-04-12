@@ -9,6 +9,7 @@ import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -23,6 +24,8 @@ class ConfirmOrderPaymentUseCase(
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
+    private val log = LoggerFactory.getLogger(ConfirmOrderPaymentUseCase::class.java)
+
     fun confirm(orderId: UUID): Order {
         val order = requireNotNull(orderRepository.findById(orderId)) { "Order not found: $orderId" }
         return eventLockManager.withEventLock(order.eventId) {
@@ -61,6 +64,7 @@ class ConfirmOrderPaymentUseCase(
                     paymentAttemptRepository.save(paymentAttempt.markSucceeded(clock.instant()))
                 }
 
+                log.info("PAYMENT_CONFIRMED orderId={} reference={}", orderId, paymentAttempt.reference)
                 paymentSettlementService.completePaidOrder(freshOrder, clock.instant())
             }
         }
