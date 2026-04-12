@@ -71,4 +71,35 @@ class SendSmsCodeUseCaseTests {
 
         assertNotNull(smsCodeRepository.findLatestByPhone("+79001234567"))
     }
+
+    @Test
+    fun `should reject send after hourly limit is reached`() {
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val phone = "+79009999999"
+
+        // отправляем MAX_REQUESTS_PER_HOUR раз с минутными паузами
+        repeat(SendSmsCodeUseCase.MAX_REQUESTS_PER_HOUR) {
+            useCase.send(phone)
+            mutableClock.advanceByMinutes(2)
+        }
+
+        assertFailsWith<IllegalStateException> { useCase.send(phone) }
+    }
+
+    @Test
+    fun `should allow send after hourly window slides`() {
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val phone = "+79008888888"
+
+        repeat(SendSmsCodeUseCase.MAX_REQUESTS_PER_HOUR) {
+            useCase.send(phone)
+            mutableClock.advanceByMinutes(2)
+        }
+
+        // прокручиваем время за границу часового окна
+        mutableClock.advanceByMinutes(60)
+        useCase.send(phone)
+
+        assertNotNull(smsCodeRepository.findLatestByPhone(phone))
+    }
 }
