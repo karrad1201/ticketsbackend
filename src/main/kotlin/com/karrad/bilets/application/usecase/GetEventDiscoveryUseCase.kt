@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.web.dto.CategoryEventsEntry
 import com.karrad.bilets.web.dto.DiscoveryFeedResponse
 import org.springframework.stereotype.Component
@@ -17,6 +18,7 @@ class GetEventDiscoveryUseCase(
     private val eventRepository: EventRepository,
     private val userEventVisitRepository: UserEventVisitRepository,
     private val categoryRepository: CategoryRepository,
+    private val userRepository: UserRepository,
     private val eventAvailabilityService: EventAvailabilityService
 ) {
     fun get(userId: UUID?, city: String, page: Int, size: Int, date: LocalDate? = null): DiscoveryFeedResponse {
@@ -75,14 +77,33 @@ class GetEventDiscoveryUseCase(
             .groupingBy { it.categoryId }
             .eachCount()
 
+        // #60: персонализация по interests пользователя
+        val userInterests = userRepository.findById(userId)?.interests ?: emptyList()
+        val interestCategoryIds = if (userInterests.isNotEmpty()) {
+            categoryRepository.findAll()
+                .filter { category ->
+                    userInterests.any { interest ->
+                        category.code.contains(interest, ignoreCase = true) ||
+                            category.label.contains(interest, ignoreCase = true)
+                    }
+                }
+                .map { it.id }
+                .toSet()
+        } else emptySet()
+
         val scored = upcomingEvents
             .filter { event ->
                 (event.organizationId != null && organizationWeights.containsKey(event.organizationId))
                     || categoryWeights.containsKey(event.categoryId)
+                    || event.categoryId in interestCategoryIds
             }
             .sortedWith(
-                compareByDescending<Event> { (organizationWeights[it.organizationId] ?: 0) + (categoryWeights[it.categoryId] ?: 0) }
-                    .thenBy { it.time }
+                compareByDescending<Event> {
+                    val orgScore = organizationWeights[it.organizationId] ?: 0
+                    val catScore = categoryWeights[it.categoryId] ?: 0
+                    val interestScore = if (it.categoryId in interestCategoryIds) 1 else 0
+                    orgScore + catScore + interestScore
+                }.thenBy { it.time }
             )
             .distinctBy { it.id }
 
