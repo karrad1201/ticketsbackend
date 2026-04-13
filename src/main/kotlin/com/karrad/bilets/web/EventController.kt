@@ -41,7 +41,17 @@ class EventController(
         closeEventSalesUseCase.closeByOrganizer(eventId, currentUserProvider.requireUserId())
 
     @GetMapping
-    fun list(): List<Event> = eventService.list()
+    fun list(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "50") size: Int
+    ): List<Event> {
+        require(page >= 0) { "page must be non-negative" }
+        require(size in 1..100) { "size must be between 1 and 100" }
+        val all = eventService.list()
+        val from = page * size
+        if (from >= all.size) return emptyList()
+        return all.subList(from, minOf(from + size, all.size))
+    }
 
     @GetMapping("/search")
     fun search(
