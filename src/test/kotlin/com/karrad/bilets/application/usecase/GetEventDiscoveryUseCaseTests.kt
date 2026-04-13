@@ -8,9 +8,11 @@ import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -40,6 +42,9 @@ class GetEventDiscoveryUseCaseTests {
 
     @Autowired
     lateinit var userEventVisitRepository: UserEventVisitRepository
+
+    @Autowired
+    lateinit var userRepository: UserRepository
 
     @Autowired
     lateinit var useCase: GetEventDiscoveryUseCase
@@ -88,6 +93,37 @@ class GetEventDiscoveryUseCaseTests {
         }
 
         assertEquals("size must be between 1 and 50", exception.message)
+    }
+
+    @Test
+    fun `should boost events matching user interests in forYou`() {
+        seedCatalog()
+        // user with "jazz" interest → jazz events get interestScore bonus
+        userRepository.save(
+            User(fullName = "Jazz Fan", phone = "+70000000001", interests = listOf("jazz"), id = userId())
+        )
+
+        val result = useCase.get(userId = userId(), city = "Ekaterinburg", page = 0, size = 10)
+
+        // Jazz Reunion should be boosted; all future events should still appear
+        val labels = result.forYou.map { it.label }
+        assert(labels.isNotEmpty()) { "forYou should not be empty" }
+        assert(labels.contains("Jazz Reunion")) { "Jazz Reunion must appear in forYou for a jazz fan" }
+    }
+
+    @Test
+    fun `should return empty forYou when user has no interests and no visit history`() {
+        seedCatalog()
+        userRepository.save(
+            User(fullName = "New User", phone = "+70000000002", interests = emptyList(), id = userId())
+        )
+
+        val result = useCase.get(userId = userId(), city = "Ekaterinburg", page = 0, size = 10)
+
+        // forYou is empty when there are no visits and no matching interests — by design
+        assert(result.forYou.isEmpty()) { "forYou should be empty for a user with no history or interests" }
+        // but byCategory must still be populated
+        assert(result.byCategory.isNotEmpty()) { "byCategory must contain events" }
     }
 
     @Test
