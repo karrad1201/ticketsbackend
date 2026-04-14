@@ -36,12 +36,14 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import com.karrad.bilets.support.MutableClock
+import com.karrad.bilets.support.PostgresTestContainer
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import org.flywaydb.core.Flyway
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.Clock
 import java.time.Duration
@@ -52,20 +54,17 @@ import javax.sql.DataSource
 class JdbcDurableOrderFlowTestConfig {
 
     @Bean
-    fun dataSource(): DataSource = EmbeddedDatabaseBuilder()
-        .setType(EmbeddedDatabaseType.H2)
-        .addScript("classpath:db/migration/V1__jdbc_order_flow.sql")
-        .addScript("classpath:db/migration/V2__payment_model.sql")
-        .addScript("classpath:db/migration/V3__event_sales_closure.sql")
-        .addScript("classpath:db/migration/V4__phone_auth.sql")
-        .addScript("classpath:db/migration/V6__event_image_url_venue_address.sql")
-        .addScript("classpath:db/migration/V8__ticket_used_at.sql")
-        .addScript("classpath:db/migration/V9__event_age_rating.sql")
-        .addScript("classpath:db/migration/V10__venue_access_grants.sql")
-        .addScript("classpath:db/migration/V11__event_has_seat_map.sql")
-        .addScript("classpath:db/migration/V13__user_profile_fields.sql")
-        .addScript("classpath:db/migration/V14__admission_inventory_label.sql")
-        .build()
+    fun dataSource(): DataSource {
+        val pg = PostgresTestContainer.instance
+        val ds = HikariDataSource(HikariConfig().apply {
+            jdbcUrl = PostgresTestContainer.freshJdbcUrl()
+            username = pg.username
+            password = pg.password
+            maximumPoolSize = 5
+        })
+        Flyway.configure().dataSource(ds).load().migrate()
+        return ds
+    }
 
     @Bean
     fun jdbcTemplate(dataSource: DataSource): JdbcTemplate = JdbcTemplate(dataSource)

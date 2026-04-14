@@ -10,21 +10,23 @@ class JdbcAuthTokenRepository(private val jdbcTemplate: JdbcTemplate) : AuthToke
 
     override fun save(authToken: AuthToken): AuthToken {
         jdbcTemplate.update(
-            "insert into auth_tokens (id, token, user_id, created_at) values (?, ?, ?, ?)",
+            "insert into auth_tokens (id, token, user_id, created_at, expires_at) values (?, ?, ?, ?, ?)",
             authToken.id, authToken.token, authToken.userId,
-            Timestamp.from(authToken.createdAt)
+            Timestamp.from(authToken.createdAt),
+            Timestamp.from(authToken.expiresAt)
         )
         return authToken
     }
 
     override fun findByToken(token: String): AuthToken? = jdbcTemplate.query(
-        "select id, token, user_id, created_at from auth_tokens where token = ?",
+        "select id, token, user_id, created_at, expires_at from auth_tokens where token = ?",
         { rs, _ ->
             AuthToken(
                 id = UUID.fromString(rs.getString("id")),
                 token = rs.getString("token"),
                 userId = UUID.fromString(rs.getString("user_id")),
-                createdAt = rs.getTimestamp("created_at").toInstant()
+                createdAt = rs.getTimestamp("created_at").toInstant(),
+                expiresAt = rs.getTimestamp("expires_at").toInstant()
             )
         },
         token

@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import org.springframework.stereotype.Component
 import java.time.Clock
+import java.time.Duration
 import java.util.UUID
 
 data class RegisterResult(val token: String, val user: User)
@@ -35,11 +36,13 @@ class RegisterWithPhoneUseCase(
 
         val user = userRepository.save(User(fullName = fullName, phone = phone))
 
+        val now = clock.instant()
         val authToken = authTokenRepository.save(
             AuthToken(
                 token = UUID.randomUUID().toString(),
                 userId = user.id,
-                createdAt = clock.instant()
+                createdAt = now,
+                expiresAt = now.plus(Duration.ofDays(90))
             )
         )
         return RegisterResult(token = authToken.token, user = user)

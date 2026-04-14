@@ -14,6 +14,6 @@ import java.util.UUID
  */
 fun AuthTokenRepository.bearerFor(userId: UUID): String {
     val token = "test-token-$userId"
-    save(AuthToken(token = token, userId = userId, createdAt = Instant.now()))
+    save(AuthToken(token = token, userId = userId, createdAt = Instant.now(), expiresAt = Instant.now().plusSeconds(86400 * 90)))
     return token
 }
