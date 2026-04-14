@@ -9,6 +9,7 @@ import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.OrderRepository
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.util.UUID
@@ -24,6 +25,7 @@ class CloseEventSalesUseCase(
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
+    @CacheEvict(value = ["events"], cacheManager = "redisCacheManager", key = "#eventId")
     fun closeByOrganizer(eventId: UUID, actorUserId: UUID): Event {
         return eventLockManager.withEventLock(eventId) {
             orderFlowTransactionManager.inTransaction {
@@ -39,6 +41,7 @@ class CloseEventSalesUseCase(
         }
     }
 
+    @CacheEvict(value = ["events"], cacheManager = "redisCacheManager", key = "#eventId")
     fun closeWhenStarted(eventId: UUID): Event {
         return eventLockManager.withEventLock(eventId) {
             orderFlowTransactionManager.inTransaction {

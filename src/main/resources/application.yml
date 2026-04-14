@@ -9,6 +9,10 @@ spring:
       - categories.all
       - cities.all
       - layoutTemplates.byVenueSpaceId
+  data:
+    redis:
+      host: localhost
+      port: 6379
   datasource:
     url: jdbc:postgresql://localhost:5432/bilets
     driver-class-name: org.postgresql.Driver
