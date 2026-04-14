@@ -3,7 +3,7 @@ alter table users alter column email drop not null;
 
 -- Add phone field
 alter table users add column if not exists phone varchar(32) null;
-alter table users add constraint if not exists users_phone_unique unique (phone);
+alter table users add constraint users_phone_unique unique (phone);
 
 -- SMS verification codes
 create table if not exists sms_codes (
