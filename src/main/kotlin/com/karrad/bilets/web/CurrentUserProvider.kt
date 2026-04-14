@@ -7,12 +7,14 @@ import com.karrad.bilets.domain.repository.UserRepository
 import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import java.time.Clock
 import java.util.UUID
 
 @Component
 class CurrentUserProvider(
     private val userRepository: UserRepository,
-    private val authTokenRepository: AuthTokenRepository
+    private val authTokenRepository: AuthTokenRepository,
+    private val clock: Clock
 ) {
     fun requireUserId(): UUID = requireUser().id
 
@@ -26,6 +28,7 @@ class CurrentUserProvider(
             val token = authHeader.removePrefix("Bearer ").trim()
             val authToken = authTokenRepository.findByToken(token)
                 ?: throw IllegalArgumentException("Invalid or expired token")
+            if (authToken.isExpired(clock.instant())) throw IllegalArgumentException("Token has expired")
             return requireNotNull(userRepository.findById(authToken.userId)) {
                 "Authenticated user not found: ${authToken.userId}"
             }

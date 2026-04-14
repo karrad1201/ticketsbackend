@@ -49,28 +49,53 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationReposit
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
+import com.karrad.bilets.support.PostgresTestContainer
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.annotation.DirtiesContext
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
-@SpringBootTest(
-    properties = [
-        "spring.datasource.url=jdbc:h2:mem:jdbc-order-flow-profile;MODE=PostgreSQL",
-        "spring.datasource.driverClassName=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.flyway.locations=classpath:db/h2migration"
-    ]
-)
+@SpringBootTest
 @ActiveProfiles("jdbc-order-flow")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class JdbcOrderFlowProfileIntegrationTests {
+
+    companion object {
+        @JvmStatic
+        @DynamicPropertySource
+        fun properties(registry: DynamicPropertyRegistry) {
+            val pg = PostgresTestContainer.instance
+            registry.add("spring.datasource.url", pg::getJdbcUrl)
+            registry.add("spring.datasource.username", pg::getUsername)
+            registry.add("spring.datasource.password", pg::getPassword)
+            registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
+        }
+    }
+
+    @Autowired
+    lateinit var jdbcTemplate: JdbcTemplate
+
+    @BeforeEach
+    fun cleanData() {
+        jdbcTemplate.execute("""
+            truncate table tickets, order_seat_items, order_admission_items, orders,
+                payment_attempts, payment_callback_audits,
+                event_seat_inventory, event_admission_inventory, event_inventory_plans,
+                user_event_visits, venue_access_grants,
+                organization_members, organization_applications, favorite_events,
+                auth_tokens, sms_codes, events, venues, venue_spaces,
+                layout_templates, layout_template_sections, layout_template_rows,
+                categories, organizations, users
+            cascade
+        """.trimIndent())
+    }
 
     @Autowired
     lateinit var userRepository: UserRepository

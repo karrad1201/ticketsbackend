@@ -20,7 +20,7 @@ create table if not exists payment_callback_audits (
     payment_reference varchar(255) not null,
     status varchar(32) not null,
     received_at timestamp not null,
-    payload clob null
+    payload text null
 );
 
 create index if not exists idx_payment_callback_audits_reference
