@@ -1,6 +1,14 @@
 spring:
   application:
     name: bilets
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=1000
+    cache-names:
+      - categories.all
+      - cities.all
+      - layoutTemplates.byVenueSpaceId
   datasource:
     url: jdbc:postgresql://localhost:5432/bilets
     driver-class-name: org.postgresql.Driver
