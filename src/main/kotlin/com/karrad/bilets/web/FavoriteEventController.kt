@@ -1,5 +1,6 @@
 package com.karrad.bilets.web
 
+import com.karrad.bilets.application.query.FavoriteQueryPort
 import com.karrad.bilets.application.service.FavoriteEventService
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.FavoriteEvent
@@ -20,6 +21,7 @@ import java.util.UUID
 @RequestMapping("/api/favorites")
 class FavoriteEventController(
     private val favoriteEventService: FavoriteEventService,
+    private val favoriteQueryPort: FavoriteQueryPort,
     private val currentUserProvider: CurrentUserProvider
 ) {
     @PostMapping
@@ -40,9 +42,6 @@ class FavoriteEventController(
     ): List<Event> {
         require(page >= 0) { "page must be non-negative" }
         require(size in 1..100) { "size must be between 1 and 100" }
-        val all = favoriteEventService.listEvents(currentUserProvider.requireUserId())
-        val from = page * size
-        if (from >= all.size) return emptyList()
-        return all.subList(from, minOf(from + size, all.size))
+        return favoriteQueryPort.listFavoriteEvents(currentUserProvider.requireUserId(), page, size)
     }
 }

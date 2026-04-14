@@ -1,6 +1,7 @@
 package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.service.EventAvailabilityService
+import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventRepository
@@ -34,9 +35,12 @@ class GetEventDiscoveryUseCase(
             allUpcoming
         }
 
-        val forYou = buildForYou(userId, upcomingEvents, page, size)
+        // Load categories once — shared by buildForYou and buildByCategory to avoid N+1
+        val allCategories = categoryRepository.findAll().associateBy { it.id }
 
-        val byCategory = buildByCategory(upcomingEvents, page, size)
+        val forYou = buildForYou(userId, upcomingEvents, allCategories, page, size)
+
+        val byCategory = buildByCategory(upcomingEvents, allCategories, page, size)
 
         val tomorrow = if (date != null) emptyList() else paginate(
             allUpcoming
@@ -62,11 +66,19 @@ class GetEventDiscoveryUseCase(
         )
     }
 
-    private fun buildForYou(userId: UUID?, upcomingEvents: List<Event>, page: Int, size: Int): List<Event> {
+    private fun buildForYou(
+        userId: UUID?,
+        upcomingEvents: List<Event>,
+        allCategories: Map<UUID, Category>,
+        page: Int,
+        size: Int
+    ): List<Event> {
         if (userId == null) return emptyList()
 
         val visits = userEventVisitRepository.findByUserId(userId)
-        val visitedEvents = visits.mapNotNull { eventRepository.findById(it.eventId) }
+        val visitedEventIds = visits.map { it.eventId }.toSet()
+        // Batch-load all visited events in a single query instead of N individual findById calls
+        val visitedEvents = eventRepository.findAllByIds(visitedEventIds)
 
         val organizationWeights = visitedEvents
             .mapNotNull { it.organizationId }
@@ -80,7 +92,7 @@ class GetEventDiscoveryUseCase(
         // #60: персонализация по interests пользователя
         val userInterests = userRepository.findById(userId)?.interests ?: emptyList()
         val interestCategoryIds = if (userInterests.isNotEmpty()) {
-            categoryRepository.findAll()
+            allCategories.values
                 .filter { category ->
                     userInterests.any { interest ->
                         category.code.contains(interest, ignoreCase = true) ||
@@ -110,11 +122,17 @@ class GetEventDiscoveryUseCase(
         return paginate(scored, page, size)
     }
 
-    private fun buildByCategory(upcomingEvents: List<Event>, page: Int, size: Int): List<CategoryEventsEntry> {
+    private fun buildByCategory(
+        upcomingEvents: List<Event>,
+        allCategories: Map<UUID, Category>,
+        page: Int,
+        size: Int
+    ): List<CategoryEventsEntry> {
         return upcomingEvents
             .groupBy { it.categoryId }
             .mapNotNull { (categoryId, events) ->
-                val category = categoryRepository.findById(categoryId) ?: return@mapNotNull null
+                // Map lookup instead of N individual categoryRepository.findById calls
+                val category = allCategories[categoryId] ?: return@mapNotNull null
                 CategoryEventsEntry(
                     category = category,
                     events = paginate(events.sortedBy { it.time }, page, size)
