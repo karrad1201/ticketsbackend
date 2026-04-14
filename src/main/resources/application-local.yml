@@ -1,9 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/bilets
-    driver-class-name: org.postgresql.Driver
-    username: bilets
-    password: bilets
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 1
