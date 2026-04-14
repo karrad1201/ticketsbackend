@@ -18,6 +18,7 @@ data class EventSearchCriteria(
 interface EventRepository {
     fun save(event: Event): Event
     fun findById(id: UUID): Event?
+    fun findAllByIds(ids: Collection<UUID>): List<Event> = ids.mapNotNull { findById(it) }
     fun findAll(): List<Event>
     fun findByVenueId(venueId: UUID): List<Event>
     fun findAvailableByCity(city: String, now: Instant): List<Event>

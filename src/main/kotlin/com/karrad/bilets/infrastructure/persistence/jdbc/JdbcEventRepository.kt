@@ -83,6 +83,18 @@ class JdbcEventRepository(
         id
     ).singleOrNull()
 
+    override fun findAllByIds(ids: Collection<UUID>): List<Event> {
+        if (ids.isEmpty()) return emptyList()
+        return jdbcTemplate.query(
+            { conn ->
+                conn.prepareStatement("$selectAll\nwhere id = ANY(?)").apply {
+                    setArray(1, conn.createArrayOf("uuid", ids.toTypedArray()))
+                }
+            },
+            { rs, _ -> rowMapper(rs) }
+        )
+    }
+
     override fun findAll(): List<Event> = jdbcTemplate.query(
         "$selectAll\norder by event_time, id"
     ) { rs, _ -> rowMapper(rs) }
