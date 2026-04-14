@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.FavoriteEvent
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -12,11 +13,13 @@ class FavoriteEventService(
     private val favoriteEventRepository: FavoriteEventRepository,
     private val eventRepository: EventRepository
 ) {
+    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", allEntries = true)
     fun add(userId: UUID, eventId: UUID): FavoriteEvent {
         if (eventRepository.findById(eventId) == null) throw NoSuchElementException("Event not found: $eventId")
         return favoriteEventRepository.save(FavoriteEvent(userId = userId, eventId = eventId))
     }
 
+    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", allEntries = true)
     fun remove(userId: UUID, eventId: UUID) {
         favoriteEventRepository.deleteByUserIdAndEventId(userId, eventId)
     }

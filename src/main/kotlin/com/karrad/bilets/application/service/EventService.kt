@@ -2,6 +2,8 @@ package com.karrad.bilets.application.service
 
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventRepository
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -11,6 +13,7 @@ class EventService(
 ) {
     fun create(event: Event): Event = eventRepository.save(event)
 
+    @Cacheable(value = ["events"], cacheManager = "redisCacheManager", key = "#id")
     fun getById(id: UUID): Event? = eventRepository.findById(id)
 
     fun list(): List<Event> = eventRepository.findAll()
@@ -22,5 +25,6 @@ class EventService(
         return eventRepository.save(event)
     }
 
+    @CacheEvict(value = ["events"], cacheManager = "redisCacheManager", key = "#id")
     fun deleteById(id: UUID): Boolean = eventRepository.deleteById(id)
 }

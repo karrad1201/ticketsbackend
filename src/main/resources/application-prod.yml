@@ -1,4 +1,7 @@
 spring:
+  data:
+    redis:
+      url: ${REDIS_URL}
   datasource:
     url: ${DATASOURCE_URL}
     driver-class-name: org.postgresql.Driver
