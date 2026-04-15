@@ -2,6 +2,7 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 
 import com.karrad.bilets.domain.entity.SmsCode
 import com.karrad.bilets.domain.repository.SmsCodeRepository
+import java.time.Instant
 import java.util.UUID
 
 class InMemorySmsCodeRepository : SmsCodeRepository {
@@ -20,5 +21,17 @@ class InMemorySmsCodeRepository : SmsCodeRepository {
         val updated = code.copy(used = true)
         storage[id] = updated
         return updated
+    }
+
+    @Synchronized
+    override fun tryMarkUsed(id: UUID): Boolean {
+        val code = storage[id] ?: return false
+        if (code.used) return false
+        storage[id] = code.copy(used = true)
+        return true
+    }
+
+    override fun deleteExpired(before: Instant) {
+        storage.values.removeIf { it.expiresAt.isBefore(before) }
     }
 }

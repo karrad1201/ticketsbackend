@@ -6,6 +6,7 @@ import com.karrad.bilets.application.usecase.ProcessStalePaymentAttemptsUseCase
 import com.karrad.bilets.config.OperationsProperties
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import com.karrad.bilets.domain.repository.SmsCodeRepository
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class OperationsScheduler(
     private val expireOrderUseCase: ExpireOrderUseCase,
     private val orderRepository: OrderRepository,
     private val authTokenRepository: AuthTokenRepository,
+    private val smsCodeRepository: SmsCodeRepository,
     private val clock: Clock
 ) {
     private val log = LoggerFactory.getLogger(OperationsScheduler::class.java)
@@ -67,5 +69,14 @@ class OperationsScheduler(
     fun purgeExpiredAuthTokens() {
         if (!operationsProperties.scheduling.enabled) return
         authTokenRepository.deleteExpired(clock.instant())
+    }
+
+    @Scheduled(
+        initialDelayString = "\${operations.scheduling.initial-delay-ms:300000}",
+        fixedDelayString = "\${operations.scheduling.purge-expired-sms-codes-delay-ms:3600000}"
+    )
+    fun purgeExpiredSmsCodes() {
+        if (!operationsProperties.scheduling.enabled) return
+        smsCodeRepository.deleteExpired(clock.instant())
     }
 }

@@ -28,7 +28,7 @@ class LoginWithPhoneUseCase(
         }
         require(smsCode.code == code) { "Invalid code" }
 
-        smsCodeRepository.markUsed(smsCode.id)
+        require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Code already used" }
 
         val user = userRepository.findByPhone(phone)
             ?: throw NoSuchElementException("No account found for phone $phone. Please register first.")
