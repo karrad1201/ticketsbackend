@@ -12,7 +12,8 @@ import java.util.UUID
 @RestController
 @RequestMapping("/api/organization-members")
 class OrganizationMemberController(
-    private val organizationMemberService: OrganizationMemberService
+    private val organizationMemberService: OrganizationMemberService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @GetMapping
@@ -20,6 +21,7 @@ class OrganizationMemberController(
         @RequestParam(required = false) organizationId: UUID?,
         @RequestParam(required = false) userId: UUID?
     ): List<OrganizationMember> {
+        currentUserProvider.requireAdmin()
         return when {
             organizationId != null -> organizationMemberService.listByOrganizationId(organizationId)
             userId != null -> organizationMemberService.listByUserId(userId)
@@ -28,6 +30,8 @@ class OrganizationMemberController(
     }
 
     @GetMapping("/{memberId}")
-    fun getById(@PathVariable memberId: UUID): OrganizationMember =
-        organizationMemberService.getById(memberId) ?: throw NoSuchElementException("OrganizationMember not found: $memberId")
+    fun getById(@PathVariable memberId: UUID): OrganizationMember {
+        currentUserProvider.requireAdmin()
+        return organizationMemberService.getById(memberId) ?: throw NoSuchElementException("OrganizationMember not found: $memberId")
+    }
 }
