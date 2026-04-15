@@ -2,6 +2,7 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 
 import com.karrad.bilets.domain.entity.AuthToken
 import com.karrad.bilets.domain.repository.AuthTokenRepository
+import java.time.Instant
 import java.util.UUID
 
 class InMemoryAuthTokenRepository : AuthTokenRepository {
@@ -14,4 +15,12 @@ class InMemoryAuthTokenRepository : AuthTokenRepository {
 
     override fun findByToken(token: String): AuthToken? =
         storage.values.firstOrNull { it.token == token }
+
+    override fun deleteByToken(token: String) {
+        storage.values.removeIf { it.token == token }
+    }
+
+    override fun deleteExpired(before: Instant) {
+        storage.values.removeIf { it.expiresAt.isBefore(before) }
+    }
 }
