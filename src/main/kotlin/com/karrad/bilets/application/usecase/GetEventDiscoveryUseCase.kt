@@ -1,6 +1,5 @@
 package com.karrad.bilets.application.usecase
 
-import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.CategoryRepository
@@ -10,6 +9,7 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.web.dto.CategoryEventsEntry
 import com.karrad.bilets.web.dto.DiscoveryFeedResponse
 import org.springframework.stereotype.Component
+import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID
@@ -20,13 +20,13 @@ class GetEventDiscoveryUseCase(
     private val userEventVisitRepository: UserEventVisitRepository,
     private val categoryRepository: CategoryRepository,
     private val userRepository: UserRepository,
-    private val eventAvailabilityService: EventAvailabilityService
+    private val clock: Clock
 ) {
     fun get(userId: UUID?, city: String, page: Int, size: Int, date: LocalDate? = null): DiscoveryFeedResponse {
         validatePagination(page, size)
 
         val today = LocalDate.now(ZoneOffset.UTC)
-        val allUpcoming = eventRepository.findAvailableByCity(city, eventAvailabilityService.now())
+        val allUpcoming = eventRepository.findAvailableByCity(city, clock.instant())
             .filter { event -> !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) }
 
         val upcomingEvents = if (date != null) {

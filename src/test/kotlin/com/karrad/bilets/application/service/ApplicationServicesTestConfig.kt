@@ -175,9 +175,6 @@ class ApplicationServicesTestConfig {
     fun eventService(eventRepository: EventRepository): EventService = EventService(eventRepository)
 
     @Bean
-    fun eventAvailabilityService(clock: Clock): EventAvailabilityService = EventAvailabilityService(clock)
-
-    @Bean
     fun favoriteEventRepository(): FavoriteEventRepository = InMemoryFavoriteEventRepository()
 
     @Bean
