@@ -19,4 +19,10 @@ class InMemoryOrganizationRepository : OrganizationRepository {
     override fun findAll(): List<Organization> = storage.values.toList()
 
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null
+
+    @Synchronized
+    override fun creditBalance(id: UUID, amount: Int) {
+        val org = storage[id] ?: return
+        storage[id] = org.copy(balance = org.balance + amount)
+    }
 }

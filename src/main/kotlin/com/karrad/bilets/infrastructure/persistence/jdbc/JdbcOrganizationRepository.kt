@@ -89,4 +89,8 @@ class JdbcOrganizationRepository(
         "delete from organizations where id = ?",
         id
     ) > 0
+
+    override fun creditBalance(id: UUID, amount: Int) {
+        jdbcTemplate.update("update organizations set balance = balance + ? where id = ?", amount, id)
+    }
 }

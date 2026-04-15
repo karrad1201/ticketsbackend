@@ -9,4 +9,6 @@ interface OrganizationRepository {
     fun findByCode(code: String): Organization?
     fun findAll(): List<Organization>
     fun deleteById(id: UUID): Boolean
+    /** Атомарно увеличивает баланс организации. */
+    fun creditBalance(id: UUID, amount: Int)
 }
