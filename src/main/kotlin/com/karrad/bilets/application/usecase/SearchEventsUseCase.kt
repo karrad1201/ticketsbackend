@@ -1,17 +1,17 @@
 package com.karrad.bilets.application.usecase
 
-import com.karrad.bilets.application.service.EventAvailabilityService
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventSearchCriteria
 import com.karrad.bilets.domain.repository.EventRepository
 import org.springframework.stereotype.Component
+import java.time.Clock
 import java.time.LocalDate
 import java.util.UUID
 
 @Component
 class SearchEventsUseCase(
     private val eventRepository: EventRepository,
-    private val eventAvailabilityService: EventAvailabilityService
+    private val clock: Clock
 ) {
     fun search(
         query: String?,
@@ -37,7 +37,7 @@ class SearchEventsUseCase(
                 venueId = venueId,
                 dateFrom = dateFrom,
                 dateTo = dateTo,
-                now = eventAvailabilityService.now()
+                now = clock.instant()
             )
         )
             .sortedWith(compareBy<Event> { queryRank(it.label, normalizedQuery) }.thenBy { it.time })
