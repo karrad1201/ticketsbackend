@@ -59,6 +59,18 @@ class JdbcOrderInventoryRepository(
             "Admission hold request contains duplicate ticket types: $duplicateTicketTypeIds"
         }
 
+        // Lock all rows in consistent order to prevent deadlocks between concurrent orders
+        // sharing the same ticket types. Must run inside an active transaction.
+        requests.map { it.ticketTypeId }
+            .sortedBy { it.toString() }
+            .forEach { ticketTypeId ->
+                jdbcTemplate.query(
+                    "select event_id from event_admission_inventory where event_id = ? and ticket_type_id = ? for update",
+                    { _, _ -> Unit },
+                    eventId, ticketTypeId
+                )
+            }
+
         val items = requests.map { request ->
             val updated = jdbcTemplate.update(
                 """
