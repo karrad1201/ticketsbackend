@@ -2,12 +2,14 @@ package com.karrad.bilets.infrastructure.payment
 
 import com.karrad.bilets.domain.entity.PaymentSession
 import com.karrad.bilets.domain.payment.PaymentGateway
+import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
 @Component
+@Profile("!prod")
 class MockPaymentGateway : PaymentGateway() {
     private val createdPayments = CopyOnWriteArrayList<PaymentSession>()
 
