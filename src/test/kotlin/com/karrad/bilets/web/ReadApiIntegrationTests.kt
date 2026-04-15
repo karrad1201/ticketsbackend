@@ -17,6 +17,7 @@ import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.CategoryRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
@@ -51,6 +52,9 @@ class ReadApiIntegrationTests {
 
     @Autowired
     lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
 
     @Autowired
     lateinit var userRepository: UserRepository
@@ -140,11 +144,15 @@ class ReadApiIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.code").value("ufa-jazz"))
 
-        mockMvc.perform(get("/api/organization-members"))
+        val admin = User(fullName = "Platform Admin", email = "admin@example.com", role = UserRole.ADMIN, id = UUID.fromString("123e4567-e89b-12d3-a456-426614175095"))
+        userRepository.save(admin)
+        val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
+
+        mockMvc.perform(get("/api/organization-members").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-members/${member.id}"))
+        mockMvc.perform(get("/api/organization-members/${member.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.role").value("OWNER"))
 
@@ -195,13 +203,18 @@ class ReadApiIntegrationTests {
 
     @Test
     fun `should return 404 for missing resources on read endpoints`() {
+        val admin = User(fullName = "Platform Admin", email = "admin@example.com", role = UserRole.ADMIN, id = UUID.fromString("123e4567-e89b-12d3-a456-426614175095"))
+        userRepository.save(admin)
+        val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
+
         mockMvc.perform(get("/api/users/123e4567-e89b-12d3-a456-426614175109"))
+
             .andExpect(status().isNotFound)
 
         mockMvc.perform(get("/api/organization-applications/123e4567-e89b-12d3-a456-426614175108"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/organization-members/123e4567-e89b-12d3-a456-426614175107"))
+        mockMvc.perform(get("/api/organization-members/123e4567-e89b-12d3-a456-426614175107").header("Authorization", adminBearer))
             .andExpect(status().isNotFound)
 
         mockMvc.perform(get("/api/organizations/123e4567-e89b-12d3-a456-426614175110"))

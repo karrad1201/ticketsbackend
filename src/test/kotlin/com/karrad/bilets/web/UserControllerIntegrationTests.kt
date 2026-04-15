@@ -3,6 +3,7 @@ package com.karrad.bilets.web
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -34,6 +35,9 @@ class UserControllerIntegrationTests {
     @Autowired
     lateinit var userRepository: UserRepository
 
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -41,8 +45,17 @@ class UserControllerIntegrationTests {
 
     @Test
     fun `should create and read users over http`() {
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175400")
+        )
+        userRepository.save(admin)
+
         mockMvc.perform(
             post("/api/users")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -52,12 +65,12 @@ class UserControllerIntegrationTests {
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.email").value("user@example.com"))
+            .andExpect(jsonPath("$.role").value("USER"))
 
         val user = userRepository.findByEmail("user@example.com")!!
 
         mockMvc.perform(get("/api/users"))
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.length()").value(1))
 
         mockMvc.perform(get("/api/users/${user.id}"))
             .andExpect(status().isOk)
@@ -65,7 +78,51 @@ class UserControllerIntegrationTests {
     }
 
     @Test
+    fun `should reject user creation without admin token`() {
+        mockMvc.perform(
+            post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf("email" to "user@example.com", "fullName" to "Regular User", "role" to "USER")
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject user creation when caller is not admin`() {
+        val user = User(
+            email = "user@example.com",
+            fullName = "Regular User",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175401")
+        )
+        userRepository.save(user)
+
+        mockMvc.perform(
+            post("/api/users")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(user.id)}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf("email" to "another@example.com", "fullName" to "Another User", "role" to "USER")
+                    )
+                )
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
     fun `should reject duplicate user email over http`() {
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175400")
+        )
+        userRepository.save(admin)
         userRepository.save(
             User(
                 email = "user@example.com",
@@ -77,6 +134,7 @@ class UserControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/users")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

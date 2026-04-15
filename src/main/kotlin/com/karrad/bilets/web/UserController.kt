@@ -3,6 +3,7 @@ package com.karrad.bilets.web
 import com.karrad.bilets.application.service.UserService
 import com.karrad.bilets.application.usecase.CreateUserUseCase
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.web.dto.CreateUserRequest
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -18,13 +19,15 @@ import java.util.UUID
 @RequestMapping("/api/users")
 class UserController(
     private val createUserUseCase: CreateUserUseCase,
-    private val userService: UserService
+    private val userService: UserService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@RequestBody request: CreateUserRequest): User {
-        return createUserUseCase.create(request.toDomain())
+        currentUserProvider.requireAdmin()
+        return createUserUseCase.create(request.toDomain().copy(role = UserRole.USER))
     }
 
     @GetMapping

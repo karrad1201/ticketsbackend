@@ -5,7 +5,9 @@ import com.karrad.bilets.domain.entity.OrganizationMember
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,6 +33,12 @@ class OrganizationMemberControllerIntegrationTests {
     @Autowired
     lateinit var organizationMemberRepository: OrganizationMemberRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -38,6 +46,14 @@ class OrganizationMemberControllerIntegrationTests {
 
     @Test
     fun `should read organization members over http`() {
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175420")
+        )
+        userRepository.save(admin)
+
         val organization = Organization(
             code = "ural-live",
             name = "Ural Live Events",
@@ -57,20 +73,36 @@ class OrganizationMemberControllerIntegrationTests {
         )
         organizationMemberRepository.save(member)
 
-        mockMvc.perform(get("/api/organization-members"))
+        val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
+
+        mockMvc.perform(get("/api/organization-members").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-members/${member.id}"))
+        mockMvc.perform(get("/api/organization-members/${member.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.role").value("OWNER"))
 
-        mockMvc.perform(get("/api/organization-members").param("organizationId", organization.id.toString()))
+        mockMvc.perform(
+            get("/api/organization-members")
+                .header("Authorization", adminBearer)
+                .param("organizationId", organization.id.toString())
+        )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-members").param("userId", user.id.toString()))
+        mockMvc.perform(
+            get("/api/organization-members")
+                .header("Authorization", adminBearer)
+                .param("userId", user.id.toString())
+        )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
+    }
+
+    @Test
+    fun `should reject organization members listing without admin token`() {
+        mockMvc.perform(get("/api/organization-members"))
+            .andExpect(status().isBadRequest)
     }
 }
