@@ -22,8 +22,11 @@ class VenueQueryService(private val jdbcTemplate: JdbcTemplate) : VenueQueryPort
         """
         SELECT v.id AS v_id, v.label AS v_label, v.city_label, v.subject_label,
                v.organization_id, v.address,
+               c.id AS city_id, sub.id AS subject_id,
                s.id AS space_id, s.label AS space_label
         FROM venues v
+        LEFT JOIN cities c ON c.label = v.city_label
+        LEFT JOIN subjects sub ON sub.label = v.subject_label
         LEFT JOIN venue_spaces s ON s.venue_id = v.id
         ORDER BY v.label, v.id, s.label, s.id
         """.trimIndent(),
@@ -34,8 +37,11 @@ class VenueQueryService(private val jdbcTemplate: JdbcTemplate) : VenueQueryPort
         """
         SELECT v.id AS v_id, v.label AS v_label, v.city_label, v.subject_label,
                v.organization_id, v.address,
+               c.id AS city_id, sub.id AS subject_id,
                s.id AS space_id, s.label AS space_label
         FROM venues v
+        LEFT JOIN cities c ON c.label = v.city_label
+        LEFT JOIN subjects sub ON sub.label = v.subject_label
         LEFT JOIN venue_spaces s ON s.venue_id = v.id
         WHERE v.id = ?
         ORDER BY s.label, s.id
@@ -58,7 +64,11 @@ class VenueQueryService(private val jdbcTemplate: JdbcTemplate) : VenueQueryPort
             Venue(
                 id = row.id,
                 label = row.label,
-                city = City(label = row.cityLabel, subject = Subject(row.subjectLabel)),
+                city = City(
+                    id = row.cityId ?: UUID.randomUUID(),
+                    label = row.cityLabel,
+                    subject = Subject(id = row.subjectId ?: UUID.randomUUID(), label = row.subjectLabel)
+                ),
                 organizationId = row.organizationId,
                 address = row.address,
                 spaces = spaces
@@ -70,7 +80,9 @@ class VenueQueryService(private val jdbcTemplate: JdbcTemplate) : VenueQueryPort
         id = rs.uuid("v_id"),
         label = rs.getString("v_label"),
         cityLabel = rs.getString("city_label"),
+        cityId = rs.nullableUuid("city_id"),
         subjectLabel = rs.getString("subject_label"),
+        subjectId = rs.nullableUuid("subject_id"),
         organizationId = rs.nullableUuid("organization_id"),
         address = rs.getString("address")
     )
@@ -79,7 +91,9 @@ class VenueQueryService(private val jdbcTemplate: JdbcTemplate) : VenueQueryPort
         val id: UUID,
         val label: String,
         val cityLabel: String,
+        val cityId: UUID?,
         val subjectLabel: String,
+        val subjectId: UUID?,
         val organizationId: UUID?,
         val address: String?
     )
