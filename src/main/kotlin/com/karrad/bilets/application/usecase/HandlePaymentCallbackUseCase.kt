@@ -12,6 +12,7 @@ import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.OrderRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Instant
@@ -35,7 +36,10 @@ class HandlePaymentCallbackUseCase(
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
 ) {
+    private val log = LoggerFactory.getLogger(HandlePaymentCallbackUseCase::class.java)
+
     fun handle(command: HandlePaymentCallbackCommand): Order {
+        log.info("PAYMENT_CALLBACK_RECEIVED reference={} status={}", command.paymentReference, command.status)
         val paymentAttempt = requireNotNull(paymentAttemptRepository.findByReference(command.paymentReference)) {
             "Payment attempt not found for reference: ${command.paymentReference}"
         }
@@ -75,12 +79,15 @@ class HandlePaymentCallbackUseCase(
         receivedAt: Instant
     ): Order {
         if (attempt.status == PaymentAttemptStatus.FAILED || order.status == OrderStatus.PAYMENT_FAILED) {
+            log.warn("PAYMENT_CALLBACK_IGNORED reference={} orderId={} — attempt already failed", attempt.reference, order.id)
             return order
         }
         if (attempt.status == PaymentAttemptStatus.SUCCEEDED && order.status == OrderStatus.PAID) {
+            log.info("PAYMENT_CALLBACK_DUPLICATE reference={} orderId={} — already paid, skipping", attempt.reference, order.id)
             return order
         }
         if (clock.instant().isAfter(order.expiresAt)) {
+            log.warn("PAYMENT_CALLBACK_EXPIRED reference={} orderId={} — callback arrived after expiry", attempt.reference, order.id)
             orderInventoryRepository.release(order)
             val expiredOrder = orderRepository.save(order.markExpired(clock.instant()))
             paymentAttemptRepository.save(attempt.markFailed(receivedAt, "Payment callback received after expiration"))
@@ -89,6 +96,7 @@ class HandlePaymentCallbackUseCase(
         if (attempt.status != PaymentAttemptStatus.SUCCEEDED) {
             paymentAttemptRepository.save(attempt.markSucceeded(receivedAt))
         }
+        log.info("PAYMENT_CALLBACK_SUCCESS reference={} orderId={}", attempt.reference, order.id)
         return paymentSettlementService.completePaidOrder(order, receivedAt)
     }
 
@@ -98,6 +106,7 @@ class HandlePaymentCallbackUseCase(
         command: HandlePaymentCallbackCommand
     ): Order {
         if (attempt.status == PaymentAttemptStatus.SUCCEEDED || order.status == OrderStatus.PAID) {
+            log.warn("PAYMENT_CALLBACK_IGNORED reference={} orderId={} — already paid, ignoring failure", attempt.reference, order.id)
             return order
         }
         val failedAttempt = paymentAttemptRepository.save(
@@ -109,6 +118,7 @@ class HandlePaymentCallbackUseCase(
         if (order.status != OrderStatus.PENDING_PAYMENT) {
             return order
         }
+        log.info("PAYMENT_CALLBACK_FAILURE reference={} orderId={} reason={}", attempt.reference, order.id, command.failureReason)
         return paymentSettlementService.failPendingOrder(order, failedAttempt.updatedAt)
     }
 
@@ -118,9 +128,11 @@ class HandlePaymentCallbackUseCase(
         receivedAt: Instant
     ): Order {
         if (attempt.status == PaymentAttemptStatus.SUCCEEDED || order.status == OrderStatus.PAID) {
+            log.warn("PAYMENT_CALLBACK_IGNORED reference={} orderId={} — already paid, ignoring expiry", attempt.reference, order.id)
             return order
         }
         if (order.status == OrderStatus.EXPIRED) {
+            log.info("PAYMENT_CALLBACK_DUPLICATE_EXPIRY reference={} orderId={} — already expired", attempt.reference, order.id)
             return order
         }
         val failedAttempt = paymentAttemptRepository.save(
@@ -129,6 +141,7 @@ class HandlePaymentCallbackUseCase(
         if (order.status != OrderStatus.PENDING_PAYMENT) {
             return order
         }
+        log.info("PAYMENT_CALLBACK_SESSION_EXPIRED reference={} orderId={}", attempt.reference, order.id)
         orderInventoryRepository.release(order)
         return orderRepository.save(order.markPaymentFailed(failedAttempt.updatedAt))
     }
