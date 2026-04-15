@@ -65,7 +65,7 @@ class JdbcOrderInventoryRepository(
             .sortedBy { it.toString() }
             .forEach { ticketTypeId ->
                 jdbcTemplate.query(
-                    "select id from event_admission_inventory where event_id = ? and ticket_type_id = ? for update",
+                    "select event_id from event_admission_inventory where event_id = ? and ticket_type_id = ? for update",
                     { _, _ -> Unit },
                     eventId, ticketTypeId
                 )
