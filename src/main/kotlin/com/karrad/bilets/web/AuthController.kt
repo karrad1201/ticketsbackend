@@ -4,11 +4,13 @@ import com.karrad.bilets.application.usecase.LoginWithPhoneUseCase
 import com.karrad.bilets.application.usecase.RegisterWithPhoneUseCase
 import com.karrad.bilets.application.usecase.SendSmsCodeUseCase
 import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.web.dto.AuthResponse
 import com.karrad.bilets.web.dto.LoginRequest
 import com.karrad.bilets.web.dto.RegisterRequest
 import com.karrad.bilets.web.dto.SendCodeRequest
 import com.karrad.bilets.web.dto.UserResponse
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
@@ -26,7 +28,8 @@ class AuthController(
     private val sendSmsCodeUseCase: SendSmsCodeUseCase,
     private val loginWithPhoneUseCase: LoginWithPhoneUseCase,
     private val registerWithPhoneUseCase: RegisterWithPhoneUseCase,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    private val authTokenRepository: AuthTokenRepository
 ) {
     @PostMapping("/send-code")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -45,6 +48,15 @@ class AuthController(
     fun register(@Valid @RequestBody request: RegisterRequest): AuthResponse {
         val result = registerWithPhoneUseCase.register(request.phone, request.code, request.fullName)
         return AuthResponse(token = result.token, user = result.user.toResponse())
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun logout(request: HttpServletRequest) {
+        val authHeader = request.getHeader("Authorization") ?: return
+        if (authHeader.startsWith("Bearer ")) {
+            authTokenRepository.deleteByToken(authHeader.removePrefix("Bearer ").trim())
+        }
     }
 
     @GetMapping("/me")

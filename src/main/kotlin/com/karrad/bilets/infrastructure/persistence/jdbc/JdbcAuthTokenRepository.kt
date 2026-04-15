@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.AuthToken
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Timestamp
+import java.time.Instant
 import java.util.UUID
 
 class JdbcAuthTokenRepository(private val jdbcTemplate: JdbcTemplate) : AuthTokenRepository {
@@ -16,6 +17,14 @@ class JdbcAuthTokenRepository(private val jdbcTemplate: JdbcTemplate) : AuthToke
             Timestamp.from(authToken.expiresAt)
         )
         return authToken
+    }
+
+    override fun deleteByToken(token: String) {
+        jdbcTemplate.update("delete from auth_tokens where token = ?", token)
+    }
+
+    override fun deleteExpired(before: Instant) {
+        jdbcTemplate.update("delete from auth_tokens where expires_at < ?", Timestamp.from(before))
     }
 
     override fun findByToken(token: String): AuthToken? = jdbcTemplate.query(
