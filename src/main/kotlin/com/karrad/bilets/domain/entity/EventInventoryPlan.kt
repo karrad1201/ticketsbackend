@@ -30,19 +30,9 @@ data class EventInventoryPlan(
     }
 
     fun holdSeats(seatKeys: List<SeatKey>): EventInventoryPlan {
-        require(mode == InventoryMode.SEATED) { "Seat hold is supported only for seated inventory" }
-        require(seatKeys.isNotEmpty()) { "Seat hold requires at least one seat" }
-
-        val duplicateSeatKeys = seatKeys.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateSeatKeys.isEmpty()) { "Seat hold request contains duplicate seat keys: $duplicateSeatKeys" }
-
-        val seatMap = seatInventory.associateBy { it.seatKey }
-        val missingSeatKeys = seatKeys.filter { it !in seatMap.keys }
-        require(missingSeatKeys.isEmpty()) { "Seats not found in inventory: $missingSeatKeys" }
-
+        val seatMap = validateAndMapSeats("hold", seatKeys)
         val unavailableSeatKeys = seatKeys.filter { seatMap.getValue(it).status != SeatStatus.AVAILABLE }
         require(unavailableSeatKeys.isEmpty()) { "Seats are not available: $unavailableSeatKeys" }
-
         return copy(
             seatInventory = seatInventory.map { seat ->
                 if (seat.seatKey in seatKeys) seat.copy(status = SeatStatus.HELD) else seat
@@ -51,19 +41,9 @@ data class EventInventoryPlan(
     }
 
     fun releaseSeats(seatKeys: List<SeatKey>): EventInventoryPlan {
-        require(mode == InventoryMode.SEATED) { "Seat release is supported only for seated inventory" }
-        require(seatKeys.isNotEmpty()) { "Seat release requires at least one seat" }
-
-        val duplicateSeatKeys = seatKeys.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateSeatKeys.isEmpty()) { "Seat release request contains duplicate seat keys: $duplicateSeatKeys" }
-
-        val seatMap = seatInventory.associateBy { it.seatKey }
-        val missingSeatKeys = seatKeys.filter { it !in seatMap.keys }
-        require(missingSeatKeys.isEmpty()) { "Seats not found in inventory: $missingSeatKeys" }
-
+        val seatMap = validateAndMapSeats("release", seatKeys)
         val nonHeldSeatKeys = seatKeys.filter { seatMap.getValue(it).status != SeatStatus.HELD }
         require(nonHeldSeatKeys.isEmpty()) { "Seats are not held: $nonHeldSeatKeys" }
-
         return copy(
             seatInventory = seatInventory.map { seat ->
                 if (seat.seatKey in seatKeys) seat.copy(status = SeatStatus.AVAILABLE) else seat
@@ -72,19 +52,9 @@ data class EventInventoryPlan(
     }
 
     fun sellSeats(seatKeys: List<SeatKey>): EventInventoryPlan {
-        require(mode == InventoryMode.SEATED) { "Seat sale is supported only for seated inventory" }
-        require(seatKeys.isNotEmpty()) { "Seat sale requires at least one seat" }
-
-        val duplicateSeatKeys = seatKeys.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateSeatKeys.isEmpty()) { "Seat sale request contains duplicate seat keys: $duplicateSeatKeys" }
-
-        val seatMap = seatInventory.associateBy { it.seatKey }
-        val missingSeatKeys = seatKeys.filter { it !in seatMap.keys }
-        require(missingSeatKeys.isEmpty()) { "Seats not found in inventory: $missingSeatKeys" }
-
+        val seatMap = validateAndMapSeats("sale", seatKeys)
         val nonHeldSeatKeys = seatKeys.filter { seatMap.getValue(it).status != SeatStatus.HELD }
         require(nonHeldSeatKeys.isEmpty()) { "Seats must be held before sale: $nonHeldSeatKeys" }
-
         return copy(
             seatInventory = seatInventory.map { seat ->
                 if (seat.seatKey in seatKeys) seat.copy(status = SeatStatus.SOLD) else seat
@@ -93,21 +63,11 @@ data class EventInventoryPlan(
     }
 
     fun holdAdmission(requests: List<AdmissionQuantity>): EventInventoryPlan {
-        require(mode == InventoryMode.GENERAL_ADMISSION) { "Admission hold is supported only for general admission inventory" }
-        require(requests.isNotEmpty()) { "Admission hold requires at least one item" }
-
-        val duplicateTicketTypeIds = requests.groupingBy { it.ticketTypeId }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateTicketTypeIds.isEmpty()) { "Admission hold request contains duplicate ticket types: $duplicateTicketTypeIds" }
-
-        val inventoryByTicketType = admissionInventory.associateBy { it.ticketTypeId }
-        val missingTicketTypeIds = requests.map { it.ticketTypeId }.filter { it !in inventoryByTicketType.keys }
-        require(missingTicketTypeIds.isEmpty()) { "Ticket types not found in inventory: $missingTicketTypeIds" }
-
+        val inventoryByTicketType = validateAndMapAdmission("hold", requests)
         val overbookedTicketTypeIds = requests.filter { request ->
             inventoryByTicketType.getValue(request.ticketTypeId).available < request.quantity
         }.map { it.ticketTypeId }
         require(overbookedTicketTypeIds.isEmpty()) { "Not enough admission capacity for ticket types: $overbookedTicketTypeIds" }
-
         val quantitiesByTicketType = requests.associate { it.ticketTypeId to it.quantity }
         return copy(
             admissionInventory = admissionInventory.map { inventory ->
@@ -118,21 +78,11 @@ data class EventInventoryPlan(
     }
 
     fun releaseAdmission(requests: List<AdmissionQuantity>): EventInventoryPlan {
-        require(mode == InventoryMode.GENERAL_ADMISSION) { "Admission release is supported only for general admission inventory" }
-        require(requests.isNotEmpty()) { "Admission release requires at least one item" }
-
-        val duplicateTicketTypeIds = requests.groupingBy { it.ticketTypeId }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateTicketTypeIds.isEmpty()) { "Admission release request contains duplicate ticket types: $duplicateTicketTypeIds" }
-
-        val inventoryByTicketType = admissionInventory.associateBy { it.ticketTypeId }
-        val missingTicketTypeIds = requests.map { it.ticketTypeId }.filter { it !in inventoryByTicketType.keys }
-        require(missingTicketTypeIds.isEmpty()) { "Ticket types not found in inventory: $missingTicketTypeIds" }
-
+        val inventoryByTicketType = validateAndMapAdmission("release", requests)
         val insufficientHeldTicketTypeIds = requests.filter { request ->
             inventoryByTicketType.getValue(request.ticketTypeId).held < request.quantity
         }.map { it.ticketTypeId }
         require(insufficientHeldTicketTypeIds.isEmpty()) { "Not enough held admission inventory for ticket types: $insufficientHeldTicketTypeIds" }
-
         val quantitiesByTicketType = requests.associate { it.ticketTypeId to it.quantity }
         return copy(
             admissionInventory = admissionInventory.map { inventory ->
@@ -143,21 +93,11 @@ data class EventInventoryPlan(
     }
 
     fun sellAdmission(requests: List<AdmissionQuantity>): EventInventoryPlan {
-        require(mode == InventoryMode.GENERAL_ADMISSION) { "Admission sale is supported only for general admission inventory" }
-        require(requests.isNotEmpty()) { "Admission sale requires at least one item" }
-
-        val duplicateTicketTypeIds = requests.groupingBy { it.ticketTypeId }.eachCount().filterValues { it > 1 }.keys
-        require(duplicateTicketTypeIds.isEmpty()) { "Admission sale request contains duplicate ticket types: $duplicateTicketTypeIds" }
-
-        val inventoryByTicketType = admissionInventory.associateBy { it.ticketTypeId }
-        val missingTicketTypeIds = requests.map { it.ticketTypeId }.filter { it !in inventoryByTicketType.keys }
-        require(missingTicketTypeIds.isEmpty()) { "Ticket types not found in inventory: $missingTicketTypeIds" }
-
+        val inventoryByTicketType = validateAndMapAdmission("sale", requests)
         val insufficientHeldTicketTypeIds = requests.filter { request ->
             inventoryByTicketType.getValue(request.ticketTypeId).held < request.quantity
         }.map { it.ticketTypeId }
         require(insufficientHeldTicketTypeIds.isEmpty()) { "Not enough held admission inventory for ticket types: $insufficientHeldTicketTypeIds" }
-
         val quantitiesByTicketType = requests.associate { it.ticketTypeId to it.quantity }
         return copy(
             admissionInventory = admissionInventory.map { inventory ->
@@ -168,6 +108,28 @@ data class EventInventoryPlan(
                 )
             }
         )
+    }
+
+    private fun validateAndMapSeats(operation: String, seatKeys: List<SeatKey>): Map<SeatKey, EventSeat> {
+        require(mode == InventoryMode.SEATED) { "Seat $operation is supported only for seated inventory" }
+        require(seatKeys.isNotEmpty()) { "Seat $operation requires at least one seat" }
+        val duplicates = seatKeys.groupingBy { it }.eachCount().filterValues { it > 1 }.keys
+        require(duplicates.isEmpty()) { "Seat $operation request contains duplicate seat keys: $duplicates" }
+        val seatMap = seatInventory.associateBy { it.seatKey }
+        val missing = seatKeys.filter { it !in seatMap.keys }
+        require(missing.isEmpty()) { "Seats not found in inventory: $missing" }
+        return seatMap
+    }
+
+    private fun validateAndMapAdmission(operation: String, requests: List<AdmissionQuantity>): Map<UUID, EventAdmissionInventory> {
+        require(mode == InventoryMode.GENERAL_ADMISSION) { "Admission $operation is supported only for general admission inventory" }
+        require(requests.isNotEmpty()) { "Admission $operation requires at least one item" }
+        val duplicates = requests.groupingBy { it.ticketTypeId }.eachCount().filterValues { it > 1 }.keys
+        require(duplicates.isEmpty()) { "Admission $operation request contains duplicate ticket types: $duplicates" }
+        val inventoryByTicketType = admissionInventory.associateBy { it.ticketTypeId }
+        val missing = requests.map { it.ticketTypeId }.filter { it !in inventoryByTicketType.keys }
+        require(missing.isEmpty()) { "Ticket types not found in inventory: $missing" }
+        return inventoryByTicketType
     }
 
     companion object {
