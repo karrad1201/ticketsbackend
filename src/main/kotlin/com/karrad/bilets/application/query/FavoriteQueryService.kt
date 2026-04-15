@@ -18,10 +18,9 @@ class FavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : FavoriteQue
     @Cacheable(
         value = ["favorites"],
         cacheManager = "redisCacheManager",
-        key = "#userId + ':' + #page + ':' + #size"
+        key = "#userId"
     )
-    override fun listFavoriteEvents(userId: UUID, page: Int, size: Int): List<Event> {
-        val offset = page * size
+    fun listAllFavoriteEvents(userId: UUID): List<Event> {
         return jdbcTemplate.query(
             """
             SELECT e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time,
@@ -31,7 +30,6 @@ class FavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : FavoriteQue
             JOIN events e ON e.id = f.event_id
             WHERE f.user_id = ?
             ORDER BY f.created_at DESC, e.id
-            LIMIT ? OFFSET ?
             """.trimIndent(),
             { rs, _ ->
                 Event(
@@ -50,7 +48,14 @@ class FavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : FavoriteQue
                     hasSeatMap = rs.getBoolean("has_seat_map")
                 )
             },
-            userId, size, offset
+            userId
         )
+    }
+
+    override fun listFavoriteEvents(userId: UUID, page: Int, size: Int): List<Event> {
+        val all = listAllFavoriteEvents(userId)
+        val fromIndex = page * size
+        if (fromIndex >= all.size) return emptyList()
+        return all.subList(fromIndex, minOf(fromIndex + size, all.size))
     }
 }

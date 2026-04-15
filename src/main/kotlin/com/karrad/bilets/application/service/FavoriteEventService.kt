@@ -13,13 +13,13 @@ class FavoriteEventService(
     private val favoriteEventRepository: FavoriteEventRepository,
     private val eventRepository: EventRepository
 ) {
-    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", allEntries = true)
+    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", key = "#userId")
     fun add(userId: UUID, eventId: UUID): FavoriteEvent {
         if (eventRepository.findById(eventId) == null) throw NoSuchElementException("Event not found: $eventId")
         return favoriteEventRepository.save(FavoriteEvent(userId = userId, eventId = eventId))
     }
 
-    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", allEntries = true)
+    @CacheEvict(value = ["favorites"], cacheManager = "redisCacheManager", key = "#userId")
     fun remove(userId: UUID, eventId: UUID) {
         favoriteEventRepository.deleteByUserIdAndEventId(userId, eventId)
     }
