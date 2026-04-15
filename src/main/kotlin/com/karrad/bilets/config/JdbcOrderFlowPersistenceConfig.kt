@@ -50,6 +50,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -157,6 +158,7 @@ class JdbcOrderFlowPersistenceConfig {
         JdbcFavoriteEventRepository(jdbcTemplate)
 
     @Bean
+    @Profile("!prod")
     @ConditionalOnMissingBean(SmsGateway::class)
     fun smsGateway(): SmsGateway = MockSmsGateway()
 }
