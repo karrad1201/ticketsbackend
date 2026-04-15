@@ -32,7 +32,7 @@ class RegisterWithPhoneUseCase(
             "Phone already registered: $phone"
         }
 
-        smsCodeRepository.markUsed(smsCode.id)
+        require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Code already used" }
 
         val user = userRepository.save(User(fullName = fullName, phone = phone))
 

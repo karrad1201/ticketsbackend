@@ -48,4 +48,11 @@ class JdbcSmsCodeRepository(private val jdbcTemplate: JdbcTemplate) : SmsCodeRep
             id
         ).singleOrNull()) { "SmsCode not found: $id" }
     }
+
+    override fun tryMarkUsed(id: UUID): Boolean =
+        jdbcTemplate.update("update sms_codes set used = true where id = ? and used = false", id) > 0
+
+    override fun deleteExpired(before: Instant) {
+        jdbcTemplate.update("delete from sms_codes where expires_at < ?", Timestamp.from(before))
+    }
 }
