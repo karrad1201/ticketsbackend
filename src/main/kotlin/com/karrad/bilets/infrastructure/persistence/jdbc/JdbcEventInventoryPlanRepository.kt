@@ -15,61 +15,60 @@ class JdbcEventInventoryPlanRepository(
 ) : EventInventoryPlanRepository {
 
     override fun save(plan: EventInventoryPlan): EventInventoryPlan {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update event_inventory_plans
-            set mode = ?, layout_template_id = ?
-            where event_id = ?
+            insert into event_inventory_plans (event_id, mode, layout_template_id)
+            values (?, ?, ?)
+            on conflict (event_id) do update set mode = excluded.mode, layout_template_id = excluded.layout_template_id
             """.trimIndent(),
+            plan.eventId,
             plan.mode.name,
-            plan.layoutTemplateId,
-            plan.eventId
+            plan.layoutTemplateId
         )
-        if (updated == 0) {
+
+        if (plan.seatInventory.isEmpty()) {
+            jdbcTemplate.update("delete from event_seat_inventory where event_id = ?", plan.eventId)
+        } else {
+            plan.seatInventory.forEach { seat ->
+                jdbcTemplate.update(
+                    """
+                    insert into event_seat_inventory (event_id, section_key, row_key, seat_number, price, status, hold_order_id, hold_expires_at)
+                    values (?, ?, ?, ?, ?, ?, null, null)
+                    on conflict (event_id, section_key, row_key, seat_number) do update set
+                      price = excluded.price, status = excluded.status,
+                      hold_order_id = excluded.hold_order_id, hold_expires_at = excluded.hold_expires_at
+                    """.trimIndent(),
+                    plan.eventId, seat.sectionKey, seat.rowKey, seat.seatKey.seatKey, seat.price, seat.status.name
+                )
+            }
+            val placeholders = plan.seatInventory.joinToString(", ") { "(?, ?, ?)" }
+            val keyParams = plan.seatInventory.flatMap { listOf(it.sectionKey, it.rowKey, it.seatKey.seatKey) }
             jdbcTemplate.update(
-                """
-                insert into event_inventory_plans (event_id, mode, layout_template_id)
-                values (?, ?, ?)
-                """.trimIndent(),
-                plan.eventId,
-                plan.mode.name,
-                plan.layoutTemplateId
+                "delete from event_seat_inventory where event_id = ? and (section_key, row_key, seat_number) not in ($placeholders)",
+                plan.eventId, *keyParams.toTypedArray()
             )
         }
 
-        jdbcTemplate.update("delete from event_seat_inventory where event_id = ?", plan.eventId)
-        plan.seatInventory.forEach { seat ->
+        if (plan.admissionInventory.isEmpty()) {
+            jdbcTemplate.update("delete from event_admission_inventory where event_id = ?", plan.eventId)
+        } else {
+            plan.admissionInventory.forEach { inv ->
+                jdbcTemplate.update(
+                    """
+                    insert into event_admission_inventory (event_id, ticket_type_id, label, price, capacity, held, sold)
+                    values (?, ?, ?, ?, ?, ?, ?)
+                    on conflict (event_id, ticket_type_id) do update set
+                      label = excluded.label, price = excluded.price, capacity = excluded.capacity,
+                      held = excluded.held, sold = excluded.sold
+                    """.trimIndent(),
+                    plan.eventId, inv.ticketTypeId, inv.label, inv.price, inv.capacity, inv.held, inv.sold
+                )
+            }
+            val placeholders = plan.admissionInventory.joinToString(", ") { "?" }
+            val ticketTypeIds = plan.admissionInventory.map { it.ticketTypeId }.toTypedArray()
             jdbcTemplate.update(
-                """
-                insert into event_seat_inventory (
-                    event_id, section_key, row_key, seat_number, price, status, hold_order_id, hold_expires_at
-                ) values (?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                plan.eventId,
-                seat.sectionKey,
-                seat.rowKey,
-                seat.seatKey.seatKey,
-                seat.price,
-                seat.status.name,
-                null,
-                null
-            )
-        }
-
-        jdbcTemplate.update("delete from event_admission_inventory where event_id = ?", plan.eventId)
-        plan.admissionInventory.forEach { inventory ->
-            jdbcTemplate.update(
-                """
-                insert into event_admission_inventory (event_id, ticket_type_id, label, price, capacity, held, sold)
-                values (?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                plan.eventId,
-                inventory.ticketTypeId,
-                inventory.label,
-                inventory.price,
-                inventory.capacity,
-                inventory.held,
-                inventory.sold
+                "delete from event_admission_inventory where event_id = ? and ticket_type_id not in ($placeholders)",
+                plan.eventId, *ticketTypeIds
             )
         }
 
