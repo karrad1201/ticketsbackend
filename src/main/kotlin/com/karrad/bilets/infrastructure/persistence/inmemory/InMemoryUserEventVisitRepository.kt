@@ -19,5 +19,10 @@ class InMemoryUserEventVisitRepository : UserEventVisitRepository {
     override fun findByUserId(userId: UUID): List<UserEventVisit> =
         storage.values.filter { it.userId == userId }
 
+    override fun findRecentByUserId(userId: UUID, limit: Int): List<UserEventVisit> =
+        storage.values.filter { it.userId == userId }
+            .sortedByDescending { it.visitedAt }
+            .take(limit)
+
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null
 }

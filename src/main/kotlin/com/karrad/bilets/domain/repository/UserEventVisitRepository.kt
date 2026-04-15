@@ -8,5 +8,6 @@ interface UserEventVisitRepository {
     fun findById(id: UUID): UserEventVisit?
     fun findAll(): List<UserEventVisit>
     fun findByUserId(userId: UUID): List<UserEventVisit>
+    fun findRecentByUserId(userId: UUID, limit: Int): List<UserEventVisit>
     fun deleteById(id: UUID): Boolean
 }
