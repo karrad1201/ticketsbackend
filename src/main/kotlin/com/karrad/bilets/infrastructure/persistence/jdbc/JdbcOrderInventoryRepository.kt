@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.SeatKey
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.ReservedInventory
 import com.karrad.bilets.domain.repository.ReservedInventoryItem
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import java.sql.Timestamp
 import java.time.Instant
@@ -14,6 +15,8 @@ import java.util.UUID
 class JdbcOrderInventoryRepository(
     private val jdbcTemplate: JdbcTemplate
 ) : OrderInventoryRepository {
+
+    private val log = LoggerFactory.getLogger(JdbcOrderInventoryRepository::class.java)
 
     override fun reserveSeats(orderId: UUID, eventId: UUID, seatKeys: List<SeatKey>, expiresAt: Instant): ReservedInventory {
         require(seatKeys.isNotEmpty()) { "Seat hold requires at least one seat" }
@@ -156,7 +159,9 @@ class JdbcOrderInventoryRepository(
                 seatKey.seatKey,
                 order.id
             )
-            require(updated == 1) { "Seats are not held: [$seatKey]" }
+            if (updated == 0) {
+                log.warn("releaseSeats: seat already released or not held by this order — skipping. orderId={} seatKey={}", order.id, seatKey)
+            }
         }
     }
 
@@ -173,8 +178,8 @@ class JdbcOrderInventoryRepository(
                 item.ticketTypeId,
                 item.quantity
             )
-            require(updated == 1) {
-                "Not enough held admission inventory for ticket types: [${item.ticketTypeId}]"
+            if (updated == 0) {
+                log.warn("releaseAdmission: admission already released or insufficient held — skipping. orderId={} ticketTypeId={}", order.id, item.ticketTypeId)
             }
         }
     }
