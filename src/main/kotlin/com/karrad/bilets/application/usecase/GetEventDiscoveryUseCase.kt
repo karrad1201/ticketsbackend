@@ -75,7 +75,7 @@ class GetEventDiscoveryUseCase(
     ): List<Event> {
         if (userId == null) return emptyList()
 
-        val visits = userEventVisitRepository.findByUserId(userId)
+        val visits = userEventVisitRepository.findRecentByUserId(userId, limit = 200)
         val visitedEventIds = visits.map { it.eventId }.toSet()
         // Batch-load all visited events in a single query instead of N individual findById calls
         val visitedEvents = eventRepository.findAllByIds(visitedEventIds)

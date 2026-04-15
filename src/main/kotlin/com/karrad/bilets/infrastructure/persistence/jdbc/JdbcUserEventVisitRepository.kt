@@ -65,6 +65,19 @@ class JdbcUserEventVisitRepository(
         userId
     )
 
+    override fun findRecentByUserId(userId: UUID, limit: Int): List<UserEventVisit> = jdbcTemplate.query(
+        """
+        select id, user_id, event_id, visited_at
+        from user_event_visits
+        where user_id = ?
+        order by visited_at desc, id
+        limit ?
+        """.trimIndent(),
+        { rs, _ -> mapVisit(rs) },
+        userId,
+        limit
+    )
+
     override fun deleteById(id: UUID): Boolean = jdbcTemplate.update(
         "delete from user_event_visits where id = ?",
         id
