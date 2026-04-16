@@ -2,6 +2,7 @@ package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.service.ApplicationServicesTestConfig
 import com.karrad.bilets.domain.repository.SmsCodeRepository
+import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.support.MutableClock
 import org.junit.jupiter.api.Test
@@ -24,7 +25,7 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should send code and store it`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock) { "123456" }
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter()) { "123456" }
 
         useCase.send("+79001234567")
 
@@ -36,7 +37,7 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should store code with correct expiry`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock) { "654321" }
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter()) { "654321" }
 
         useCase.send("+79001234567")
 
@@ -48,14 +49,14 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should reject blank phone`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
 
         assertFailsWith<IllegalArgumentException> { useCase.send("  ") }
     }
 
     @Test
     fun `should reject second send to same phone within rate limit window`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
 
         useCase.send("+79001234567")
         assertFailsWith<IllegalStateException> { useCase.send("+79001234567") }
@@ -63,7 +64,7 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should allow send after rate limit window expires`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
 
         useCase.send("+79001234567")
         mutableClock.advanceByMinutes(2)
@@ -74,7 +75,7 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should reject send after hourly limit is reached`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
         val phone = "+79009999999"
 
         // отправляем MAX_REQUESTS_PER_HOUR раз с минутными паузами
@@ -88,7 +89,7 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should allow send after hourly window slides`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock)
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
         val phone = "+79008888888"
 
         repeat(SendSmsCodeUseCase.MAX_REQUESTS_PER_HOUR) {
