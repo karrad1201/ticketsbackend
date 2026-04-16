@@ -17,5 +17,11 @@ class CorsConfig(
             .allowedHeaders("*")
             .allowCredentials(allowedOrigins != "*")
             .maxAge(3600)
+        registry.addMapping("/auth/**")
+            .allowedOriginPatterns(allowedOrigins)
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+            .allowedHeaders("*")
+            .allowCredentials(allowedOrigins != "*")
+            .maxAge(3600)
     }
 }
