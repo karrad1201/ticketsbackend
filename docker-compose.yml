@@ -15,5 +15,13 @@ services:
     ports:
       - "6379:6379"
 
+  wiremock:
+    image: wiremock/wiremock:latest
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+    command: --verbose
+
 volumes:
   postgres_data:

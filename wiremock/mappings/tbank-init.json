@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/Init"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "Success": true,
+      "ErrorCode": "0",
+      "TerminalKey": "test",
+      "Status": "NEW",
+      "PaymentId": 100500,
+      "OrderId": "stub-order",
+      "Amount": 10000,
+      "PaymentURL": "http://localhost:8888/pay/stub"
+    }
+  }
+}

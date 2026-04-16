@@ -23,3 +23,14 @@ springdoc:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+tbank:
+  base-url: https://securepay.tinkoff.ru/v2
+  terminal-key: ${TBANK_TERMINAL_KEY}
+  password: ${TBANK_PASSWORD}
+  notification-url: ${TBANK_NOTIFICATION_URL}
+
+zvonok:
+  base-url: https://zvonok.com
+  public-key: ${ZVONOK_PUBLIC_KEY}
+  campaign-id: ${ZVONOK_CAMPAIGN_ID}

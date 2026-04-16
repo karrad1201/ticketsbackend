@@ -38,6 +38,17 @@ app:
   cors:
     allowed-origins: "*"
 
+tbank:
+  base-url: http://localhost:8888
+  terminal-key: test
+  password: ""
+  notification-url: http://localhost:8080/api/payments/callbacks/tbank
+
+zvonok:
+  base-url: http://localhost:8888
+  public-key: test
+  campaign-id: test
+
 order-flow:
   persistence: jdbc
 

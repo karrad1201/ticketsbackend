@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/manager/cabapi_request/api/v1/phones/sms/"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "status": "ok",
+      "data": "stub-message-id"
+    }
+  }
+}
