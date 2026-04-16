@@ -1,5 +1,6 @@
 package com.karrad.bilets.application.service
 
+import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.config.PurchaseProperties
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.Ticket
@@ -20,17 +21,20 @@ class PaymentSettlementService(
     private val eventRepository: EventRepository,
     private val organizationRepository: OrganizationRepository,
     private val ticketRepository: TicketRepository,
-    private val purchaseProperties: PurchaseProperties
+    private val purchaseProperties: PurchaseProperties,
+    private val transactionManager: OrderFlowTransactionManager
 ) {
     fun completePaidOrder(order: Order, settledAt: Instant): Order {
         if (order.status != com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT) {
             return order
         }
-        val confirmedInventory = orderInventoryRepository.confirm(order)
-        val paidOrder = orderRepository.save(order.markPaid(settledAt))
-        creditOrganizationBalance(paidOrder)
-        ticketRepository.saveAll(issueTickets(paidOrder, confirmedInventory))
-        return paidOrder
+        return transactionManager.inTransaction {
+            val confirmedInventory = orderInventoryRepository.confirm(order)
+            val paidOrder = orderRepository.save(order.markPaid(settledAt))
+            creditOrganizationBalance(paidOrder)
+            ticketRepository.saveAll(issueTickets(paidOrder, confirmedInventory))
+            paidOrder
+        }
     }
 
     fun failPendingOrder(order: Order, failedAt: Instant): Order {

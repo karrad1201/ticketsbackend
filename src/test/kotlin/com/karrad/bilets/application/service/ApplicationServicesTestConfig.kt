@@ -204,14 +204,16 @@ class ApplicationServicesTestConfig {
         eventRepository: EventRepository,
         organizationRepository: OrganizationRepository,
         ticketRepository: TicketRepository,
-        purchaseProperties: PurchaseProperties
+        purchaseProperties: PurchaseProperties,
+        orderFlowTransactionManager: OrderFlowTransactionManager
     ): PaymentSettlementService = PaymentSettlementService(
         orderRepository,
         orderInventoryRepository,
         eventRepository,
         organizationRepository,
         ticketRepository,
-        purchaseProperties
+        purchaseProperties,
+        orderFlowTransactionManager
     )
 
     @Bean
