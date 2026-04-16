@@ -31,9 +31,14 @@ class UserController(
     }
 
     @GetMapping
-    fun list(): List<User> = userService.list()
+    fun list(): List<User> {
+        currentUserProvider.requireAdmin()
+        return userService.list()
+    }
 
     @GetMapping("/{userId}")
-    fun getById(@PathVariable userId: UUID): User =
-        userService.getById(userId) ?: throw NoSuchElementException("User not found: $userId")
+    fun getById(@PathVariable userId: UUID): User {
+        currentUserProvider.requireAdmin()
+        return userService.getById(userId) ?: throw NoSuchElementException("User not found: $userId")
+    }
 }
