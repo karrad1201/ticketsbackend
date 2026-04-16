@@ -1,6 +1,7 @@
 package com.karrad.bilets.domain.repository
 
 import com.karrad.bilets.domain.entity.PaymentAttempt
+import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import java.util.UUID
 
 interface PaymentAttemptRepository {
@@ -11,4 +12,6 @@ interface PaymentAttemptRepository {
     fun findByOrderId(orderId: UUID): PaymentAttempt?
     fun findByOrderIdForUpdate(orderId: UUID): PaymentAttempt? = findByOrderId(orderId)
     fun findAll(): List<PaymentAttempt>
+    fun findByStatus(status: PaymentAttemptStatus): List<PaymentAttempt> =
+        findAll().filter { it.status == status }
 }
