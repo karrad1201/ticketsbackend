@@ -23,8 +23,10 @@ import com.karrad.bilets.domain.repository.FavoriteEventRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsGateway
+import com.karrad.bilets.domain.sms.SmsRateLimiter
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
 import com.karrad.bilets.infrastructure.security.RedisBearerTokenRateLimiter
+import com.karrad.bilets.infrastructure.sms.RedisSmsRateLimiter
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCityRepository
@@ -168,4 +170,8 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun bearerTokenRateLimiter(redisTemplate: StringRedisTemplate): BearerTokenRateLimiter =
         RedisBearerTokenRateLimiter(redisTemplate)
+
+    @Bean
+    fun smsRateLimiter(redisTemplate: StringRedisTemplate): SmsRateLimiter =
+        RedisSmsRateLimiter(redisTemplate)
 }

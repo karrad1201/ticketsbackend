@@ -20,8 +20,12 @@ import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsGateway
+import com.karrad.bilets.domain.sms.SmsRateLimiter
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import com.karrad.bilets.infrastructure.security.InMemoryBearerTokenRateLimiter
+import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
@@ -77,6 +81,12 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun authTokenRepository(): AuthTokenRepository = InMemoryAuthTokenRepository()
+
+    @Bean
+    fun bearerTokenRateLimiter(): BearerTokenRateLimiter = InMemoryBearerTokenRateLimiter()
+
+    @Bean
+    fun smsRateLimiter(): SmsRateLimiter = InMemorySmsRateLimiter()
 
     @Bean
     fun smsGateway(): SmsGateway = MockSmsGateway()

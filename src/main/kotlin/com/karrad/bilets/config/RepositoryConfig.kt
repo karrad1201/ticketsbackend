@@ -40,7 +40,9 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRe
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
+import com.karrad.bilets.domain.sms.SmsRateLimiter
 import com.karrad.bilets.infrastructure.security.InMemoryBearerTokenRateLimiter
+import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
@@ -149,4 +151,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnMissingBean(BearerTokenRateLimiter::class)
     fun bearerTokenRateLimiter(): BearerTokenRateLimiter = InMemoryBearerTokenRateLimiter()
+
+    @Bean
+    @ConditionalOnMissingBean(SmsRateLimiter::class)
+    fun smsRateLimiter(): SmsRateLimiter = InMemorySmsRateLimiter()
 }
