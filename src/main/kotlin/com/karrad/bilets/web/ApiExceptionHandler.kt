@@ -27,4 +27,9 @@ class ApiExceptionHandler {
     fun handleForbidden(exception: SecurityException): ProblemDetail {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.message ?: "Forbidden")
     }
+
+    @ExceptionHandler(TooManyRequestsException::class)
+    fun handleTooManyRequests(exception: TooManyRequestsException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, exception.message ?: "Too many requests")
+    }
 }
