@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
@@ -14,7 +15,8 @@ import java.util.UUID
 class CurrentUserProvider(
     private val userRepository: UserRepository,
     private val authTokenRepository: AuthTokenRepository,
-    private val clock: Clock
+    private val clock: Clock,
+    private val bearerTokenRateLimiter: BearerTokenRateLimiter
 ) {
     fun requireUserId(): UUID = requireUser().id
 
@@ -27,7 +29,13 @@ class CurrentUserProvider(
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             val token = authHeader.removePrefix("Bearer ").trim()
             val authToken = authTokenRepository.findByToken(token)
-                ?: throw IllegalArgumentException("Invalid or expired token")
+            if (authToken == null) {
+                val ip = request.remoteAddr
+                if (bearerTokenRateLimiter.recordFailure(ip)) {
+                    throw TooManyRequestsException("Too many invalid token attempts")
+                }
+                throw IllegalArgumentException("Invalid or expired token")
+            }
             if (authToken.isExpired(clock.instant())) throw IllegalArgumentException("Token has expired")
             return requireNotNull(userRepository.findById(authToken.userId)) {
                 "Authenticated user not found: ${authToken.userId}"

@@ -39,6 +39,8 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserReposit
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.domain.security.BearerTokenRateLimiter
+import com.karrad.bilets.infrastructure.security.InMemoryBearerTokenRateLimiter
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
@@ -143,4 +145,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun orderFlowTransactionManager(): OrderFlowTransactionManager = NoOpOrderFlowTransactionManager()
+
+    @Bean
+    @ConditionalOnMissingBean(BearerTokenRateLimiter::class)
+    fun bearerTokenRateLimiter(): BearerTokenRateLimiter = InMemoryBearerTokenRateLimiter()
 }

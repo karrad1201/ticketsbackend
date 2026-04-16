@@ -21,8 +21,10 @@ import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
 import com.karrad.bilets.domain.repository.VenueRepository
+import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
+import com.karrad.bilets.infrastructure.security.RedisBearerTokenRateLimiter
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcCityRepository
@@ -51,6 +53,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
 import org.springframework.transaction.support.TransactionTemplate
@@ -161,4 +164,8 @@ class JdbcOrderFlowPersistenceConfig {
     @Profile("!prod")
     @ConditionalOnMissingBean(SmsGateway::class)
     fun smsGateway(): SmsGateway = MockSmsGateway()
+
+    @Bean
+    fun bearerTokenRateLimiter(redisTemplate: StringRedisTemplate): BearerTokenRateLimiter =
+        RedisBearerTokenRateLimiter(redisTemplate)
 }
