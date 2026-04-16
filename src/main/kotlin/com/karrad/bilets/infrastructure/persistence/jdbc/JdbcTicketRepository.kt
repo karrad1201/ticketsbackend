@@ -49,7 +49,38 @@ class JdbcTicketRepository(
             Timestamp.from(usedAt), ticketId
         ) > 0
 
-    override fun saveAll(tickets: List<Ticket>): List<Ticket> = tickets.map(::save)
+    override fun saveAll(tickets: List<Ticket>): List<Ticket> {
+        if (tickets.isEmpty()) return tickets
+        val sql = """
+            insert into tickets (
+                id, order_id, event_id, user_id, price,
+                section_key, row_key, seat_number, ticket_type_id, issued_at
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+                order_id = excluded.order_id, event_id = excluded.event_id,
+                user_id = excluded.user_id, price = excluded.price,
+                section_key = excluded.section_key, row_key = excluded.row_key,
+                seat_number = excluded.seat_number, ticket_type_id = excluded.ticket_type_id,
+                issued_at = excluded.issued_at
+            """.trimIndent()
+        jdbcTemplate.batchUpdate(sql, object : org.springframework.jdbc.core.BatchPreparedStatementSetter {
+            override fun setValues(ps: java.sql.PreparedStatement, i: Int) {
+                val t = tickets[i]
+                ps.setObject(1, t.id)
+                ps.setObject(2, t.orderId)
+                ps.setObject(3, t.eventId)
+                ps.setObject(4, t.userId)
+                ps.setInt(5, t.price)
+                ps.setObject(6, t.seatKey?.sectionKey)
+                ps.setObject(7, t.seatKey?.rowKey)
+                ps.setObject(8, t.seatKey?.seatKey)
+                ps.setObject(9, t.ticketTypeId)
+                ps.setTimestamp(10, Timestamp.from(t.issuedAt))
+            }
+            override fun getBatchSize(): Int = tickets.size
+        })
+        return tickets
+    }
 
     override fun findById(id: UUID): Ticket? = queryTickets("where id = ?", id).singleOrNull()
 
