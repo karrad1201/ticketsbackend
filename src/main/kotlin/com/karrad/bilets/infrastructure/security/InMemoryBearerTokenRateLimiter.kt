@@ -12,6 +12,7 @@ class InMemoryBearerTokenRateLimiter(
     private data class Window(val count: AtomicInteger, val resetAt: Long)
 
     private val windows = ConcurrentHashMap<String, Window>()
+    private val callCount = AtomicInteger(0)
 
     override fun recordFailure(ip: String): Boolean {
         val now = System.currentTimeMillis() / 1000
@@ -22,6 +23,12 @@ class InMemoryBearerTokenRateLimiter(
                 existing.also { it.count.incrementAndGet() }
             }
         }!!
+
+        // Purge stale entries every 1 000 calls to prevent unbounded growth.
+        if (callCount.incrementAndGet() % 1_000 == 0) {
+            windows.entries.removeIf { now >= it.value.resetAt }
+        }
+
         return window.count.get() > maxAttempts
     }
 }
