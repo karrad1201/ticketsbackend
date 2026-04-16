@@ -3,12 +3,14 @@ package com.karrad.bilets.web
 import com.karrad.bilets.application.usecase.HandlePaymentCallbackUseCase
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.web.dto.MockPaymentCallbackRequest
+import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Clock
 
+@Profile("!prod")
 @RestController
 @RequestMapping("/api/payments")
 class PaymentController(

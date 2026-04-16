@@ -25,6 +25,19 @@ spring:
 server:
   address: 0.0.0.0
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+app:
+  cors:
+    allowed-origins: "*"
+
 order-flow:
   persistence: jdbc
 
