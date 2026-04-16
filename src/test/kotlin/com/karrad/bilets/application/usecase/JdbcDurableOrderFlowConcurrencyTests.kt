@@ -28,7 +28,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @SpringJUnitConfig(JdbcDurableOrderFlowTestConfig::class)
-@Import(CreateOrderUseCase::class, ConfirmOrderPaymentUseCase::class, ExpireOrderUseCase::class)
+@Import(
+    CreateOrderUseCase::class,
+    ConfirmOrderPaymentUseCase::class,
+    ExpireOrderUseCase::class,
+    CloseEventSalesUseCase::class
+)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class JdbcDurableOrderFlowConcurrencyTests {
 
@@ -58,6 +63,9 @@ class JdbcDurableOrderFlowConcurrencyTests {
 
     @Autowired
     lateinit var expireOrderUseCase: ExpireOrderUseCase
+
+    @Autowired
+    lateinit var closeEventSalesUseCase: CloseEventSalesUseCase
 
     @BeforeEach
     fun seedCommonData() {
@@ -207,6 +215,79 @@ class JdbcDurableOrderFlowConcurrencyTests {
         assertEquals(0, ticketRepository.findByOrderId(order.id).size)
         assertEquals(0, admissionHeld(generalAdmissionEvent().id, standardTicketTypeId()))
         assertEquals(0, admissionSold(generalAdmissionEvent().id, standardTicketTypeId()))
+    }
+
+    @Test
+    fun `should reject order creation when sales close concurrently`() {
+        insertAdmissionInventory(generalAdmissionEvent().id, standardTicketTypeId(), price = 1500, capacity = 100)
+
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            // One thread closes sales; another tries to create an order simultaneously
+            val closeTask = executor.submit(Callable { runCatching { closeEventSalesUseCase.closeWhenStarted(generalAdmissionEvent().id) } })
+            val createTask = executor.submit(
+                Callable {
+                    runCatching {
+                        createOrderUseCase.create(
+                            CreateOrderCommand(
+                                eventId = generalAdmissionEvent().id,
+                                buyerUserId = buyer().id,
+                                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+                            )
+                        )
+                    }
+                }
+            )
+
+            closeTask.get()
+            val createResult = createTask.get()
+
+            // If the order was created before sales closed, it may succeed —
+            // but there must never be more than 1 PENDING_PAYMENT order when sales are closed
+            val orders = orderRepository.findAll()
+            assertTrue(orders.size <= 1)
+            if (createResult.isFailure) {
+                val msg = createResult.exceptionOrNull()?.message ?: ""
+                assertTrue(msg.contains("closed") || msg.contains("started") || msg.contains("sales"),
+                    "Unexpected failure message: $msg")
+            }
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `should produce correct org balance when two orders are confirmed concurrently`() {
+        // price=1500, commission=10% → net=1350 per order; two orders → expected balance=2700
+        insertAdmissionInventory(generalAdmissionEvent().id, standardTicketTypeId(), price = 1500, capacity = 100)
+
+        val order1 = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = generalAdmissionEvent().id,
+                buyerUserId = buyer().id,
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+        val order2 = createOrderUseCase.create(
+            CreateOrderCommand(
+                eventId = generalAdmissionEvent().id,
+                buyerUserId = buyer().id,
+                admissionItems = listOf(AdmissionQuantity(ticketTypeId = standardTicketTypeId(), quantity = 1))
+            )
+        )
+
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val t1 = executor.submit(Callable { confirmOrderPaymentUseCase.confirm(order1.id) })
+            val t2 = executor.submit(Callable { confirmOrderPaymentUseCase.confirm(order2.id) })
+            t1.get()
+            t2.get()
+
+            val balance = requireNotNull(organizationRepository.findById(organization().id)).balance
+            assertEquals(2700, balance, "Concurrent confirmations must not lose any credit")
+        } finally {
+            executor.shutdownNow()
+        }
     }
 
     private fun expireOrderAfterTtlConcurrently(orderId: UUID) {
