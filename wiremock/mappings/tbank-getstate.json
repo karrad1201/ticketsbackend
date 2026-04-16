@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/GetState"
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "Success": true,
+      "ErrorCode": "0",
+      "Status": "CONFIRMED",
+      "PaymentId": 100500
+    }
+  }
+}
