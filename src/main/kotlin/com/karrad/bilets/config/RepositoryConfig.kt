@@ -39,8 +39,10 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserReposit
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsRateLimiter
+import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
 import com.karrad.bilets.infrastructure.security.InMemoryBearerTokenRateLimiter
 import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
@@ -155,4 +157,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnMissingBean(SmsRateLimiter::class)
     fun smsRateLimiter(): SmsRateLimiter = InMemorySmsRateLimiter()
+
+    @Bean
+    @ConditionalOnMissingBean(EventLockManager::class)
+    fun eventLockManager(): EventLockManager = InMemoryEventLockManager()
 }
