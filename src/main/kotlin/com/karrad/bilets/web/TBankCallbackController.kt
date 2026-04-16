@@ -7,6 +7,7 @@ import com.karrad.bilets.application.usecase.HandlePaymentCallbackUseCase
 import com.karrad.bilets.config.TBankProperties
 import com.karrad.bilets.domain.enums.PaymentCallbackStatus
 import com.karrad.bilets.infrastructure.payment.TBankPaymentGateway
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.web.bind.annotation.PostMapping
@@ -24,6 +25,16 @@ class TBankCallbackController(
     private val clock: Clock
 ) {
     private val log = LoggerFactory.getLogger(TBankCallbackController::class.java)
+
+    @PostConstruct
+    fun validateConfig() {
+        require(tbankProperties.password.isNotBlank()) {
+            "TBANK_PASSWORD must not be empty in production"
+        }
+        require(tbankProperties.terminalKey.isNotBlank()) {
+            "TBANK_TERMINAL_KEY must not be empty in production"
+        }
+    }
 
     @PostMapping
     fun handleCallback(@RequestBody notification: TBankNotification): String {
@@ -63,7 +74,6 @@ class TBankCallbackController(
     }
 
     private fun verifySignature(notification: TBankNotification): Boolean {
-        if (tbankProperties.password.isBlank()) return true // dev/test mode
         val params = buildMap {
             put("TerminalKey", notification.terminalKey)
             put("OrderId", notification.orderId)

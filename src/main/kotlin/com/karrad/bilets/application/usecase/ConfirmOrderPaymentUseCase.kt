@@ -27,11 +27,16 @@ class ConfirmOrderPaymentUseCase(
     private val log = LoggerFactory.getLogger(ConfirmOrderPaymentUseCase::class.java)
 
     fun confirm(orderId: UUID): Order {
-        return orderFlowTransactionManager.inTransaction {
-            val freshOrder = requireNotNull(orderRepository.findByIdForUpdate(orderId)) {
-                "Order not found: $orderId"
-            }
-            eventLockManager.withEventLock(freshOrder.eventId) {
+        // Read without lock just to get eventId for the distributed lock.
+        // The order is re-read with FOR UPDATE inside the transaction below.
+        val orderForLock = requireNotNull(orderRepository.findById(orderId)) {
+            "Order not found: $orderId"
+        }
+        return eventLockManager.withEventLock(orderForLock.eventId) {
+            orderFlowTransactionManager.inTransaction {
+                val freshOrder = requireNotNull(orderRepository.findByIdForUpdate(orderId)) {
+                    "Order not found: $orderId"
+                }
                 if (freshOrder.status == OrderStatus.EXPIRED) {
                     throw IllegalStateException("Order is already expired: $orderId")
                 }

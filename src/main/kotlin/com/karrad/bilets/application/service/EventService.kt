@@ -30,6 +30,9 @@ class EventService(
         return eventRepository.save(event)
     }
 
-    @CacheEvict(value = ["events"], cacheManager = "redisCacheManager", key = "#id")
+    @Caching(evict = [
+        CacheEvict(value = ["events"], cacheManager = "redisCacheManager", key = "#id"),
+        CacheEvict(value = ["discovery"], cacheManager = "redisCacheManager", allEntries = true)
+    ])
     fun deleteById(id: UUID): Boolean = eventRepository.deleteById(id)
 }

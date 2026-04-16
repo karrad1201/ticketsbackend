@@ -69,10 +69,12 @@ class UserControllerIntegrationTests {
 
         val user = userRepository.findByEmail("user@example.com")!!
 
-        mockMvc.perform(get("/api/users"))
+        val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
+
+        mockMvc.perform(get("/api/users").header("Authorization", adminBearer))
             .andExpect(status().isOk)
 
-        mockMvc.perform(get("/api/users/${user.id}"))
+        mockMvc.perform(get("/api/users/${user.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.fullName").value("Regular User"))
     }
