@@ -126,6 +126,17 @@ class JdbcOrderRepository(
         )
     )
 
+    override fun findByIds(ids: Collection<UUID>): List<Order> {
+        if (ids.isEmpty()) return emptyList()
+        val placeholders = ids.joinToString(", ") { "?" }
+        return batchLoadItems(
+            jdbcTemplate.query(
+                "select $ORDER_COLS from orders where id in ($placeholders) order by created_at, id",
+                { rs, _ -> rs.mapOrder() }, *ids.toTypedArray<Any>()
+            )
+        )
+    }
+
     // --- batch helpers ---
 
     private fun batchLoadItems(orders: List<Order>): List<Order> {

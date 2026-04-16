@@ -15,13 +15,15 @@ class PaymentReconciliationService(
 ) {
     fun findStalePendingAttempts(now: Instant, limit: Int = Int.MAX_VALUE): List<PaymentAttempt> {
         require(limit > 0) { "limit must be positive" }
-        return paymentAttemptRepository.findAll().filter { attempt ->
-            if (attempt.status != PaymentAttemptStatus.PENDING) {
-                false
-            } else {
-                val order = orderRepository.findById(attempt.orderId) ?: return@filter true
-                order.status == OrderStatus.PENDING_PAYMENT && !now.isBefore(order.expiresAt)
-            }
+        val pendingAttempts = paymentAttemptRepository.findByStatus(PaymentAttemptStatus.PENDING)
+        if (pendingAttempts.isEmpty()) return emptyList()
+
+        val orderIds = pendingAttempts.map { it.orderId }.toSet()
+        val ordersById = orderRepository.findByIds(orderIds).associateBy { it.id }
+
+        return pendingAttempts.filter { attempt ->
+            val order = ordersById[attempt.orderId] ?: return@filter true
+            order.status == OrderStatus.PENDING_PAYMENT && !now.isBefore(order.expiresAt)
         }.take(limit)
     }
 }

@@ -10,6 +10,7 @@ interface OrderRepository {
     fun findById(id: UUID): Order?
     fun findByIdForUpdate(id: UUID): Order? = findById(id)
     fun findAll(): List<Order>
+    fun findByIds(ids: Collection<UUID>): List<Order> = findAll().filter { it.id in ids }
     fun findPendingByEventId(eventId: UUID): List<Order> = findAll().filter { it.eventId == eventId }
     fun findExpiredPending(now: Instant): List<Order> =
         findAll().filter { it.status == OrderStatus.PENDING_PAYMENT && now.isAfter(it.expiresAt) }

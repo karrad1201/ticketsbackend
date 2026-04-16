@@ -80,6 +80,29 @@ class JdbcPaymentAttemptRepository(
         )
     }
 
+    override fun findByStatus(status: PaymentAttemptStatus): List<PaymentAttempt> = jdbcTemplate.query(
+        """
+        select id, order_id, reference, amount, status, created_at, updated_at, confirmed_at, failure_reason
+        from payment_attempts
+        where status = ?
+        order by created_at, id
+        """.trimIndent(),
+        { rs, _ ->
+            PaymentAttempt(
+                orderId = rs.uuid("order_id"),
+                reference = rs.getString("reference"),
+                amount = rs.getInt("amount"),
+                status = PaymentAttemptStatus.valueOf(rs.getString("status")),
+                createdAt = rs.instant("created_at"),
+                updatedAt = rs.instant("updated_at"),
+                confirmedAt = rs.nullableInstant("confirmed_at"),
+                failureReason = rs.getString("failure_reason"),
+                id = rs.uuid("id")
+            )
+        },
+        status.name
+    )
+
     private fun queryOne(predicate: String, value: Any): PaymentAttempt? = jdbcTemplate.query(
         """
         select id, order_id, reference, amount, status, created_at, updated_at, confirmed_at, failure_reason
