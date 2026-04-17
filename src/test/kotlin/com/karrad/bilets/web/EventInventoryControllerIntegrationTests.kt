@@ -124,6 +124,7 @@ class EventInventoryControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/123e4567-e89b-12d3-a456-426614174302/inventory/seated")
+                .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

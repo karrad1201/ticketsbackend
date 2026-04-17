@@ -64,42 +64,36 @@ class JdbcOrderRepository(
     }
 
     override fun findById(id: UUID): Order? {
-        val order = jdbcTemplate.query(
+        val row = jdbcTemplate.query(
             "select $ORDER_COLS from orders where id = ?",
-            { rs, _ -> rs.mapOrder() }, id
+            { rs, _ -> rs.mapOrderRow() }, id
         ).singleOrNull() ?: return null
-        return order.copy(
-            seatKeys = findSeatKeys(id),
-            admissionItems = findAdmissionItems(id)
-        )
+        return row.toOrder(findSeatKeys(id), findAdmissionItems(id))
     }
 
     override fun findByIdForUpdate(id: UUID): Order? {
-        val order = jdbcTemplate.query(
+        val row = jdbcTemplate.query(
             "select $ORDER_COLS from orders where id = ? for update",
-            { rs, _ -> rs.mapOrder() }, id
+            { rs, _ -> rs.mapOrderRow() }, id
         ).singleOrNull() ?: return null
-        return order.copy(
-            seatKeys = findSeatKeys(id),
-            admissionItems = findAdmissionItems(id)
-        )
+        return row.toOrder(findSeatKeys(id), findAdmissionItems(id))
     }
 
     override fun findAll(): List<Order> = batchLoadItems(
-        jdbcTemplate.query("select $ORDER_COLS from orders order by created_at, id") { rs, _ -> rs.mapOrder() }
+        jdbcTemplate.query("select $ORDER_COLS from orders order by created_at, id") { rs, _ -> rs.mapOrderRow() }
     )
 
     override fun findPendingByEventId(eventId: UUID): List<Order> = batchLoadItems(
         jdbcTemplate.query(
             "select $ORDER_COLS from orders where event_id = ? and status = 'PENDING_PAYMENT' order by created_at, id",
-            { rs, _ -> rs.mapOrder() }, eventId
+            { rs, _ -> rs.mapOrderRow() }, eventId
         )
     )
 
     override fun findExpiredPending(now: Instant): List<Order> = batchLoadItems(
         jdbcTemplate.query(
             "select $ORDER_COLS from orders where status = 'PENDING_PAYMENT' and expires_at < ? order by expires_at, id",
-            { rs, _ -> rs.mapOrder() }, Timestamp.from(now)
+            { rs, _ -> rs.mapOrderRow() }, Timestamp.from(now)
         )
     )
 
@@ -109,16 +103,16 @@ class JdbcOrderRepository(
         return batchLoadItems(
             jdbcTemplate.query(
                 "select $ORDER_COLS from orders where id in ($placeholders) order by created_at, id",
-                { rs, _ -> rs.mapOrder() }, *ids.toTypedArray<Any>()
+                { rs, _ -> rs.mapOrderRow() }, *ids.toTypedArray<Any>()
             )
         )
     }
 
     // --- batch helpers ---
 
-    private fun batchLoadItems(orders: List<Order>): List<Order> {
-        if (orders.isEmpty()) return orders
-        val orderIds = orders.map { it.id }
+    private fun batchLoadItems(rows: List<OrderRow>): List<Order> {
+        if (rows.isEmpty()) return emptyList()
+        val orderIds = rows.map { it.id }
         val placeholders = orderIds.joinToString(", ") { "?" }
         val params = orderIds.toTypedArray<Any>()
 
@@ -146,10 +140,10 @@ class JdbcOrderRepository(
             *params
         )
 
-        return orders.map { order ->
-            order.copy(
-                seatKeys = seatsByOrder[order.id] ?: emptyList(),
-                admissionItems = admissionByOrder[order.id] ?: emptyList()
+        return rows.map { row ->
+            row.toOrder(
+                seatsByOrder[row.id] ?: emptyList(),
+                admissionByOrder[row.id] ?: emptyList()
             )
         }
     }
@@ -191,7 +185,37 @@ class JdbcOrderRepository(
 
     // --- mapping ---
 
-    private fun ResultSet.mapOrder() = Order(
+    private data class OrderRow(
+        val id: UUID,
+        val eventId: UUID,
+        val buyerUserId: UUID,
+        val amount: Int,
+        val expiresAt: Instant,
+        val paymentReference: String,
+        val paymentUrl: String,
+        val status: OrderStatus,
+        val createdAt: Instant,
+        val paidAt: Instant?,
+        val failedAt: Instant?
+    )
+
+    private fun OrderRow.toOrder(seatKeys: List<SeatKey>, admissionItems: List<AdmissionQuantity>) = Order(
+        id = id,
+        eventId = eventId,
+        buyerUserId = buyerUserId,
+        amount = amount,
+        expiresAt = expiresAt,
+        paymentReference = paymentReference,
+        paymentUrl = paymentUrl,
+        status = status,
+        createdAt = createdAt,
+        paidAt = paidAt,
+        failedAt = failedAt,
+        seatKeys = seatKeys,
+        admissionItems = admissionItems
+    )
+
+    private fun ResultSet.mapOrderRow() = OrderRow(
         id = uuid("id"),
         eventId = uuid("event_id"),
         buyerUserId = uuid("buyer_user_id"),
@@ -202,9 +226,7 @@ class JdbcOrderRepository(
         status = OrderStatus.valueOf(getString("status")),
         createdAt = instant("created_at"),
         paidAt = nullableInstant("paid_at"),
-        failedAt = nullableInstant("failed_at"),
-        seatKeys = emptyList(),
-        admissionItems = emptyList()
+        failedAt = nullableInstant("failed_at")
     )
 
     companion object {

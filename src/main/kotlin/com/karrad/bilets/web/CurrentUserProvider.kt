@@ -34,15 +34,15 @@ class CurrentUserProvider(
                 if (bearerTokenRateLimiter.recordFailure(ip)) {
                     throw TooManyRequestsException("Too many invalid token attempts")
                 }
-                throw IllegalArgumentException("Invalid or expired token")
+                throw UnauthorizedException("Invalid or expired token")
             }
-            if (authToken.isExpired(clock.instant())) throw IllegalArgumentException("Token has expired")
+            if (authToken.isExpired(clock.instant())) throw UnauthorizedException("Token has expired")
             return requireNotNull(userRepository.findById(authToken.userId)) {
                 "Authenticated user not found: ${authToken.userId}"
             }
         }
 
-        throw IllegalArgumentException("Missing authorization: provide Bearer token")
+        throw UnauthorizedException("Missing authorization: provide Bearer token")
     }
 
     fun currentUserId(): UUID? = try { requireUserId() } catch (_: Exception) { null }
