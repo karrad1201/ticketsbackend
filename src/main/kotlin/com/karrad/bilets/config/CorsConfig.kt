@@ -11,17 +11,19 @@ class CorsConfig(
 ) : WebMvcConfigurer {
 
     override fun addCorsMappings(registry: CorsRegistry) {
+        val origins = allowedOrigins.split(",").map { it.trim() }.toTypedArray()
+        val useCredentials = allowedOrigins.trim() != "*"
         registry.addMapping("/api/**")
-            .allowedOriginPatterns(allowedOrigins)
+            .allowedOriginPatterns(*origins)
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")
-            .allowCredentials(allowedOrigins != "*")
+            .allowCredentials(useCredentials)
             .maxAge(3600)
         registry.addMapping("/auth/**")
-            .allowedOriginPatterns(allowedOrigins)
+            .allowedOriginPatterns(*origins)
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")
-            .allowCredentials(allowedOrigins != "*")
+            .allowCredentials(useCredentials)
             .maxAge(3600)
     }
 }
