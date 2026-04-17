@@ -94,21 +94,71 @@ class JdbcEventInventoryPlanRepository(
         eventId
     ).singleOrNull()
 
-    override fun findAll(): List<EventInventoryPlan> = jdbcTemplate.query(
-        """
-        select event_id, mode, layout_template_id
-        from event_inventory_plans
-        order by event_id
-        """.trimIndent()
-    ) { rs, _ ->
-        val eventId = rs.uuid("event_id")
-        EventInventoryPlan(
-            eventId = eventId,
-            mode = InventoryMode.valueOf(rs.getString("mode")),
-            layoutTemplateId = rs.nullableUuid("layout_template_id"),
-            seatInventory = findSeats(eventId),
-            admissionInventory = findAdmission(eventId)
+    override fun findAll(): List<EventInventoryPlan> {
+        val plans = jdbcTemplate.query(
+            """
+            select event_id, mode, layout_template_id
+            from event_inventory_plans
+            order by event_id
+            """.trimIndent()
+        ) { rs, _ ->
+            Triple(
+                rs.uuid("event_id"),
+                InventoryMode.valueOf(rs.getString("mode")),
+                rs.nullableUuid("layout_template_id")
+            )
+        }
+        if (plans.isEmpty()) return emptyList()
+        val eventIds = plans.map { it.first }
+        val placeholders = eventIds.joinToString(", ") { "?" }
+        val params = eventIds.toTypedArray<Any>()
+
+        val seatsByEvent = mutableMapOf<UUID, MutableList<EventSeat>>()
+        jdbcTemplate.query(
+            "select event_id, section_key, row_key, seat_number, price, status from event_seat_inventory where event_id in ($placeholders) order by event_id, section_key, row_key, seat_number",
+            { rs, _ ->
+                val eid = rs.uuid("event_id")
+                seatsByEvent.getOrPut(eid) { mutableListOf() }.add(
+                    EventSeat(
+                        eventUuid = eid,
+                        seatKey = SeatKey(rs.getString("section_key"), rs.getString("row_key"), rs.getString("seat_number")),
+                        price = rs.getInt("price"),
+                        status = SeatStatus.valueOf(rs.getString("status"))
+                    )
+                )
+            },
+            *params
         )
+
+        val admissionByEvent = mutableMapOf<UUID, MutableList<EventAdmissionInventory>>()
+        jdbcTemplate.query(
+            "select event_id, ticket_type_id, label, price, capacity, held, sold from event_admission_inventory where event_id in ($placeholders) order by event_id, ticket_type_id",
+            { rs, _ ->
+                val eid = rs.uuid("event_id")
+                admissionByEvent.getOrPut(eid) { mutableListOf() }.add(
+                    EventAdmissionInventory(
+                        eventId = eid,
+                        ticketTypeId = rs.uuid("ticket_type_id"),
+                        label = rs.getString("label"),
+                        price = rs.getInt("price"),
+                        capacity = rs.getInt("capacity"),
+                        held = rs.getInt("held"),
+                        sold = rs.getInt("sold")
+                    )
+                )
+            },
+            *params
+        )
+
+        return plans.map { (eventId, mode, layoutTemplateId) ->
+            EventInventoryPlan(
+                eventId = eventId,
+                mode = mode,
+                layoutTemplateId = layoutTemplateId,
+                seatInventory = seatsByEvent[eventId] ?: emptyList(),
+                admissionInventory = admissionByEvent[eventId] ?: emptyList()
+            )
+        }
     }
 
     override fun deleteByEventId(eventId: UUID): Boolean {

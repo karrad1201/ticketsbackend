@@ -10,27 +10,14 @@ class JdbcCategoryRepository(
 ) : CategoryRepository {
 
     override fun save(category: Category): Category {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update categories
-            set code = ?, label = ?
-            where id = ?
+            insert into categories (id, code, label)
+            values (?, ?, ?)
+            on conflict (id) do update set code = excluded.code, label = excluded.label
             """.trimIndent(),
-            category.code,
-            category.label,
-            category.id
+            category.id, category.code, category.label
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into categories (id, code, label)
-                values (?, ?, ?)
-                """.trimIndent(),
-                category.id,
-                category.code,
-                category.label
-            )
-        }
         return category
     }
 

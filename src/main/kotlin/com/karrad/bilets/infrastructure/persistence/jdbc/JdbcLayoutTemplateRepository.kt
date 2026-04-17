@@ -12,27 +12,14 @@ class JdbcLayoutTemplateRepository(
 ) : LayoutTemplateRepository {
 
     override fun save(layoutTemplate: LayoutTemplate): LayoutTemplate {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update layout_templates
-            set venue_space_id = ?, label = ?
-            where id = ?
+            insert into layout_templates (id, venue_space_id, label)
+            values (?, ?, ?)
+            on conflict (id) do update set venue_space_id = excluded.venue_space_id, label = excluded.label
             """.trimIndent(),
-            layoutTemplate.venueSpaceId,
-            layoutTemplate.label,
-            layoutTemplate.id
+            layoutTemplate.id, layoutTemplate.venueSpaceId, layoutTemplate.label
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into layout_templates (id, venue_space_id, label)
-                values (?, ?, ?)
-                """.trimIndent(),
-                layoutTemplate.id,
-                layoutTemplate.venueSpaceId,
-                layoutTemplate.label
-            )
-        }
 
         jdbcTemplate.update("delete from layout_template_rows where layout_template_id = ?", layoutTemplate.id)
         jdbcTemplate.update("delete from layout_template_sections where layout_template_id = ?", layoutTemplate.id)

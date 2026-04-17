@@ -11,29 +11,15 @@ class JdbcOrganizationMemberRepository(
 ) : OrganizationMemberRepository {
 
     override fun save(member: OrganizationMember): OrganizationMember {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update organization_members
-            set organization_id = ?, user_id = ?, role = ?
-            where id = ?
+            insert into organization_members (id, organization_id, user_id, role)
+            values (?, ?, ?, ?)
+            on conflict (id) do update set
+              organization_id = excluded.organization_id, user_id = excluded.user_id, role = excluded.role
             """.trimIndent(),
-            member.organizationId,
-            member.userId,
-            member.role.name,
-            member.id
+            member.id, member.organizationId, member.userId, member.role.name
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into organization_members (id, organization_id, user_id, role)
-                values (?, ?, ?, ?)
-                """.trimIndent(),
-                member.id,
-                member.organizationId,
-                member.userId,
-                member.role.name
-            )
-        }
         return member
     }
 

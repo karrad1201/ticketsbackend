@@ -16,45 +16,22 @@ class JdbcOrderRepository(
 ) : OrderRepository {
 
     override fun save(order: Order): Order {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update orders
-            set event_id = ?, buyer_user_id = ?, amount = ?, expires_at = ?, payment_reference = ?, payment_url = ?,
-                status = ?, created_at = ?, paid_at = ?, failed_at = ?
-            where id = ?
+            insert into orders (
+                id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              event_id = excluded.event_id, buyer_user_id = excluded.buyer_user_id,
+              amount = excluded.amount, expires_at = excluded.expires_at,
+              payment_reference = excluded.payment_reference, payment_url = excluded.payment_url,
+              status = excluded.status, created_at = excluded.created_at,
+              paid_at = excluded.paid_at, failed_at = excluded.failed_at
             """.trimIndent(),
-            order.eventId,
-            order.buyerUserId,
-            order.amount,
-            Timestamp.from(order.expiresAt),
-            order.paymentReference,
-            order.paymentUrl,
-            order.status.name,
-            Timestamp.from(order.createdAt),
-            instantToTimestamp(order.paidAt),
-            instantToTimestamp(order.failedAt),
-            order.id
+            order.id, order.eventId, order.buyerUserId, order.amount, Timestamp.from(order.expiresAt),
+            order.paymentReference, order.paymentUrl, order.status.name,
+            Timestamp.from(order.createdAt), instantToTimestamp(order.paidAt), instantToTimestamp(order.failedAt)
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into orders (
-                    id, event_id, buyer_user_id, amount, expires_at, payment_reference, payment_url, status, created_at, paid_at, failed_at
-                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                order.id,
-                order.eventId,
-                order.buyerUserId,
-                order.amount,
-                Timestamp.from(order.expiresAt),
-                order.paymentReference,
-                order.paymentUrl,
-                order.status.name,
-                Timestamp.from(order.createdAt),
-                instantToTimestamp(order.paidAt),
-                instantToTimestamp(order.failedAt)
-            )
-        }
 
         jdbcTemplate.update("delete from order_seat_items where order_id = ?", order.id)
         order.seatKeys.forEach { seatKey ->

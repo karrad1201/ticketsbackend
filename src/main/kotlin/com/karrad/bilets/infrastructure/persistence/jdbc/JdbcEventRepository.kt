@@ -12,47 +12,22 @@ class JdbcEventRepository(
 ) : EventRepository {
 
     override fun save(event: Event): Event {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update events
-            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?, image_url = ?, min_price = ?, age_rating = ?, has_seat_map = ?
-            where id = ?
+            insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              label = excluded.label, description = excluded.description, venue_id = excluded.venue_id,
+              category_id = excluded.category_id, event_time = excluded.event_time,
+              venue_space_id = excluded.venue_space_id, organization_id = excluded.organization_id,
+              sales_closed_at = excluded.sales_closed_at, image_url = excluded.image_url,
+              min_price = excluded.min_price, age_rating = excluded.age_rating, has_seat_map = excluded.has_seat_map
             """.trimIndent(),
-            event.label,
-            event.description,
-            event.venueId,
-            event.categoryId,
-            Timestamp.from(event.time),
-            event.venueSpaceId,
-            event.organizationId,
-            instantToTimestamp(event.salesClosedAt),
-            event.imageUrl,
-            event.minPrice,
-            event.ageRating,
-            event.hasSeatMap,
-            event.id
+            event.id, event.label, event.description, event.venueId, event.categoryId,
+            Timestamp.from(event.time), event.venueSpaceId, event.organizationId,
+            instantToTimestamp(event.salesClosedAt), event.imageUrl, event.minPrice,
+            event.ageRating, event.hasSeatMap
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                event.id,
-                event.label,
-                event.description,
-                event.venueId,
-                event.categoryId,
-                Timestamp.from(event.time),
-                event.venueSpaceId,
-                event.organizationId,
-                instantToTimestamp(event.salesClosedAt),
-                event.imageUrl,
-                event.minPrice,
-                event.ageRating,
-                event.hasSeatMap
-            )
-        }
         return event
     }
 

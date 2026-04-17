@@ -13,33 +13,18 @@ class JdbcVenueRepository(
 ) : VenueRepository {
 
     override fun save(venue: Venue): Venue {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update venues
-            set label = ?, city_label = ?, subject_label = ?, organization_id = ?, address = ?
-            where id = ?
+            insert into venues (id, label, city_label, subject_label, organization_id, address)
+            values (?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              label = excluded.label, city_label = excluded.city_label,
+              subject_label = excluded.subject_label, organization_id = excluded.organization_id,
+              address = excluded.address
             """.trimIndent(),
-            venue.label,
-            venue.city.label,
-            venue.city.subject.label,
-            venue.organizationId,
-            venue.address,
-            venue.id
+            venue.id, venue.label, venue.city.label, venue.city.subject.label,
+            venue.organizationId, venue.address
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into venues (id, label, city_label, subject_label, organization_id, address)
-                values (?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                venue.id,
-                venue.label,
-                venue.city.label,
-                venue.city.subject.label,
-                venue.organizationId,
-                venue.address
-            )
-        }
 
         jdbcTemplate.update("delete from venue_spaces where venue_id = ?", venue.id)
         venue.spaces.forEach { space ->

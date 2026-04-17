@@ -13,33 +13,22 @@ class JdbcTicketRepository(
 ) : TicketRepository {
 
     override fun save(ticket: Ticket): Ticket {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update tickets
-            set order_id = ?, event_id = ?, user_id = ?, price = ?,
-                section_key = ?, row_key = ?, seat_number = ?, ticket_type_id = ?, issued_at = ?
-            where id = ?
+            insert into tickets (
+                id, order_id, event_id, user_id, price,
+                section_key, row_key, seat_number, ticket_type_id, issued_at
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              order_id = excluded.order_id, event_id = excluded.event_id, user_id = excluded.user_id,
+              price = excluded.price, section_key = excluded.section_key, row_key = excluded.row_key,
+              seat_number = excluded.seat_number, ticket_type_id = excluded.ticket_type_id,
+              issued_at = excluded.issued_at
             """.trimIndent(),
-            ticket.orderId, ticket.eventId, ticket.userId, ticket.price,
+            ticket.id, ticket.orderId, ticket.eventId, ticket.userId, ticket.price,
             ticket.seatKey?.sectionKey, ticket.seatKey?.rowKey, ticket.seatKey?.seatKey,
-            ticket.ticketTypeId,
-            Timestamp.from(ticket.issuedAt),
-            ticket.id
+            ticket.ticketTypeId, Timestamp.from(ticket.issuedAt)
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into tickets (
-                    id, order_id, event_id, user_id, price,
-                    section_key, row_key, seat_number, ticket_type_id, issued_at
-                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                ticket.id, ticket.orderId, ticket.eventId, ticket.userId, ticket.price,
-                ticket.seatKey?.sectionKey, ticket.seatKey?.rowKey, ticket.seatKey?.seatKey,
-                ticket.ticketTypeId,
-                Timestamp.from(ticket.issuedAt)
-            )
-        }
         return ticket
     }
 
