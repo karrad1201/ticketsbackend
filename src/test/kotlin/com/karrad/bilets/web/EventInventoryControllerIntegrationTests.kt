@@ -5,9 +5,13 @@ import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,6 +32,7 @@ import java.util.UUID
 class EventInventoryControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
+    lateinit var adminBearer: String
 
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
@@ -44,9 +49,23 @@ class EventInventoryControllerIntegrationTests {
     @Autowired
     lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val admin = User(
+            fullName = "Admin",
+            email = "admin@example.com",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174300")
+        )
+        userRepository.save(admin)
+        adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
     }
 
     @Test
@@ -58,6 +77,7 @@ class EventInventoryControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/seated")
+                .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -78,6 +98,7 @@ class EventInventoryControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission")
+                .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -128,6 +149,7 @@ class EventInventoryControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission")
+                .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)
         )
@@ -135,6 +157,7 @@ class EventInventoryControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission")
+                .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)
         )

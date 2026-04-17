@@ -27,32 +27,16 @@ class JdbcVenueAccessGrantRepository(
     """.trimIndent()
 
     override fun save(grant: VenueAccessGrant): VenueAccessGrant {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update venue_access_grants
-            set status = ?, decided_at = ?, decided_by = ?
-            where id = ?
+            insert into venue_access_grants (id, venue_id, requesting_org_id, status, created_at, decided_at, decided_by)
+            values (?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              status = excluded.status, decided_at = excluded.decided_at, decided_by = excluded.decided_by
             """.trimIndent(),
-            grant.status.name,
-            instantToTimestamp(grant.decidedAt),
-            grant.decidedBy,
-            grant.id
+            grant.id, grant.venueId, grant.requestingOrgId, grant.status.name,
+            Timestamp.from(grant.createdAt), instantToTimestamp(grant.decidedAt), grant.decidedBy
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into venue_access_grants (id, venue_id, requesting_org_id, status, created_at, decided_at, decided_by)
-                values (?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                grant.id,
-                grant.venueId,
-                grant.requestingOrgId,
-                grant.status.name,
-                Timestamp.from(grant.createdAt),
-                instantToTimestamp(grant.decidedAt),
-                grant.decidedBy
-            )
-        }
         return grant
     }
 

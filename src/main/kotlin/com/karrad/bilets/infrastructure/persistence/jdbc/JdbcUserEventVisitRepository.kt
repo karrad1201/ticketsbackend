@@ -10,29 +10,16 @@ class JdbcUserEventVisitRepository(
 ) : UserEventVisitRepository {
 
     override fun save(userEventVisit: UserEventVisit): UserEventVisit {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update user_event_visits
-            set user_id = ?, event_id = ?, visited_at = ?
-            where id = ?
+            insert into user_event_visits (id, user_id, event_id, visited_at)
+            values (?, ?, ?, ?)
+            on conflict (id) do update set
+              user_id = excluded.user_id, event_id = excluded.event_id, visited_at = excluded.visited_at
             """.trimIndent(),
-            userEventVisit.userId,
-            userEventVisit.eventId,
-            instantToTimestamp(userEventVisit.visitedAt),
-            userEventVisit.id
+            userEventVisit.id, userEventVisit.userId, userEventVisit.eventId,
+            instantToTimestamp(userEventVisit.visitedAt)
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into user_event_visits (id, user_id, event_id, visited_at)
-                values (?, ?, ?, ?)
-                """.trimIndent(),
-                userEventVisit.id,
-                userEventVisit.userId,
-                userEventVisit.eventId,
-                instantToTimestamp(userEventVisit.visitedAt)
-            )
-        }
         return userEventVisit
     }
 

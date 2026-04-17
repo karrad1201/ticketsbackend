@@ -6,10 +6,14 @@ import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.SeatStatus
+import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +34,7 @@ import java.util.UUID
 class EventSeatHoldControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
+    lateinit var userBearer: String
 
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
@@ -46,9 +51,23 @@ class EventSeatHoldControllerIntegrationTests {
     @Autowired
     lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val user = User(
+            fullName = "Test User",
+            email = "user@example.com",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174700")
+        )
+        userRepository.save(user)
+        userBearer = "Bearer ${authTokenRepository.bearerFor(user.id)}"
     }
 
     @Test
@@ -61,6 +80,7 @@ class EventSeatHoldControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/holds")
+                .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

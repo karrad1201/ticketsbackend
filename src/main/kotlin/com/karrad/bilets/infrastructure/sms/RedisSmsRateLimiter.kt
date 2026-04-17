@@ -3,9 +3,7 @@ package com.karrad.bilets.infrastructure.sms
 import com.karrad.bilets.domain.sms.SmsRateLimiter
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
-import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 class RedisSmsRateLimiter(
     private val redisTemplate: StringRedisTemplate,
@@ -14,15 +12,27 @@ class RedisSmsRateLimiter(
     private val maxPerHour: Int = 5
 ) : SmsRateLimiter {
 
-    // Atomically increments the hourly counter and sets TTL on the first call.
-    // KEYS[1] = hourly key, ARGV[1] = window TTL in seconds
-    // Returns the new counter value.
-    private val incrScript = DefaultRedisScript<Long>().apply {
+    // Atomically:
+    // 1. Check cooldown key TTL — if > 0 return remaining seconds (blocked)
+    // 2. Increment hourly counter, set TTL on first call
+    // 3. If count > maxPerHour, decrement and return -1 (hourly limit)
+    // 4. Set cooldown key with EX, return 0 (allowed)
+    //
+    // KEYS[1] = cooldownKey, KEYS[2] = hourlyKey
+    // ARGV[1] = cooldownSeconds, ARGV[2] = hourlyWindowSeconds, ARGV[3] = maxPerHour
+    private val checkAndRecordScript = DefaultRedisScript<Long>().apply {
         setScriptText(
             """
-            local v = redis.call('INCR', KEYS[1])
-            if v == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
-            return v
+            local ttl = redis.call('TTL', KEYS[1])
+            if ttl > 0 then return ttl end
+            local count = redis.call('INCR', KEYS[2])
+            if count == 1 then redis.call('EXPIRE', KEYS[2], ARGV[2]) end
+            if count > tonumber(ARGV[3]) then
+              redis.call('DECR', KEYS[2])
+              return -1
+            end
+            redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+            return 0
             """.trimIndent()
         )
         resultType = Long::class.java
@@ -32,22 +42,17 @@ class RedisSmsRateLimiter(
         val cooldownKey = "sms:cooldown:$phone"
         val hourlyKey = "sms:hourly:$phone"
 
-        // Cooldown check
-        if (redisTemplate.hasKey(cooldownKey) == true) {
-            val ttl = redisTemplate.getExpire(cooldownKey, TimeUnit.SECONDS)
-            throw IllegalStateException("Too many requests: wait ${ttl}s before requesting a new code")
+        val result = redisTemplate.execute(
+            checkAndRecordScript,
+            listOf(cooldownKey, hourlyKey),
+            cooldownSeconds.toString(),
+            hourlyWindowSeconds.toString(),
+            maxPerHour.toString()
+        ) ?: 0L
+
+        when {
+            result > 0L -> throw IllegalStateException("Too many requests: wait ${result}s before requesting a new code")
+            result == -1L -> throw IllegalStateException("Hourly SMS limit reached for $phone. Try again later.")
         }
-
-        // Hourly check
-        val currentCount = redisTemplate.opsForValue().get(hourlyKey)?.toLongOrNull() ?: 0L
-        if (currentCount >= maxPerHour) {
-            throw IllegalStateException("Hourly SMS limit reached for $phone. Try again later.")
-        }
-
-        // Record cooldown atomically via SET EX (already atomic)
-        redisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(cooldownSeconds))
-
-        // Atomically increment hourly counter and set TTL on first call
-        redisTemplate.execute(incrScript, listOf(hourlyKey), hourlyWindowSeconds.toString())
     }
 }

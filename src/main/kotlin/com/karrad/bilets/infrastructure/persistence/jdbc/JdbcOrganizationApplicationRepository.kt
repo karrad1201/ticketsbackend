@@ -11,40 +11,25 @@ class JdbcOrganizationApplicationRepository(
 ) : OrganizationApplicationRepository {
 
     override fun save(application: OrganizationApplication): OrganizationApplication {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update organization_applications
-            set applicant_user_id = ?, organization_code = ?, organization_name = ?, status = ?,
-                reviewed_by_user_id = ?, reviewed_at = ?, organization_id = ?
-            where id = ?
+            insert into organization_applications (
+                id, applicant_user_id, organization_code, organization_name, status,
+                reviewed_by_user_id, reviewed_at, organization_id
+            ) values (?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              applicant_user_id = excluded.applicant_user_id,
+              organization_code = excluded.organization_code,
+              organization_name = excluded.organization_name,
+              status = excluded.status,
+              reviewed_by_user_id = excluded.reviewed_by_user_id,
+              reviewed_at = excluded.reviewed_at,
+              organization_id = excluded.organization_id
             """.trimIndent(),
-            application.applicantUserId,
-            application.organizationCode,
-            application.organizationName,
-            application.status.name,
-            application.reviewedByUserId,
-            instantToTimestamp(application.reviewedAt),
-            application.organizationId,
-            application.id
+            application.id, application.applicantUserId, application.organizationCode,
+            application.organizationName, application.status.name,
+            application.reviewedByUserId, instantToTimestamp(application.reviewedAt), application.organizationId
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into organization_applications (
-                    id, applicant_user_id, organization_code, organization_name, status,
-                    reviewed_by_user_id, reviewed_at, organization_id
-                ) values (?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                application.id,
-                application.applicantUserId,
-                application.organizationCode,
-                application.organizationName,
-                application.status.name,
-                application.reviewedByUserId,
-                instantToTimestamp(application.reviewedAt),
-                application.organizationId
-            )
-        }
         return application
     }
 

@@ -22,6 +22,14 @@ interface EventRepository {
     fun findAll(): List<Event>
     fun findByVenueId(venueId: UUID): List<Event>
     fun findAvailableByCity(city: String, now: Instant): List<Event>
+    /** Fetch available events for city with optional date filter and row cap applied at SQL level. */
+    fun findAvailableByCity(city: String, now: Instant, date: LocalDate?, limit: Int): List<Event> =
+        findAvailableByCity(city, now).let { events ->
+            val filtered = if (date != null) {
+                events.filter { it.time.atOffset(java.time.ZoneOffset.UTC).toLocalDate() == date }
+            } else events
+            filtered.take(limit)
+        }
     fun searchAvailable(criteria: EventSearchCriteria): List<Event>
     fun findUpcomingByOrganizationId(organizationId: UUID, now: Instant): List<Event>
     fun findIdsWithStartedOpenSales(now: Instant, limit: Int): List<UUID>

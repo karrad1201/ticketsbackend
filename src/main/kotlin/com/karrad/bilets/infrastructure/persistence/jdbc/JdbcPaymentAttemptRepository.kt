@@ -11,40 +11,21 @@ class JdbcPaymentAttemptRepository(
 ) : PaymentAttemptRepository {
 
     override fun save(paymentAttempt: PaymentAttempt): PaymentAttempt {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update payment_attempts
-            set order_id = ?, reference = ?, amount = ?, status = ?, created_at = ?, updated_at = ?, confirmed_at = ?, failure_reason = ?
-            where id = ?
+            insert into payment_attempts (
+                id, order_id, reference, amount, status, created_at, updated_at, confirmed_at, failure_reason
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              order_id = excluded.order_id, reference = excluded.reference, amount = excluded.amount,
+              status = excluded.status, created_at = excluded.created_at, updated_at = excluded.updated_at,
+              confirmed_at = excluded.confirmed_at, failure_reason = excluded.failure_reason
             """.trimIndent(),
-            paymentAttempt.orderId,
-            paymentAttempt.reference,
-            paymentAttempt.amount,
-            paymentAttempt.status.name,
-            instantToTimestamp(paymentAttempt.createdAt),
-            instantToTimestamp(paymentAttempt.updatedAt),
-            instantToTimestamp(paymentAttempt.confirmedAt),
-            paymentAttempt.failureReason,
-            paymentAttempt.id
+            paymentAttempt.id, paymentAttempt.orderId, paymentAttempt.reference, paymentAttempt.amount,
+            paymentAttempt.status.name, instantToTimestamp(paymentAttempt.createdAt),
+            instantToTimestamp(paymentAttempt.updatedAt), instantToTimestamp(paymentAttempt.confirmedAt),
+            paymentAttempt.failureReason
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into payment_attempts (
-                    id, order_id, reference, amount, status, created_at, updated_at, confirmed_at, failure_reason
-                ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                paymentAttempt.id,
-                paymentAttempt.orderId,
-                paymentAttempt.reference,
-                paymentAttempt.amount,
-                paymentAttempt.status.name,
-                instantToTimestamp(paymentAttempt.createdAt),
-                instantToTimestamp(paymentAttempt.updatedAt),
-                instantToTimestamp(paymentAttempt.confirmedAt),
-                paymentAttempt.failureReason
-            )
-        }
         return paymentAttempt
     }
 

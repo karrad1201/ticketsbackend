@@ -33,13 +33,13 @@ class EventInventoryController(
     private val sellEventSeatsUseCase: SellEventSeatsUseCase,
     private val holdGeneralAdmissionUseCase: HoldGeneralAdmissionUseCase,
     private val releaseGeneralAdmissionUseCase: ReleaseGeneralAdmissionUseCase,
-    private val sellGeneralAdmissionUseCase: SellGeneralAdmissionUseCase
+    private val sellGeneralAdmissionUseCase: SellGeneralAdmissionUseCase,
+    private val currentUserProvider: CurrentUserProvider
 ) {
     @GetMapping
     fun getInventory(@PathVariable eventId: UUID): EventInventoryPlan =
         inventoryPlanService.getByEventId(eventId)
             ?: throw NoSuchElementException("EventInventoryPlan not found for event: $eventId")
-
 
     @PostMapping("/seated")
     @ResponseStatus(HttpStatus.CREATED)
@@ -47,6 +47,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: SeatedInventoryGenerationRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireAdmin()
         return generateEventInventoryUseCase.generateSeated(
             eventId = eventId,
             layoutTemplateId = request.layoutTemplateId
@@ -59,6 +60,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: GeneralAdmissionInventoryGenerationRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireAdmin()
         return generateEventInventoryUseCase.generateGeneralAdmission(
             eventId = eventId,
             ticketTypes = request.ticketTypes.map { it.toDomain() }
@@ -71,6 +73,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: HoldSeatsRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return holdEventSeatsUseCase.hold(
             eventId = eventId,
             seatKeys = request.seatKeys.map { it.toDomain() }
@@ -83,6 +86,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: HoldSeatsRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return releaseEventSeatsUseCase.release(
             eventId = eventId,
             seatKeys = request.seatKeys.map { it.toDomain() }
@@ -95,6 +99,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: HoldSeatsRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return sellEventSeatsUseCase.sell(
             eventId = eventId,
             seatKeys = request.seatKeys.map { it.toDomain() }
@@ -107,6 +112,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: AdmissionInventoryActionRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return holdGeneralAdmissionUseCase.hold(
             eventId = eventId,
             requests = request.items.map { it.toDomain() }
@@ -119,6 +125,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: AdmissionInventoryActionRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return releaseGeneralAdmissionUseCase.release(
             eventId = eventId,
             requests = request.items.map { it.toDomain() }
@@ -131,6 +138,7 @@ class EventInventoryController(
         @PathVariable eventId: UUID,
         @RequestBody request: AdmissionInventoryActionRequest
     ): EventInventoryPlan {
+        currentUserProvider.requireUserId()
         return sellGeneralAdmissionUseCase.sell(
             eventId = eventId,
             requests = request.items.map { it.toDomain() }

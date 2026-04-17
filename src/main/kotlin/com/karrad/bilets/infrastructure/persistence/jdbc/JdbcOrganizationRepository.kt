@@ -10,29 +10,15 @@ class JdbcOrganizationRepository(
 ) : OrganizationRepository {
 
     override fun save(organization: Organization): Organization {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update organizations
-            set code = ?, name = ?, balance = ?
-            where id = ?
+            insert into organizations (id, code, name, balance)
+            values (?, ?, ?, ?)
+            on conflict (id) do update set
+              code = excluded.code, name = excluded.name, balance = excluded.balance
             """.trimIndent(),
-            organization.code,
-            organization.name,
-            organization.balance,
-            organization.id
+            organization.id, organization.code, organization.name, organization.balance
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into organizations (id, code, name, balance)
-                values (?, ?, ?, ?)
-                """.trimIndent(),
-                organization.id,
-                organization.code,
-                organization.name,
-                organization.balance
-            )
-        }
         return organization
     }
 

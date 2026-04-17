@@ -12,47 +12,22 @@ class JdbcEventRepository(
 ) : EventRepository {
 
     override fun save(event: Event): Event {
-        val updated = jdbcTemplate.update(
+        jdbcTemplate.update(
             """
-            update events
-            set label = ?, description = ?, venue_id = ?, category_id = ?, event_time = ?, venue_space_id = ?, organization_id = ?, sales_closed_at = ?, image_url = ?, min_price = ?, age_rating = ?, has_seat_map = ?
-            where id = ?
+            insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              label = excluded.label, description = excluded.description, venue_id = excluded.venue_id,
+              category_id = excluded.category_id, event_time = excluded.event_time,
+              venue_space_id = excluded.venue_space_id, organization_id = excluded.organization_id,
+              sales_closed_at = excluded.sales_closed_at, image_url = excluded.image_url,
+              min_price = excluded.min_price, age_rating = excluded.age_rating, has_seat_map = excluded.has_seat_map
             """.trimIndent(),
-            event.label,
-            event.description,
-            event.venueId,
-            event.categoryId,
-            Timestamp.from(event.time),
-            event.venueSpaceId,
-            event.organizationId,
-            instantToTimestamp(event.salesClosedAt),
-            event.imageUrl,
-            event.minPrice,
-            event.ageRating,
-            event.hasSeatMap,
-            event.id
+            event.id, event.label, event.description, event.venueId, event.categoryId,
+            Timestamp.from(event.time), event.venueSpaceId, event.organizationId,
+            instantToTimestamp(event.salesClosedAt), event.imageUrl, event.minPrice,
+            event.ageRating, event.hasSeatMap
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                """
-                insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.trimIndent(),
-                event.id,
-                event.label,
-                event.description,
-                event.venueId,
-                event.categoryId,
-                Timestamp.from(event.time),
-                event.venueSpaceId,
-                event.organizationId,
-                instantToTimestamp(event.salesClosedAt),
-                event.imageUrl,
-                event.minPrice,
-                event.ageRating,
-                event.hasSeatMap
-            )
-        }
         return event
     }
 
@@ -119,6 +94,33 @@ class JdbcEventRepository(
         city.trim().lowercase(),
         Timestamp.from(now)
     )
+
+    override fun findAvailableByCity(city: String, now: java.time.Instant, date: java.time.LocalDate?, limit: Int): List<Event> {
+        val params = mutableListOf<Any>(city.trim().lowercase(), Timestamp.from(now))
+        val dateFilter = if (date != null) {
+            val dayStart = Timestamp.from(date.atStartOfDay(java.time.ZoneOffset.UTC).toInstant())
+            val dayEnd = Timestamp.from(date.plusDays(1).atStartOfDay(java.time.ZoneOffset.UTC).toInstant())
+            params += dayStart
+            params += dayEnd
+            "and e.event_time >= ? and e.event_time < ?"
+        } else ""
+        params += limit
+        return jdbcTemplate.query(
+            """
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
+            from events e
+            join venues v on v.id = e.venue_id
+            where lower(v.city_label) = ?
+              and e.sales_closed_at is null
+              and e.event_time > ?
+              $dateFilter
+            order by e.event_time, e.id
+            limit ?
+            """.trimIndent(),
+            { rs, _ -> rowMapper(rs) },
+            *params.toTypedArray()
+        )
+    }
 
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(

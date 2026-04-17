@@ -16,16 +16,16 @@ class JdbcUserRepository(
 
     override fun save(user: User): User {
         val interestsJson = mapper.writeValueAsString(user.interests)
-        val updated = jdbcTemplate.update(
-            "update users set email = ?, phone = ?, full_name = ?, role = ?, avatar_url = ?, interests = ? where id = ?",
-            user.email, user.phone, user.fullName, user.role.name, user.avatarUrl, interestsJson, user.id
+        jdbcTemplate.update(
+            """
+            insert into users (id, email, phone, full_name, role, avatar_url, interests)
+            values (?, ?, ?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              email = excluded.email, phone = excluded.phone, full_name = excluded.full_name,
+              role = excluded.role, avatar_url = excluded.avatar_url, interests = excluded.interests
+            """.trimIndent(),
+            user.id, user.email, user.phone, user.fullName, user.role.name, user.avatarUrl, interestsJson
         )
-        if (updated == 0) {
-            jdbcTemplate.update(
-                "insert into users (id, email, phone, full_name, role, avatar_url, interests) values (?, ?, ?, ?, ?, ?, ?)",
-                user.id, user.email, user.phone, user.fullName, user.role.name, user.avatarUrl, interestsJson
-            )
-        }
         return user
     }
 
