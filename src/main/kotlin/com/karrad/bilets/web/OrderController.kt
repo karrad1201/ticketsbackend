@@ -33,12 +33,18 @@ class OrderController(
     ): Order = createOrderUseCase.create(request.toCommand(eventId, currentUserProvider.requireUserId()))
 
     @PostMapping("/orders/{orderId}/confirm-payment")
-    fun confirmPayment(@PathVariable orderId: UUID): Order =
-        confirmOrderPaymentUseCase.confirm(orderId)
+    fun confirmPayment(@PathVariable orderId: UUID): Order {
+        val order = orderService.getById(orderId) ?: throw NoSuchElementException("Order not found: $orderId")
+        val userId = currentUserProvider.requireUserId()
+        if (order.buyerUserId != userId) throw SecurityException("Access denied")
+        return confirmOrderPaymentUseCase.confirm(orderId)
+    }
 
     @PostMapping("/orders/{orderId}/expire")
-    fun expire(@PathVariable orderId: UUID): Order =
-        expireOrderUseCase.expire(orderId)
+    fun expire(@PathVariable orderId: UUID): Order {
+        currentUserProvider.requireAdmin()
+        return expireOrderUseCase.expire(orderId)
+    }
 
     @GetMapping("/orders/{orderId}")
     fun getById(@PathVariable orderId: UUID): Order {
