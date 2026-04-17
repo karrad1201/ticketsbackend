@@ -3,6 +3,7 @@ package com.karrad.bilets.web
 import com.karrad.bilets.application.service.UserService
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.web.dto.UserResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -16,11 +17,15 @@ import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+private val ALLOWED_IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp")
+private const val MAX_AVATAR_BYTES = 5 * 1024 * 1024L // 5 MB
+
 @RestController
 @RequestMapping("/auth/me")
 class UserProfileController(
     private val userService: UserService,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    @Value("\${app.uploads.avatars-dir:uploads/avatars}") private val avatarsDir: String
 ) {
     @PatchMapping
     fun updateProfile(@RequestBody body: UpdateProfileRequest): UserResponse {
@@ -31,18 +36,24 @@ class UserProfileController(
     @PostMapping("/avatar", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadAvatar(@RequestParam("file") file: MultipartFile): UserResponse {
         val userId = currentUserProvider.requireUserId()
-        val ext = (file.originalFilename?.substringAfterLast('.', "jpg") ?: "jpg")
-            .lowercase()
-            .filter { it.isLetterOrDigit() }
-            .take(5)
-            .ifBlank { "jpg" }
+
+        if (file.size > MAX_AVATAR_BYTES) {
+            throw IllegalArgumentException("Avatar file must not exceed 5 MB")
+        }
+
+        val rawExt = file.originalFilename?.substringAfterLast('.', "")?.lowercase() ?: ""
+        val ext = if (rawExt in ALLOWED_IMAGE_EXTENSIONS) rawExt else "jpg"
+
         val date = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
-        val dir = Paths.get("uploads/avatars/$date")
+        val baseDir = Paths.get(avatarsDir).normalize()
+        val dir = baseDir.resolve(date)
         Files.createDirectories(dir)
         val filename = "$userId.$ext"
         val targetPath = dir.resolve(filename)
+        // Ensure the resolved path is still inside avatarsDir (path traversal guard)
+        check(targetPath.startsWith(baseDir)) { "Invalid upload path" }
         file.transferTo(targetPath)
-        val avatarUrl = "/uploads/avatars/$date/$filename"
+        val avatarUrl = "/$avatarsDir/$date/$filename"
         return userService.updateAvatar(userId, avatarUrl).toResponse()
     }
 

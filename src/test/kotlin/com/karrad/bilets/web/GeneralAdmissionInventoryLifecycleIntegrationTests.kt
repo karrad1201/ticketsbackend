@@ -4,8 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.TicketType
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +31,7 @@ import java.util.UUID
 class GeneralAdmissionInventoryLifecycleIntegrationTests {
 
     lateinit var mockMvc: MockMvc
+    lateinit var userBearer: String
 
     @Autowired
     lateinit var webApplicationContext: WebApplicationContext
@@ -40,9 +45,23 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
     @Autowired
     lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val user = User(
+            fullName = "Test User",
+            email = "user@example.com",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175000")
+        )
+        userRepository.save(user)
+        userBearer = "Bearer ${authTokenRepository.bearerFor(user.id)}"
     }
 
     @Test
@@ -61,6 +80,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission/holds")
+                .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)
         )
@@ -77,6 +97,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission/releases")
+                .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(releasePayload)
         )
@@ -93,6 +114,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/general-admission/sales")
+                .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(salePayload)
         )

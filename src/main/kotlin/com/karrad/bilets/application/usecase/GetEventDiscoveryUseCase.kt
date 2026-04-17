@@ -26,14 +26,9 @@ class GetEventDiscoveryUseCase(
         validatePagination(page, size)
 
         val today = LocalDate.now(ZoneOffset.UTC)
-        val allUpcoming = eventRepository.findAvailableByCity(city, clock.instant())
+        // SQL-level date filter and row cap: max 1000 rows to avoid full table scans
+        val upcomingEvents = eventRepository.findAvailableByCity(city, clock.instant(), date, limit = 1000)
             .filter { event -> !event.time.isBefore(today.atStartOfDay().toInstant(ZoneOffset.UTC)) }
-
-        val upcomingEvents = if (date != null) {
-            allUpcoming.filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == date }
-        } else {
-            allUpcoming
-        }
 
         // Load categories once — shared by buildForYou and buildByCategory to avoid N+1
         val allCategories = categoryRepository.findAll().associateBy { it.id }
@@ -43,16 +38,14 @@ class GetEventDiscoveryUseCase(
         val byCategory = buildByCategory(upcomingEvents, allCategories, page, size)
 
         val tomorrow = if (date != null) emptyList() else paginate(
-            allUpcoming
-                .filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == today.plusDays(1) }
+            eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(1), limit = 1000)
                 .sortedBy { it.time },
             page = page,
             size = size
         )
 
         val dayAfterTomorrow = if (date != null) emptyList() else paginate(
-            allUpcoming
-                .filter { event -> event.time.atOffset(ZoneOffset.UTC).toLocalDate() == today.plusDays(2) }
+            eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(2), limit = 1000)
                 .sortedBy { it.time },
             page = page,
             size = size

@@ -95,6 +95,33 @@ class JdbcEventRepository(
         Timestamp.from(now)
     )
 
+    override fun findAvailableByCity(city: String, now: java.time.Instant, date: java.time.LocalDate?, limit: Int): List<Event> {
+        val params = mutableListOf<Any>(city.trim().lowercase(), Timestamp.from(now))
+        val dateFilter = if (date != null) {
+            val dayStart = Timestamp.from(date.atStartOfDay(java.time.ZoneOffset.UTC).toInstant())
+            val dayEnd = Timestamp.from(date.plusDays(1).atStartOfDay(java.time.ZoneOffset.UTC).toInstant())
+            params += dayStart
+            params += dayEnd
+            "and e.event_time >= ? and e.event_time < ?"
+        } else ""
+        params += limit
+        return jdbcTemplate.query(
+            """
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
+            from events e
+            join venues v on v.id = e.venue_id
+            where lower(v.city_label) = ?
+              and e.sales_closed_at is null
+              and e.event_time > ?
+              $dateFilter
+            order by e.event_time, e.id
+            limit ?
+            """.trimIndent(),
+            { rs, _ -> rowMapper(rs) },
+            *params.toTypedArray()
+        )
+    }
+
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(
             """
