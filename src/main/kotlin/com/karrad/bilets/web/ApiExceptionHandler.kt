@@ -28,6 +28,11 @@ class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.message ?: "Forbidden")
     }
 
+    @ExceptionHandler(UnauthorizedException::class)
+    fun handleUnauthorized(exception: UnauthorizedException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.message ?: "Unauthorized")
+    }
+
     @ExceptionHandler(TooManyRequestsException::class)
     fun handleTooManyRequests(exception: TooManyRequestsException): ProblemDetail {
         return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, exception.message ?: "Too many requests")

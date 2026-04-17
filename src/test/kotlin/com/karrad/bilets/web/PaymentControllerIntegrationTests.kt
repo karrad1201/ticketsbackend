@@ -131,7 +131,7 @@ class PaymentControllerIntegrationTests {
         userRepository.save(buyer())
 
         mockMvc.perform(get("/api/tickets/me"))
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.detail").value("Missing authorization: provide Bearer token"))
     }
 

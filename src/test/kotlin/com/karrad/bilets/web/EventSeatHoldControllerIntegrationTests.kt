@@ -108,6 +108,7 @@ class EventSeatHoldControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/events/${event.id}/inventory/holds")
+                .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

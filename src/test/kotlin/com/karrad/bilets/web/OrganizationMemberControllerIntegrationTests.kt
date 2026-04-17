@@ -103,6 +103,6 @@ class OrganizationMemberControllerIntegrationTests {
     @Test
     fun `should reject organization members listing without admin token`() {
         mockMvc.perform(get("/api/organization-members"))
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isUnauthorized)
     }
 }

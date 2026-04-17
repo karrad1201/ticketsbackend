@@ -90,7 +90,7 @@ class UserControllerIntegrationTests {
                     )
                 )
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isUnauthorized)
     }
 
     @Test

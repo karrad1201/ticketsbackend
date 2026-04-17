@@ -85,12 +85,12 @@ class UserProfileControllerIntegrationTests {
     }
 
     @Test
-    fun `PATCH auth me without auth returns 400`() {
+    fun `PATCH auth me without auth returns 401`() {
         mockMvc.perform(
             patch("/auth/me")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("fullName" to "Hacker")))
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isUnauthorized)
     }
 }
