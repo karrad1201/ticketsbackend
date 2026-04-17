@@ -12,6 +12,7 @@ import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.SeatStatus
+import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.EventRepository
@@ -38,6 +39,7 @@ import java.util.UUID
 class OrderControllerIntegrationTests {
 
     lateinit var mockMvc: MockMvc
+    lateinit var adminBearer: String
 
     @Autowired lateinit var authTokenRepository: AuthTokenRepository
     @Autowired
@@ -61,6 +63,14 @@ class OrderControllerIntegrationTests {
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = java.util.UUID.fromString("123e4567-e89b-12d3-a456-426614177099")
+        )
+        userRepository.save(admin)
+        adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
     }
 
     @Test
@@ -95,6 +105,7 @@ class OrderControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/orders/$orderId/confirm-payment")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
         )
             .andExpect(status().isOk)
@@ -147,7 +158,10 @@ class OrderControllerIntegrationTests {
 
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
-        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+        mockMvc.perform(
+            post("/api/orders/$orderId/confirm-payment")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
+        )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
@@ -190,7 +204,10 @@ class OrderControllerIntegrationTests {
 
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
-        mockMvc.perform(post("/api/orders/$orderId/expire"))
+        mockMvc.perform(
+            post("/api/orders/$orderId/expire")
+                .header("Authorization", adminBearer)
+        )
             .andExpect(status().isConflict)
 
         val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(event.id))
@@ -304,10 +321,16 @@ class OrderControllerIntegrationTests {
 
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
-        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+        mockMvc.perform(
+            post("/api/orders/$orderId/confirm-payment")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
+        )
             .andExpect(status().isOk)
 
-        mockMvc.perform(post("/api/orders/$orderId/confirm-payment"))
+        mockMvc.perform(
+            post("/api/orders/$orderId/confirm-payment")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
+        )
             .andExpect(status().isConflict)
     }
 
