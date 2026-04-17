@@ -37,8 +37,8 @@ class CloseEventSalesUseCase(
                 val organizationId = requireNotNull(event.organizationId) {
                     "Event is not assigned to organization: $eventId"
                 }
-                requireNotNull(organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId)) {
-                    "User $actorUserId is not a member of organization $organizationId"
+                if (organizationMemberRepository.findByOrganizationIdAndUserId(organizationId, actorUserId) == null) {
+                    throw SecurityException("User $actorUserId is not a member of organization $organizationId")
                 }
                 closeEventAndPendingOrders(event)
             }
