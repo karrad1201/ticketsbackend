@@ -331,6 +331,47 @@ class EventControllerIntegrationTests {
             .andExpect(jsonPath("$.hasSeatMap").value(false))
     }
 
+    @Test
+    fun `should reject close-sales with 403 when caller is not organizer`() {
+        val venue = demoVenue()
+        val category = demoCategory("theatre", "Theatre", UUID.fromString("123e4567-e89b-12d3-a456-426614174449"))
+        seedOrganizationAccess()
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+
+        val createResponse = mockMvc.perform(
+            post("/api/events")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "label" to "Hamlet",
+                            "description" to "Evening show",
+                            "venueId" to venue.id,
+                            "categoryId" to category.id,
+                            "time" to "2026-04-10T18:00:00Z"
+                        )
+                    )
+                )
+        ).andReturn()
+
+        val eventId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
+
+        val outsider = User(
+            email = "outsider@example.com",
+            fullName = "Outsider",
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614174450")
+        )
+        userRepository.save(outsider)
+
+        mockMvc.perform(
+            post("/api/events/$eventId/close-sales")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(outsider.id)}")
+        )
+            .andExpect(status().isForbidden)
+    }
+
     private fun demoVenue(): Venue {
         return Venue(
             label = "Demo Hall",
