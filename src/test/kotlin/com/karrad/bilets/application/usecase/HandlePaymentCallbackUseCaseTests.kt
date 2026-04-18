@@ -278,6 +278,30 @@ class HandlePaymentCallbackUseCaseTests {
         }
     }
 
+    // --- AMOUNT VALIDATION ---
+
+    @Test
+    fun `SUCCESS callback with mismatched amount should fail the order`() {
+        setupFixtures()
+        val order = createAdmissionOrder(qty = 1) // amount = 1500
+
+        val result = handlePaymentCallbackUseCase.handle(
+            HandlePaymentCallbackCommand(
+                paymentReference = order.paymentReference,
+                status = PaymentCallbackStatus.SUCCEEDED,
+                receivedAt = clock.instant(),
+                paidAmount = 100 // wrong amount
+            )
+        )
+
+        assertEquals(OrderStatus.PAYMENT_FAILED, result.status)
+        assertTrue(ticketRepository.findByOrderId(order.id).isEmpty())
+        assertEquals(
+            PaymentAttemptStatus.FAILED,
+            requireNotNull(paymentAttemptRepository.findByOrderId(order.id)).status
+        )
+    }
+
     // --- AUDIT ---
 
     @Test

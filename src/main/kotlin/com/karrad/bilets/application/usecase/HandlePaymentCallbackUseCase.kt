@@ -21,6 +21,7 @@ data class HandlePaymentCallbackCommand(
     val paymentReference: String,
     val status: PaymentCallbackStatus,
     val receivedAt: Instant,
+    val paidAmount: Int? = null,
     val failureReason: String? = null,
     val payload: String? = null
 )
@@ -65,7 +66,7 @@ class HandlePaymentCallbackUseCase(
                 }
 
                 when (command.status) {
-                    PaymentCallbackStatus.SUCCEEDED -> handleSuccess(freshOrder, freshAttempt, command.receivedAt)
+                    PaymentCallbackStatus.SUCCEEDED -> handleSuccess(freshOrder, freshAttempt, command.receivedAt, command.paidAmount)
                     PaymentCallbackStatus.FAILED -> handleFailure(freshOrder, freshAttempt, command)
                     PaymentCallbackStatus.EXPIRED -> handleExpired(freshOrder, freshAttempt, command.receivedAt)
                 }
@@ -76,7 +77,8 @@ class HandlePaymentCallbackUseCase(
     private fun handleSuccess(
         order: Order,
         attempt: com.karrad.bilets.domain.entity.PaymentAttempt,
-        receivedAt: Instant
+        receivedAt: Instant,
+        paidAmount: Int? = null
     ): Order {
         if (attempt.status == PaymentAttemptStatus.FAILED || order.status == OrderStatus.PAYMENT_FAILED) {
             log.warn("PAYMENT_CALLBACK_IGNORED reference={} orderId={} — attempt already failed", attempt.reference, order.id)
@@ -85,6 +87,16 @@ class HandlePaymentCallbackUseCase(
         if (attempt.status == PaymentAttemptStatus.SUCCEEDED && order.status == OrderStatus.PAID) {
             log.info("PAYMENT_CALLBACK_DUPLICATE reference={} orderId={} — already paid, skipping", attempt.reference, order.id)
             return order
+        }
+        if (paidAmount != null && paidAmount != order.amount) {
+            log.warn(
+                "PAYMENT_AMOUNT_MISMATCH reference={} orderId={} expected={} received={}",
+                attempt.reference, order.id, order.amount, paidAmount
+            )
+            val failedAttempt = paymentAttemptRepository.save(
+                attempt.markFailed(receivedAt, "Amount mismatch: expected ${order.amount}, received $paidAmount")
+            )
+            return paymentSettlementService.failPendingOrder(order, failedAttempt.updatedAt)
         }
         if (clock.instant().isAfter(order.expiresAt)) {
             log.warn("PAYMENT_CALLBACK_EXPIRED reference={} orderId={} — callback arrived after expiry", attempt.reference, order.id)

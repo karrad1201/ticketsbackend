@@ -62,6 +62,7 @@ class TBankCallbackController(
             paymentReference = notification.paymentId.toString(),
             status = callbackStatus,
             receivedAt = clock.instant(),
+            paidAmount = if (callbackStatus == PaymentCallbackStatus.SUCCEEDED) notification.amount else null,
             failureReason = if (callbackStatus != PaymentCallbackStatus.SUCCEEDED)
                 "T-Bank status: ${notification.status}" else null,
             payload = null
