@@ -7,10 +7,19 @@ import org.slf4j.LoggerFactory
  * Mock SMS gateway for development and testing.
  * Logs codes to console and stores them for test assertions.
  *
- * TODO: Replace with real SMS provider (e.g. SMS.ru, Twilio) in production.
+ * NEVER use in production — will throw if spring profile "prod" is detected.
  */
 class MockSmsGateway : SmsGateway() {
     private val log = LoggerFactory.getLogger(MockSmsGateway::class.java)
+
+    init {
+        val activeProfiles = System.getProperty("spring.profiles.active", "") +
+            "," + (System.getenv("SPRING_PROFILES_ACTIVE") ?: "")
+        check("prod" !in activeProfiles.split(",").map { it.trim() }) {
+            "MockSmsGateway must not be used in production (profile 'prod' is active)"
+        }
+        log.warn("MockSmsGateway is active — SMS codes will be logged, NOT sent. Do not use in production.")
+    }
 
     /** phone → last code sent; thread-safe for concurrent test/dev requests */
     val sentCodes = java.util.concurrent.ConcurrentHashMap<String, String>()
