@@ -63,6 +63,7 @@ import org.springframework.context.annotation.Profile
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DataSourceTransactionManager
+import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.TransactionTemplate
 import javax.sql.DataSource
 
@@ -93,7 +94,9 @@ class JdbcOrderFlowPersistenceConfig {
     fun orderFlowTransactionManager(
         transactionManager: DataSourceTransactionManager
     ): OrderFlowTransactionManager {
-        val template = TransactionTemplate(transactionManager)
+        val template = TransactionTemplate(transactionManager).apply {
+            isolationLevel = TransactionDefinition.ISOLATION_REPEATABLE_READ
+        }
         return object : OrderFlowTransactionManager {
             override fun <T> inTransaction(action: () -> T): T = template.execute { action() }!!
         }
