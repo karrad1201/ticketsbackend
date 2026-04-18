@@ -44,4 +44,7 @@ interface OrderInventoryRepository {
     fun confirm(order: Order): ReservedInventory
 
     fun release(order: Order)
+
+    /** Освобождает холды по orderId — используется для компенсации до создания Order */
+    fun releaseHold(orderId: UUID, eventId: UUID, seatKeys: List<SeatKey>, admissionItems: List<AdmissionQuantity>)
 }
