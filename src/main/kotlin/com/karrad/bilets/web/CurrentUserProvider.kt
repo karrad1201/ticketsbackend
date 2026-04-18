@@ -30,7 +30,8 @@ class CurrentUserProvider(
             val token = authHeader.removePrefix("Bearer ").trim()
             val authToken = authTokenRepository.findByToken(token)
             if (authToken == null) {
-                val ip = request.remoteAddr
+                val ip = request.getHeader("X-Forwarded-For")?.split(",")?.firstOrNull()?.trim()
+                    ?: request.remoteAddr
                 if (bearerTokenRateLimiter.recordFailure(ip)) {
                     throw TooManyRequestsException("Too many invalid token attempts")
                 }
