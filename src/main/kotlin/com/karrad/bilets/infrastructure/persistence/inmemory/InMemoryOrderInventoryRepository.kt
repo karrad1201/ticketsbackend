@@ -71,13 +71,17 @@ class InMemoryOrderInventoryRepository(
     }
 
     override fun release(order: Order) {
-        val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(order.eventId)) {
-            "EventInventoryPlan not found for event: ${order.eventId}"
+        releaseHold(order.id, order.eventId, order.seatKeys, order.admissionItems)
+    }
+
+    override fun releaseHold(orderId: UUID, eventId: UUID, seatKeys: List<SeatKey>, admissionItems: List<AdmissionQuantity>) {
+        val plan = requireNotNull(eventInventoryPlanRepository.findByEventId(eventId)) {
+            "EventInventoryPlan not found for event: $eventId"
         }
         val updatedPlan = when {
-            order.seatKeys.isNotEmpty() -> plan.releaseSeats(order.seatKeys)
-            order.admissionItems.isNotEmpty() -> plan.releaseAdmission(order.admissionItems)
-            else -> throw IllegalStateException("Order does not contain inventory items")
+            seatKeys.isNotEmpty() -> plan.releaseSeats(seatKeys)
+            admissionItems.isNotEmpty() -> plan.releaseAdmission(admissionItems)
+            else -> throw IllegalStateException("No inventory items to release")
         }
         eventInventoryPlanRepository.save(updatedPlan)
     }

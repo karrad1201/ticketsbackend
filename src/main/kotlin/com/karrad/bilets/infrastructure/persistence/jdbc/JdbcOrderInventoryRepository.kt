@@ -104,10 +104,14 @@ class JdbcOrderInventoryRepository(
     }
 
     override fun release(order: Order) {
+        releaseHold(order.id, order.eventId, order.seatKeys, order.admissionItems)
+    }
+
+    override fun releaseHold(orderId: UUID, eventId: UUID, seatKeys: List<SeatKey>, admissionItems: List<AdmissionQuantity>) {
         when {
-            order.seatKeys.isNotEmpty() -> releaseSeats(order)
-            order.admissionItems.isNotEmpty() -> releaseAdmission(order)
-            else -> throw IllegalStateException("Order does not contain inventory items")
+            seatKeys.isNotEmpty() -> releaseSeats(orderId, eventId, seatKeys)
+            admissionItems.isNotEmpty() -> releaseAdmission(orderId, eventId, admissionItems)
+            else -> throw IllegalStateException("No inventory items to release")
         }
     }
 
@@ -157,28 +161,28 @@ class JdbcOrderInventoryRepository(
         return ReservedInventory(items)
     }
 
-    private fun releaseSeats(order: Order) {
-        order.seatKeys.forEach { seatKey ->
+    private fun releaseSeats(orderId: UUID, eventId: UUID, seatKeys: List<SeatKey>) {
+        seatKeys.forEach { seatKey ->
             val updated = jdbcTemplate.update(
                 """
                 update event_seat_inventory
                 set status = 'AVAILABLE', hold_order_id = null, hold_expires_at = null
                 where event_id = ? and section_key = ? and row_key = ? and seat_number = ? and status = 'HELD' and hold_order_id = ?
                 """.trimIndent(),
-                order.eventId,
+                eventId,
                 seatKey.sectionKey,
                 seatKey.rowKey,
                 seatKey.seatKey,
-                order.id
+                orderId
             )
             if (updated == 0) {
-                log.warn("releaseSeats: seat already released or not held by this order — skipping. orderId={} seatKey={}", order.id, seatKey)
+                log.warn("releaseSeats: seat already released or not held by this order — skipping. orderId={} seatKey={}", orderId, seatKey)
             }
         }
     }
 
-    private fun releaseAdmission(order: Order) {
-        order.admissionItems.forEach { item ->
+    private fun releaseAdmission(orderId: UUID, eventId: UUID, admissionItems: List<AdmissionQuantity>) {
+        admissionItems.forEach { item ->
             val updated = jdbcTemplate.update(
                 """
                 update event_admission_inventory
@@ -186,12 +190,12 @@ class JdbcOrderInventoryRepository(
                 where event_id = ? and ticket_type_id = ? and held >= ?
                 """.trimIndent(),
                 item.quantity,
-                order.eventId,
+                eventId,
                 item.ticketTypeId,
                 item.quantity
             )
             if (updated == 0) {
-                log.warn("releaseAdmission: admission already released or insufficient held — skipping. orderId={} ticketTypeId={}", order.id, item.ticketTypeId)
+                log.warn("releaseAdmission: admission already released or insufficient held — skipping. orderId={} ticketTypeId={}", orderId, item.ticketTypeId)
             }
         }
     }

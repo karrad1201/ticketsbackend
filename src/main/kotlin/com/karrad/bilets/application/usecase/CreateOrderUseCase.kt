@@ -58,11 +58,17 @@ class CreateOrderUseCase(
                     command = command,
                     expiresAt = expiresAt
                 )
-                val payment = paymentGateway.createPayment(
-                    orderId = orderId,
-                    amount = reservedInventory.amount,
-                    expiresAt = expiresAt
-                )
+                val payment = try {
+                    paymentGateway.createPayment(
+                        orderId = orderId,
+                        amount = reservedInventory.amount,
+                        expiresAt = expiresAt
+                    )
+                } catch (e: Exception) {
+                    log.error("PAYMENT_GATEWAY_ERROR orderId={}: compensating inventory hold", orderId, e)
+                    orderInventoryRepository.releaseHold(orderId, command.eventId, command.seatKeys, command.admissionItems)
+                    throw e
+                }
                 val order = Order(
                     eventId = command.eventId,
                     buyerUserId = command.buyerUserId,
