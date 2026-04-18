@@ -74,7 +74,7 @@ class PaymentControllerIntegrationTests {
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -97,7 +97,7 @@ class PaymentControllerIntegrationTests {
             ?: error("Payment attempt not created for order $orderId")
 
         mockMvc.perform(
-            post("/api/payments/callbacks/mock")
+            post("/api/v1/payments/callbacks/mock")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -112,7 +112,7 @@ class PaymentControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}"))
+        mockMvc.perform(get("/api/v1/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
 
@@ -130,7 +130,7 @@ class PaymentControllerIntegrationTests {
     fun `should reject ticket listing without current user header`() {
         userRepository.save(buyer())
 
-        mockMvc.perform(get("/api/tickets/me"))
+        mockMvc.perform(get("/api/v1/tickets/me"))
             .andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.detail").value("Missing authorization: provide Bearer token"))
     }
@@ -144,7 +144,7 @@ class PaymentControllerIntegrationTests {
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -166,7 +166,7 @@ class PaymentControllerIntegrationTests {
             ?: error("Payment attempt not created for order $orderId")
 
         mockMvc.perform(
-            post("/api/payments/callbacks/mock")
+            post("/api/v1/payments/callbacks/mock")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(

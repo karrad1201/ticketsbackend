@@ -26,14 +26,14 @@ class GeoControllerIntegrationTests {
 
     @Test
     fun `GET geo cities returns 200 with 23 cities`() {
-        mockMvc.perform(get("/api/geo/cities"))
+        mockMvc.perform(get("/api/v1/geo/cities"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(23))
     }
 
     @Test
     fun `each city has id, label, subject id and subject label`() {
-        mockMvc.perform(get("/api/geo/cities"))
+        mockMvc.perform(get("/api/v1/geo/cities"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].id").isNotEmpty)
             .andExpect(jsonPath("$[0].label").isNotEmpty)
@@ -43,7 +43,7 @@ class GeoControllerIntegrationTests {
 
     @Test
     fun `Moskva is in the list with correct subject`() {
-        mockMvc.perform(get("/api/geo/cities"))
+        mockMvc.perform(get("/api/v1/geo/cities"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[?(@.id == 'b0000000-0000-0000-0000-000000000001')].label").value("Москва"))
             .andExpect(jsonPath("$[?(@.id == 'b0000000-0000-0000-0000-000000000001')].subject.id").value("a0000000-0000-0000-0000-000000000001"))

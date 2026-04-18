@@ -64,7 +64,7 @@ class VenueAccessGrantControllerIntegrationTests {
     @Test
     fun `should request venue access`() {
         mockMvc.perform(
-            post("/api/venues/$venueId/access-requests")
+            post("/api/v1/venues/$venueId/access-requests")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(requesterUserId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("requestingOrgId" to requesterOrgId)))
@@ -82,7 +82,7 @@ class VenueAccessGrantControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            get("/api/venues/$venueId/access-requests")
+            get("/api/v1/venues/$venueId/access-requests")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
@@ -97,7 +97,7 @@ class VenueAccessGrantControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/venues/$venueId/access-requests/${grant.id}/approve")
+            post("/api/v1/venues/$venueId/access-requests/${grant.id}/approve")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
@@ -112,7 +112,7 @@ class VenueAccessGrantControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/venues/$venueId/access-requests/${grant.id}/reject")
+            post("/api/v1/venues/$venueId/access-requests/${grant.id}/reject")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
         )
             .andExpect(status().isOk)
@@ -122,7 +122,7 @@ class VenueAccessGrantControllerIntegrationTests {
     @Test
     fun `should return 400 when requesting access to own venue`() {
         mockMvc.perform(
-            post("/api/venues/$venueId/access-requests")
+            post("/api/v1/venues/$venueId/access-requests")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerUserId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("requestingOrgId" to ownerOrgId)))

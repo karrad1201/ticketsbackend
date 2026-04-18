@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/events/{eventId}/inventory")
+@RequestMapping("/api/v1/events/{eventId}/inventory")
 class EventInventoryController(
     private val inventoryPlanService: InventoryPlanService,
     private val generateEventInventoryUseCase: GenerateEventInventoryUseCase,

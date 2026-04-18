@@ -67,7 +67,7 @@ class FavoriteEventControllerIntegrationTests {
     @Test
     fun `should add event to favorites`() {
         mockMvc.perform(
-            post("/api/favorites")
+            post("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
@@ -81,7 +81,7 @@ class FavoriteEventControllerIntegrationTests {
     fun `should return 404 when event does not exist`() {
         val unknownEventId = UUID.fromString("ffffffff-0000-0000-0000-000000000001")
         mockMvc.perform(
-            post("/api/favorites")
+            post("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to unknownEventId)))
@@ -92,14 +92,14 @@ class FavoriteEventControllerIntegrationTests {
     @Test
     fun `should list favorite events`() {
         mockMvc.perform(
-            post("/api/favorites")
+            post("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
         ).andExpect(status().isCreated)
 
         mockMvc.perform(
-            get("/api/favorites")
+            get("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -110,19 +110,19 @@ class FavoriteEventControllerIntegrationTests {
     @Test
     fun `should remove event from favorites`() {
         mockMvc.perform(
-            post("/api/favorites")
+            post("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
         ).andExpect(status().isCreated)
 
         mockMvc.perform(
-            delete("/api/favorites/$eventId")
+            delete("/api/v1/favorites/$eventId")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         ).andExpect(status().isNoContent)
 
         mockMvc.perform(
-            get("/api/favorites")
+            get("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -132,7 +132,7 @@ class FavoriteEventControllerIntegrationTests {
     @Test
     fun `should return empty list when no favorites`() {
         mockMvc.perform(
-            get("/api/favorites")
+            get("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -143,7 +143,7 @@ class FavoriteEventControllerIntegrationTests {
     fun `duplicate add is idempotent`() {
         repeat(2) {
             mockMvc.perform(
-                post("/api/favorites")
+                post("/api/v1/favorites")
                     .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(mapOf("eventId" to eventId)))
@@ -151,7 +151,7 @@ class FavoriteEventControllerIntegrationTests {
         }
 
         mockMvc.perform(
-            get("/api/favorites")
+            get("/api/v1/favorites")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)

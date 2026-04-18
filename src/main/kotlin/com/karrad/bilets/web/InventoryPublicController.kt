@@ -14,7 +14,7 @@ import java.util.UUID
  * Используется клиентом (EventApiService).
  */
 @RestController
-@RequestMapping("/api/inventory")
+@RequestMapping("/api/v1/inventory")
 class InventoryPublicController(
     private val inventoryPlanService: InventoryPlanService
 ) {

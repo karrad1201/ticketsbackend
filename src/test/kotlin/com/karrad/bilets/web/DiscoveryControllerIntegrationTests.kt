@@ -70,7 +70,7 @@ class DiscoveryControllerIntegrationTests {
         userEventVisitRepository.save(UserEventVisit(userId = userId(), eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614176410"), visitedAt = Instant.now()))
 
         mockMvc.perform(
-            get("/api/discovery")
+            get("/api/v1/discovery")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId())}")
                 .param("city", "Ekaterinburg")
                 .param("page", "0")
@@ -85,7 +85,7 @@ class DiscoveryControllerIntegrationTests {
     @Test
     fun `should reject oversized discovery page size`() {
         mockMvc.perform(
-            get("/api/discovery")
+            get("/api/v1/discovery")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId())}")
                 .param("city", "Ekaterinburg")
                 .param("size", "51")

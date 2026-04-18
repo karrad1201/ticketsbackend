@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/venues")
+@RequestMapping("/api/v1/venues")
 class VenueAccessGrantController(
     private val requestVenueAccessUseCase: RequestVenueAccessUseCase,
     private val reviewVenueAccessRequestUseCase: ReviewVenueAccessRequestUseCase,

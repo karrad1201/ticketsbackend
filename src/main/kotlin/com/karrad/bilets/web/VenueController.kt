@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/venues")
+@RequestMapping("/api/v1/venues")
 class VenueController(
     private val createVenueUseCase: CreateVenueUseCase,
     private val venueQueryPort: VenueQueryPort,

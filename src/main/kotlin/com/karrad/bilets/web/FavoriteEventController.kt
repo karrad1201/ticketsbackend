@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/api/v1/favorites")
 class FavoriteEventController(
     private val favoriteEventService: FavoriteEventService,
     private val favoriteQueryPort: FavoriteQueryPort,

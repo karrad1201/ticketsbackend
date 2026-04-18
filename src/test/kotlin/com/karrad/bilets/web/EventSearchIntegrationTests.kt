@@ -48,7 +48,7 @@ class EventSearchIntegrationTests {
         eventRepository.save(demoEvent(UUID.fromString("123e4567-e89b-12d3-a456-426614176503"), "Arena Afterparty", Instant.parse("2026-05-02T18:00:00Z")))
 
         mockMvc.perform(
-            get("/api/events/search")
+            get("/api/v1/events/search")
                 .param("q", "arena")
                 .param("city", "Ekaterinburg")
                 .param("venueId", venueId().toString())
@@ -67,7 +67,7 @@ class EventSearchIntegrationTests {
     @Test
     fun `should reject invalid search page size over http`() {
         mockMvc.perform(
-            get("/api/events/search")
+            get("/api/v1/events/search")
                 .param("size", "51")
         )
             .andExpect(status().isBadRequest)

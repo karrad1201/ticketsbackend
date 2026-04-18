@@ -79,7 +79,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission/holds")
+            post("/api/v1/events/${event.id}/inventory/general-admission/holds")
                 .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)
@@ -96,7 +96,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission/releases")
+            post("/api/v1/events/${event.id}/inventory/general-admission/releases")
                 .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(releasePayload)
@@ -113,7 +113,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission/sales")
+            post("/api/v1/events/${event.id}/inventory/general-admission/sales")
                 .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(salePayload)
@@ -122,7 +122,7 @@ class GeneralAdmissionInventoryLifecycleIntegrationTests {
             .andExpect(jsonPath("$.admissionInventory[0].held").value(0))
             .andExpect(jsonPath("$.admissionInventory[0].sold").value(3))
 
-        mockMvc.perform(get("/api/events/${event.id}/inventory"))
+        mockMvc.perform(get("/api/v1/events/${event.id}/inventory"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventId").value(event.id.toString()))
     }

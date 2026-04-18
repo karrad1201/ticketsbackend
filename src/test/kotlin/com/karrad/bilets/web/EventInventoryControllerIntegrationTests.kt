@@ -76,7 +76,7 @@ class EventInventoryControllerIntegrationTests {
         layoutTemplateRepository.save(layoutTemplate)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/seated")
+            post("/api/v1/events/${event.id}/inventory/seated")
                 .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -97,7 +97,7 @@ class EventInventoryControllerIntegrationTests {
         eventRepository.save(event)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission")
+            post("/api/v1/events/${event.id}/inventory/general-admission")
                 .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -123,7 +123,7 @@ class EventInventoryControllerIntegrationTests {
         layoutTemplateRepository.save(layoutTemplate)
 
         mockMvc.perform(
-            post("/api/events/123e4567-e89b-12d3-a456-426614174302/inventory/seated")
+            post("/api/v1/events/123e4567-e89b-12d3-a456-426614174302/inventory/seated")
                 .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -149,7 +149,7 @@ class EventInventoryControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission")
+            post("/api/v1/events/${event.id}/inventory/general-admission")
                 .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)
@@ -157,7 +157,7 @@ class EventInventoryControllerIntegrationTests {
             .andExpect(status().isCreated)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/general-admission")
+            post("/api/v1/events/${event.id}/inventory/general-admission")
                 .header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload)

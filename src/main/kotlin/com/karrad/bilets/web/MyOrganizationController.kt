@@ -8,7 +8,7 @@ import java.time.Instant
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/my/organization")
+@RequestMapping("/api/v1/my/organization")
 class MyOrganizationController(
     private val getMyOrganizationEventsUseCase: GetMyOrganizationEventsUseCase,
     private val currentUserProvider: CurrentUserProvider

@@ -58,7 +58,7 @@ class InventoryPlanControllerIntegrationTests {
     @Test
     fun `should return empty list when no inventory plans`() {
         mockMvc.perform(
-            get("/api/inventory-plans")
+            get("/api/v1/inventory-plans")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -70,7 +70,7 @@ class InventoryPlanControllerIntegrationTests {
         val unknownEventId = UUID.fromString("ffffffff-0000-0000-0000-000000000001")
 
         mockMvc.perform(
-            get("/api/inventory-plans/$unknownEventId")
+            get("/api/v1/inventory-plans/$unknownEventId")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         ).andExpect(status().isNotFound)
     }
@@ -86,7 +86,7 @@ class InventoryPlanControllerIntegrationTests {
         eventInventoryPlanRepository.save(plan)
 
         mockMvc.perform(
-            get("/api/inventory-plans/$eventId")
+            get("/api/v1/inventory-plans/$eventId")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -104,7 +104,7 @@ class InventoryPlanControllerIntegrationTests {
         eventInventoryPlanRepository.save(plan)
 
         mockMvc.perform(
-            get("/api/inventory-plans")
+            get("/api/v1/inventory-plans")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)

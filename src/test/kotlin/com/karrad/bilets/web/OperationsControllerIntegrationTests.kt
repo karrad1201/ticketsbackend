@@ -85,7 +85,7 @@ class OperationsControllerIntegrationTests {
         eventRepository.save(event.copy(time = Instant.parse("2026-03-20T18:00:00Z")))
 
         mockMvc.perform(
-            post("/api/ops/close-started-event-sales")
+            post("/api/v1/ops/close-started-event-sales")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin().id)}")
                 .param("limit", "10")
         )
@@ -112,7 +112,7 @@ class OperationsControllerIntegrationTests {
         orderRepository.save(order.copy(expiresAt = Instant.parse("2026-03-22T10:00:00Z")))
 
         mockMvc.perform(
-            post("/api/ops/process-stale-payments")
+            post("/api/v1/ops/process-stale-payments")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin().id)}")
                 .param("limit", "10")
         )

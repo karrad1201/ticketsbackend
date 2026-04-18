@@ -71,7 +71,7 @@ class TicketControllerIntegrationTests {
     @Test
     fun `should return empty list of tickets for current user`() {
         mockMvc.perform(
-            get("/api/tickets/me")
+            get("/api/v1/tickets/me")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -83,7 +83,7 @@ class TicketControllerIntegrationTests {
         ticketRepository.save(demoTicket())
 
         mockMvc.perform(
-            get("/api/tickets/me")
+            get("/api/v1/tickets/me")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -109,7 +109,7 @@ class TicketControllerIntegrationTests {
         ticketRepository.save(demoTicket())
 
         mockMvc.perform(
-            get("/api/orders/$orderId/tickets")
+            get("/api/v1/orders/$orderId/tickets")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -121,7 +121,7 @@ class TicketControllerIntegrationTests {
         val ticket = ticketRepository.save(demoTicket())
 
         mockMvc.perform(
-            post("/api/events/$eventId/tickets/${ticket.id}/validate")
+            post("/api/v1/events/$eventId/tickets/${ticket.id}/validate")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isOk)
@@ -135,7 +135,7 @@ class TicketControllerIntegrationTests {
         val unknownTicketId = UUID.randomUUID()
 
         mockMvc.perform(
-            post("/api/events/$eventId/tickets/$unknownTicketId/validate")
+            post("/api/v1/events/$eventId/tickets/$unknownTicketId/validate")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isNotFound)
@@ -148,13 +148,13 @@ class TicketControllerIntegrationTests {
 
         // First validation
         mockMvc.perform(
-            post("/api/events/$eventId/tickets/${ticket.id}/validate")
+            post("/api/v1/events/$eventId/tickets/${ticket.id}/validate")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         ).andExpect(status().isOk)
 
         // Second validation
         mockMvc.perform(
-            post("/api/events/$eventId/tickets/${ticket.id}/validate")
+            post("/api/v1/events/$eventId/tickets/${ticket.id}/validate")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(staffUserId)}")
         )
             .andExpect(status().isConflict)
@@ -168,7 +168,7 @@ class TicketControllerIntegrationTests {
         val ticket = ticketRepository.save(demoTicket())
 
         mockMvc.perform(
-            post("/api/events/$eventId/tickets/${ticket.id}/validate")
+            post("/api/v1/events/$eventId/tickets/${ticket.id}/validate")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(outsiderId)}")
         )
             .andExpect(status().isForbidden)

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/geo")
+@RequestMapping("/api/v1/geo")
 class GeoController(private val cityRepository: CityRepository) {
 
     data class SubjectResponse(val id: UUID, val label: String)

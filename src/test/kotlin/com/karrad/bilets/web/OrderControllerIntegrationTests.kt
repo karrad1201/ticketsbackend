@@ -83,7 +83,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -104,7 +104,7 @@ class OrderControllerIntegrationTests {
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            post("/api/orders/$orderId/confirm-payment")
+            post("/api/v1/orders/$orderId/confirm-payment")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
         )
@@ -112,7 +112,7 @@ class OrderControllerIntegrationTests {
             .andExpect(jsonPath("$.status").value("PAID"))
 
         mockMvc.perform(
-            get("/api/orders/$orderId/tickets")
+            get("/api/v1/orders/$orderId/tickets")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
         )
             .andExpect(status().isOk)
@@ -138,7 +138,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(generalAdmissionPlan(event))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -159,13 +159,13 @@ class OrderControllerIntegrationTests {
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            post("/api/orders/$orderId/confirm-payment")
+            post("/api/v1/orders/$orderId/confirm-payment")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("PAID"))
 
-        mockMvc.perform(get("/api/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}"))
+        mockMvc.perform(get("/api/v1/tickets/me").header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
             .andExpect(jsonPath("$[0].ticketTypeId").value(standardTicketTypeId().toString()))
@@ -186,7 +186,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -205,7 +205,7 @@ class OrderControllerIntegrationTests {
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            post("/api/orders/$orderId/expire")
+            post("/api/v1/orders/$orderId/expire")
                 .header("Authorization", adminBearer)
         )
             .andExpect(status().isConflict)
@@ -227,7 +227,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(emptyMap<String, Any>()))
@@ -245,7 +245,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -277,7 +277,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(heldPlan)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -303,7 +303,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -322,13 +322,13 @@ class OrderControllerIntegrationTests {
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            post("/api/orders/$orderId/confirm-payment")
+            post("/api/v1/orders/$orderId/confirm-payment")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
         )
             .andExpect(status().isOk)
 
         mockMvc.perform(
-            post("/api/orders/$orderId/confirm-payment")
+            post("/api/v1/orders/$orderId/confirm-payment")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
         )
             .andExpect(status().isConflict)
@@ -344,7 +344,7 @@ class OrderControllerIntegrationTests {
         eventInventoryPlanRepository.save(EventInventoryPlan.seated(event, layoutTemplate))
 
         val createResponse = mockMvc.perform(
-            post("/api/events/${event.id}/orders")
+            post("/api/v1/events/${event.id}/orders")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -363,7 +363,7 @@ class OrderControllerIntegrationTests {
         val orderId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            get("/api/orders/$orderId")
+            get("/api/v1/orders/$orderId")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(buyerUserId())}")
         )
             .andExpect(status().isOk)
@@ -374,7 +374,7 @@ class OrderControllerIntegrationTests {
 
     @Test
     fun `should return not found for unknown order`() {
-        mockMvc.perform(get("/api/orders/123e4567-e89b-12d3-a456-426614177999"))
+        mockMvc.perform(get("/api/v1/orders/123e4567-e89b-12d3-a456-426614177999"))
             .andExpect(status().isNotFound)
     }
 

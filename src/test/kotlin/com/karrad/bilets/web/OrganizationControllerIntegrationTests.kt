@@ -41,7 +41,7 @@ class OrganizationControllerIntegrationTests {
     @Test
     fun `should create and read organizations over http`() {
         mockMvc.perform(
-            post("/api/organizations")
+            post("/api/v1/organizations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Ufa Jazz Collective")))
         )
@@ -50,11 +50,11 @@ class OrganizationControllerIntegrationTests {
 
         val organization = organizationRepository.findByCode("ufa-jazz")!!
 
-        mockMvc.perform(get("/api/organizations"))
+        mockMvc.perform(get("/api/v1/organizations"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organizations/${organization.id}"))
+        mockMvc.perform(get("/api/v1/organizations/${organization.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.name").value("Ufa Jazz Collective"))
     }
@@ -70,7 +70,7 @@ class OrganizationControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/organizations")
+            post("/api/v1/organizations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Another Label")))
         )
