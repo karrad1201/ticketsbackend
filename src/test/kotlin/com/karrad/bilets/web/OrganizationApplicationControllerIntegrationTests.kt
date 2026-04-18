@@ -62,7 +62,7 @@ class OrganizationApplicationControllerIntegrationTests {
         userRepository.save(admin)
 
         mockMvc.perform(
-            post("/api/organization-applications")
+            post("/api/v1/organization-applications")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -79,19 +79,19 @@ class OrganizationApplicationControllerIntegrationTests {
 
         val application = organizationApplicationRepository.findPendingByOrganizationCode("ural-live")!!
 
-        mockMvc.perform(get("/api/organization-applications"))
+        mockMvc.perform(get("/api/v1/organization-applications"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
         mockMvc.perform(
-            post("/api/organization-applications/${application.id}/approve")
+            post("/api/v1/organization-applications/${application.id}/approve")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
             .andExpect(jsonPath("$.organizationId").isNotEmpty)
 
-        mockMvc.perform(get("/api/organization-applications/${application.id}"))
+        mockMvc.perform(get("/api/v1/organization-applications/${application.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.status").value("APPROVED"))
 
@@ -108,7 +108,7 @@ class OrganizationApplicationControllerIntegrationTests {
         userRepository.save(applicant)
 
         mockMvc.perform(
-            post("/api/organization-applications")
+            post("/api/v1/organization-applications")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -125,7 +125,7 @@ class OrganizationApplicationControllerIntegrationTests {
         val application = organizationApplicationRepository.findPendingByOrganizationCode("ural-live")!!
 
         mockMvc.perform(
-            post("/api/organization-applications/${application.id}/approve")
+            post("/api/v1/organization-applications/${application.id}/approve")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
         )
             .andExpect(status().isBadRequest)

@@ -18,7 +18,7 @@ import java.time.Clock
 
 @Profile("prod")
 @RestController
-@RequestMapping("/api/payments/callbacks/tbank")
+@RequestMapping("/api/v1/payments/callbacks/tbank")
 class TBankCallbackController(
     private val handlePaymentCallbackUseCase: HandlePaymentCallbackUseCase,
     private val tbankProperties: TBankProperties,

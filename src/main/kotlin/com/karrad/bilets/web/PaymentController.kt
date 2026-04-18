@@ -12,7 +12,7 @@ import java.time.Clock
 
 @Profile("!prod")
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/api/v1/payments")
 class PaymentController(
     private val handlePaymentCallbackUseCase: HandlePaymentCallbackUseCase,
     private val clock: Clock

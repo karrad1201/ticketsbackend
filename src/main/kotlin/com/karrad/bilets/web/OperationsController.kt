@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/ops")
+@RequestMapping("/api/v1/ops")
 class OperationsController(
     private val processStartedEventSalesUseCase: ProcessStartedEventSalesUseCase,
     private val processStalePaymentAttemptsUseCase: ProcessStalePaymentAttemptsUseCase,

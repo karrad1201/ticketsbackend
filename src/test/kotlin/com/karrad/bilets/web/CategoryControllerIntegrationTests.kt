@@ -41,7 +41,7 @@ class CategoryControllerIntegrationTests {
     @Test
     fun `should create and read categories over http`() {
         mockMvc.perform(
-            post("/api/categories")
+            post("/api/v1/categories")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Theatre")))
         )
@@ -50,11 +50,11 @@ class CategoryControllerIntegrationTests {
 
         val category = categoryRepository.findByCode("theatre")!!
 
-        mockMvc.perform(get("/api/categories"))
+        mockMvc.perform(get("/api/v1/categories"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/categories/${category.id}"))
+        mockMvc.perform(get("/api/v1/categories/${category.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Theatre"))
     }
@@ -64,7 +64,7 @@ class CategoryControllerIntegrationTests {
         categoryRepository.save(Category(code = "theatre", label = "Theatre", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175201")))
 
         mockMvc.perform(
-            post("/api/categories")
+            post("/api/v1/categories")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Drama")))
         )

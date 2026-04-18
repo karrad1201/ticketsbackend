@@ -54,7 +54,7 @@ class UserControllerIntegrationTests {
         userRepository.save(admin)
 
         mockMvc.perform(
-            post("/api/users")
+            post("/api/v1/users")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -71,10 +71,10 @@ class UserControllerIntegrationTests {
 
         val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
 
-        mockMvc.perform(get("/api/users").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/users").header("Authorization", adminBearer))
             .andExpect(status().isOk)
 
-        mockMvc.perform(get("/api/users/${user.id}").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/users/${user.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.fullName").value("Regular User"))
     }
@@ -82,7 +82,7 @@ class UserControllerIntegrationTests {
     @Test
     fun `should reject user creation without admin token`() {
         mockMvc.perform(
-            post("/api/users")
+            post("/api/v1/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
@@ -104,7 +104,7 @@ class UserControllerIntegrationTests {
         userRepository.save(user)
 
         mockMvc.perform(
-            post("/api/users")
+            post("/api/v1/users")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(user.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -135,7 +135,7 @@ class UserControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            post("/api/users")
+            post("/api/v1/users")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(

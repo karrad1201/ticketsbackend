@@ -77,7 +77,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -109,7 +109,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -137,7 +137,7 @@ class EventControllerIntegrationTests {
         categoryRepository.save(category)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -164,7 +164,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -190,7 +190,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -218,7 +218,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -246,7 +246,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         val createResponse = mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -266,7 +266,7 @@ class EventControllerIntegrationTests {
         val eventId = objectMapper.readTree(createResponse.response.contentAsString).get("id").asText()
 
         mockMvc.perform(
-            post("/api/events/$eventId/close-sales")
+            post("/api/v1/events/$eventId/close-sales")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
         )
             .andExpect(status().isOk)
@@ -282,7 +282,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -312,7 +312,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -340,7 +340,7 @@ class EventControllerIntegrationTests {
         venueRepository.save(venue)
 
         val createResponse = mockMvc.perform(
-            post("/api/events")
+            post("/api/v1/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -366,7 +366,7 @@ class EventControllerIntegrationTests {
         userRepository.save(outsider)
 
         mockMvc.perform(
-            post("/api/events/$eventId/close-sales")
+            post("/api/v1/events/$eventId/close-sales")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(outsider.id)}")
         )
             .andExpect(status().isForbidden)

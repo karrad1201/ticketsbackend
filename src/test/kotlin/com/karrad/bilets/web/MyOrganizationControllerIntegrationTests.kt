@@ -61,7 +61,7 @@ class MyOrganizationControllerIntegrationTests {
     @Test
     fun `should return empty list when user has no organization membership`() {
         mockMvc.perform(
-            get("/api/my/organization/events")
+            get("/api/v1/my/organization/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(otherUserId)}")
         )
             .andExpect(status().isOk)
@@ -73,7 +73,7 @@ class MyOrganizationControllerIntegrationTests {
         seedOrganizationWithEvent(time = Instant.parse("2027-06-01T18:00:00Z"))
 
         mockMvc.perform(
-            get("/api/my/organization/events")
+            get("/api/v1/my/organization/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)
@@ -89,7 +89,7 @@ class MyOrganizationControllerIntegrationTests {
         )
 
         mockMvc.perform(
-            get("/api/my/organization/events")
+            get("/api/v1/my/organization/events")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(userId)}")
         )
             .andExpect(status().isOk)

@@ -13,7 +13,7 @@ class CorsConfig(
     override fun addCorsMappings(registry: CorsRegistry) {
         val origins = allowedOrigins.split(",").map { it.trim() }.toTypedArray()
         val useCredentials = allowedOrigins.trim() != "*"
-        registry.addMapping("/api/**")
+        registry.addMapping("/api/v1/**")
             .allowedOriginPatterns(*origins)
             .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
             .allowedHeaders("*")

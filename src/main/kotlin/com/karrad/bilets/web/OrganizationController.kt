@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/organizations")
+@RequestMapping("/api/v1/organizations")
 class OrganizationController(
     private val createOrganizationUseCase: CreateOrganizationUseCase,
     private val organizationService: OrganizationService

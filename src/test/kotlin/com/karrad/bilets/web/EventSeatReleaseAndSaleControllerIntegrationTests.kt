@@ -83,7 +83,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
         eventInventoryPlanRepository.save(heldPlan)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/releases")
+            post("/api/v1/events/${event.id}/inventory/releases")
                 .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -112,7 +112,7 @@ class EventSeatReleaseAndSaleControllerIntegrationTests {
         eventInventoryPlanRepository.save(heldPlan)
 
         mockMvc.perform(
-            post("/api/events/${event.id}/inventory/sales")
+            post("/api/v1/events/${event.id}/inventory/sales")
                 .header("Authorization", userBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(

@@ -124,79 +124,79 @@ class ReadApiIntegrationTests {
         eventRepository.save(event)
         eventInventoryPlanRepository.save(inventoryPlan)
 
-        mockMvc.perform(get("/api/users").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/users").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
 
-        mockMvc.perform(get("/api/users/${user.id}").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/users/${user.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.email").value("user@example.com"))
 
-        mockMvc.perform(get("/api/organization-applications"))
+        mockMvc.perform(get("/api/v1/organization-applications"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-applications/${application.id}"))
+        mockMvc.perform(get("/api/v1/organization-applications/${application.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.organizationCode").value("ural-live"))
 
-        mockMvc.perform(get("/api/organizations"))
+        mockMvc.perform(get("/api/v1/organizations"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organizations/${organization.id}"))
+        mockMvc.perform(get("/api/v1/organizations/${organization.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.code").value("ufa-jazz"))
 
-        mockMvc.perform(get("/api/organization-members").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/organization-members").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-members/${member.id}").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/organization-members/${member.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.role").value("OWNER"))
 
-        mockMvc.perform(get("/api/categories"))
+        mockMvc.perform(get("/api/v1/categories"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/categories/${category.id}"))
+        mockMvc.perform(get("/api/v1/categories/${category.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.code").value("theatre"))
 
-        mockMvc.perform(get("/api/venues"))
+        mockMvc.perform(get("/api/v1/venues"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/venues/${venue.id}"))
+        mockMvc.perform(get("/api/v1/venues/${venue.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Demo Hall"))
 
-        mockMvc.perform(get("/api/layout-templates"))
+        mockMvc.perform(get("/api/v1/layout-templates"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/layout-templates/${layoutTemplate.id}"))
+        mockMvc.perform(get("/api/v1/layout-templates/${layoutTemplate.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Main Hall Layout"))
 
-        mockMvc.perform(get("/api/events"))
+        mockMvc.perform(get("/api/v1/events"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/events/${event.id}"))
+        mockMvc.perform(get("/api/v1/events/${event.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.label").value("Hamlet"))
 
-        mockMvc.perform(get("/api/inventory-plans"))
+        mockMvc.perform(get("/api/v1/inventory-plans"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/inventory-plans/${event.id}"))
+        mockMvc.perform(get("/api/v1/inventory-plans/${event.id}"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventId").value(event.id.toString()))
 
-        mockMvc.perform(get("/api/events/${event.id}/inventory"))
+        mockMvc.perform(get("/api/v1/events/${event.id}/inventory"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.eventId").value(event.id.toString()))
     }
@@ -207,34 +207,34 @@ class ReadApiIntegrationTests {
         userRepository.save(admin)
         val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
 
-        mockMvc.perform(get("/api/users/123e4567-e89b-12d3-a456-426614175109").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/users/123e4567-e89b-12d3-a456-426614175109").header("Authorization", adminBearer))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/organization-applications/123e4567-e89b-12d3-a456-426614175108"))
+        mockMvc.perform(get("/api/v1/organization-applications/123e4567-e89b-12d3-a456-426614175108"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/organization-members/123e4567-e89b-12d3-a456-426614175107").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/organization-members/123e4567-e89b-12d3-a456-426614175107").header("Authorization", adminBearer))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/organizations/123e4567-e89b-12d3-a456-426614175110"))
+        mockMvc.perform(get("/api/v1/organizations/123e4567-e89b-12d3-a456-426614175110"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/categories/123e4567-e89b-12d3-a456-426614175111"))
+        mockMvc.perform(get("/api/v1/categories/123e4567-e89b-12d3-a456-426614175111"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/venues/123e4567-e89b-12d3-a456-426614175112"))
+        mockMvc.perform(get("/api/v1/venues/123e4567-e89b-12d3-a456-426614175112"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/layout-templates/123e4567-e89b-12d3-a456-426614175113"))
+        mockMvc.perform(get("/api/v1/layout-templates/123e4567-e89b-12d3-a456-426614175113"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/events/123e4567-e89b-12d3-a456-426614175114"))
+        mockMvc.perform(get("/api/v1/events/123e4567-e89b-12d3-a456-426614175114"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/inventory-plans/123e4567-e89b-12d3-a456-426614175115"))
+        mockMvc.perform(get("/api/v1/inventory-plans/123e4567-e89b-12d3-a456-426614175115"))
             .andExpect(status().isNotFound)
 
-        mockMvc.perform(get("/api/events/123e4567-e89b-12d3-a456-426614175116/inventory"))
+        mockMvc.perform(get("/api/v1/events/123e4567-e89b-12d3-a456-426614175116/inventory"))
             .andExpect(status().isNotFound)
     }
 

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/layout-templates")
+@RequestMapping("/api/v1/layout-templates")
 class LayoutTemplateController(
     private val createLayoutTemplateUseCase: CreateLayoutTemplateUseCase,
     private val layoutTemplateService: LayoutTemplateService,

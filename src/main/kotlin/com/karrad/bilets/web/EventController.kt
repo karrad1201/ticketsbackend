@@ -19,7 +19,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/events")
+@RequestMapping("/api/v1/events")
 class EventController(
     private val createEventUseCase: CreateEventUseCase,
     private val closeEventSalesUseCase: CloseEventSalesUseCase,

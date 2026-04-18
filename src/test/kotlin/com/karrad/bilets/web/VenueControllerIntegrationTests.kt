@@ -58,7 +58,7 @@ class VenueControllerIntegrationTests {
         seedOrganizationAccess()
 
         mockMvc.perform(
-            post("/api/venues")
+            post("/api/v1/venues")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -90,7 +90,7 @@ class VenueControllerIntegrationTests {
         seedOrganizationAccess()
 
         mockMvc.perform(
-            post("/api/venues")
+            post("/api/v1/venues")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -125,7 +125,7 @@ class VenueControllerIntegrationTests {
         userRepository.save(demoCreator())
 
         mockMvc.perform(
-            post("/api/venues")
+            post("/api/v1/venues")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(

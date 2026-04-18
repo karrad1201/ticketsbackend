@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/organization-members")
+@RequestMapping("/api/v1/organization-members")
 class OrganizationMemberController(
     private val organizationMemberService: OrganizationMemberService,
     private val currentUserProvider: CurrentUserProvider

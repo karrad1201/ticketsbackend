@@ -16,7 +16,7 @@ import java.time.Instant
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 class TicketController(
     private val ticketService: TicketService,
     private val orderService: OrderService,

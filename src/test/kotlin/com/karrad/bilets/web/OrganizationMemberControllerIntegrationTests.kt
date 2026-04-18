@@ -75,16 +75,16 @@ class OrganizationMemberControllerIntegrationTests {
 
         val adminBearer = "Bearer ${authTokenRepository.bearerFor(admin.id)}"
 
-        mockMvc.perform(get("/api/organization-members").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/organization-members").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(1))
 
-        mockMvc.perform(get("/api/organization-members/${member.id}").header("Authorization", adminBearer))
+        mockMvc.perform(get("/api/v1/organization-members/${member.id}").header("Authorization", adminBearer))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.role").value("OWNER"))
 
         mockMvc.perform(
-            get("/api/organization-members")
+            get("/api/v1/organization-members")
                 .header("Authorization", adminBearer)
                 .param("organizationId", organization.id.toString())
         )
@@ -92,7 +92,7 @@ class OrganizationMemberControllerIntegrationTests {
             .andExpect(jsonPath("$.length()").value(1))
 
         mockMvc.perform(
-            get("/api/organization-members")
+            get("/api/v1/organization-members")
                 .header("Authorization", adminBearer)
                 .param("userId", user.id.toString())
         )
@@ -102,7 +102,7 @@ class OrganizationMemberControllerIntegrationTests {
 
     @Test
     fun `should reject organization members listing without admin token`() {
-        mockMvc.perform(get("/api/organization-members"))
+        mockMvc.perform(get("/api/v1/organization-members"))
             .andExpect(status().isUnauthorized)
     }
 }

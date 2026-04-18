@@ -69,7 +69,7 @@ class LayoutTemplateControllerIntegrationTests {
         venueRepository.save(venue)
 
         mockMvc.perform(
-            post("/api/layout-templates")
+            post("/api/v1/layout-templates")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -106,7 +106,7 @@ class LayoutTemplateControllerIntegrationTests {
     fun `should reject layout template creation when venue space is missing`() {
         userRepository.save(demoCreator())
         mockMvc.perform(
-            post("/api/layout-templates")
+            post("/api/v1/layout-templates")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -129,7 +129,7 @@ class LayoutTemplateControllerIntegrationTests {
         userRepository.save(demoCreator())
 
         mockMvc.perform(
-            post("/api/layout-templates")
+            post("/api/v1/layout-templates")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(demoCreatorUserId())}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
