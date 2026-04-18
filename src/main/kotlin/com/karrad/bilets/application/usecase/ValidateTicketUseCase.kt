@@ -104,11 +104,12 @@ class ValidateTicketUseCase(
         val marked = ticketRepository.markAsUsed(ticket.id, now)
         if (!marked) {
             // Another scanner used the ticket between our initial read and this update
+            val actualUsedAt = ticketRepository.findById(ticket.id)?.usedAt ?: now
             return TicketValidationResult.AlreadyUsed(
                 ticketId = ticket.id,
                 eventLabel = scannedEvent.label,
                 holderName = holderName,
-                usedAt = now
+                usedAt = actualUsedAt
             )
         }
         log.info("TICKET_VALIDATED ticketId={} eventId={} scannerId={}", ticketId, eventId, callerId)
