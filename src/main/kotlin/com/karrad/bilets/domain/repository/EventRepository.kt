@@ -20,6 +20,7 @@ interface EventRepository {
     fun findById(id: UUID): Event?
     fun findAllByIds(ids: Collection<UUID>): List<Event> = ids.mapNotNull { findById(it) }
     fun findAll(): List<Event>
+    fun findAll(offset: Int, limit: Int): List<Event> = findAll().drop(offset).take(limit)
     fun findByVenueId(venueId: UUID): List<Event>
     fun findAvailableByCity(city: String, now: Instant): List<Event>
     /** Fetch available events for city with optional date filter and row cap applied at SQL level. */
