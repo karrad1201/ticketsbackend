@@ -2,7 +2,11 @@ package com.karrad.bilets.web
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.Organization
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.OrganizationRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -33,6 +37,12 @@ class OrganizationControllerIntegrationTests {
     @Autowired
     lateinit var organizationRepository: OrganizationRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
@@ -40,8 +50,12 @@ class OrganizationControllerIntegrationTests {
 
     @Test
     fun `should create and read organizations over http`() {
+        val admin = demoAdmin()
+        userRepository.save(admin)
+
         mockMvc.perform(
             post("/api/v1/organizations")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Ufa Jazz Collective")))
         )
@@ -61,6 +75,9 @@ class OrganizationControllerIntegrationTests {
 
     @Test
     fun `should reject duplicate organization code over http`() {
+        val admin = demoAdmin()
+        userRepository.save(admin)
+
         organizationRepository.save(
             Organization(
                 code = "ufa-jazz",
@@ -71,9 +88,52 @@ class OrganizationControllerIntegrationTests {
 
         mockMvc.perform(
             post("/api/v1/organizations")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Another Label")))
         )
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject organization creation without authentication`() {
+        mockMvc.perform(
+            post("/api/v1/organizations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Ufa Jazz Collective")))
+        )
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `should reject organization creation for non-admin user`() {
+        val regularUser = demoUser()
+        userRepository.save(regularUser)
+
+        mockMvc.perform(
+            post("/api/v1/organizations")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(regularUser.id)}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Ufa Jazz Collective")))
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    private fun demoAdmin(): User {
+        return User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175302")
+        )
+    }
+
+    private fun demoUser(): User {
+        return User(
+            email = "user@example.com",
+            fullName = "Regular User",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175303")
+        )
     }
 }
