@@ -74,6 +74,13 @@ class JdbcEventRepository(
         "$selectAll\norder by event_time, id"
     ) { rs, _ -> rowMapper(rs) }
 
+    override fun findAll(offset: Int, limit: Int): List<Event> = jdbcTemplate.query(
+        "$selectAll\norder by event_time, id\nLIMIT ? OFFSET ?",
+        { rs, _ -> rowMapper(rs) },
+        limit,
+        offset
+    )
+
     override fun findByVenueId(venueId: UUID): List<Event> = jdbcTemplate.query(
         "$selectAll\nwhere venue_id = ?\norder by event_time, id",
         { rs, _ -> rowMapper(rs) },
