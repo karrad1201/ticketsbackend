@@ -4,6 +4,11 @@ import com.karrad.bilets.application.query.VenueQueryPort
 import com.karrad.bilets.application.usecase.CreateVenueUseCase
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.web.dto.CreateVenueRequest
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.http.HttpStatus
@@ -14,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
+@Tag(name = "Venues", description = "Управление площадками проведения мероприятий")
 @RestController
 @RequestMapping("/api/v1/venues")
 class VenueController(
@@ -22,6 +28,13 @@ class VenueController(
     private val currentUserProvider: CurrentUserProvider
 ) {
 
+    @Operation(summary = "Создать площадку", description = "Регистрирует новую площадку в системе")
+    @ApiResponses(
+        ApiResponse(responseCode = "201", description = "Площадка успешно создана"),
+        ApiResponse(responseCode = "400", description = "Некорректные данные"),
+        ApiResponse(responseCode = "401", description = "Не аутентифицирован"),
+        ApiResponse(responseCode = "403", description = "Недостаточно прав")
+    )
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
@@ -30,10 +43,19 @@ class VenueController(
         return createVenueUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
     }
 
+    @Operation(summary = "Список площадок", description = "Возвращает все зарегистрированные площадки")
+    @ApiResponse(responseCode = "200", description = "Список площадок")
     @GetMapping
     fun list(): List<Venue> = venueQueryPort.findAll()
 
+    @Operation(summary = "Получить площадку по ID", description = "Возвращает детальную информацию о площадке")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Площадка найдена"),
+        ApiResponse(responseCode = "404", description = "Площадка не найдена")
+    )
     @GetMapping("/{venueId}")
-    fun getById(@PathVariable venueId: UUID): Venue =
+    fun getById(
+        @Parameter(description = "Идентификатор площадки") @PathVariable venueId: UUID
+    ): Venue =
         venueQueryPort.findById(venueId) ?: throw NoSuchElementException("Venue not found: $venueId")
 }

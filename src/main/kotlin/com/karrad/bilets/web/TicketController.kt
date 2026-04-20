@@ -5,6 +5,11 @@ import com.karrad.bilets.application.service.TicketService
 import com.karrad.bilets.application.usecase.TicketValidationResult
 import com.karrad.bilets.application.usecase.ValidateTicketUseCase
 import com.karrad.bilets.domain.entity.Ticket
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -15,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 import java.util.UUID
 
+@Tag(name = "Tickets", description = "Просмотр и валидация билетов")
 @RestController
 @RequestMapping("/api/v1")
 class TicketController(
@@ -23,22 +29,48 @@ class TicketController(
     private val validateTicketUseCase: ValidateTicketUseCase,
     private val currentUserProvider: CurrentUserProvider
 ) {
+    @Operation(summary = "Мои билеты", description = "Возвращает все билеты текущего авторизованного пользователя")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Список билетов"),
+        ApiResponse(responseCode = "401", description = "Не аутентифицирован")
+    )
     @GetMapping("/tickets/me")
     fun listCurrentUserTickets(): List<Ticket> =
         ticketService.listByUserId(currentUserProvider.requireUserId())
 
+    @Operation(summary = "Билеты по заказу", description = "Возвращает список билетов, входящих в указанный заказ")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Список билетов заказа"),
+        ApiResponse(responseCode = "401", description = "Не аутентифицирован"),
+        ApiResponse(responseCode = "403", description = "Заказ принадлежит другому пользователю"),
+        ApiResponse(responseCode = "404", description = "Заказ не найден")
+    )
     @GetMapping("/orders/{orderId}/tickets")
-    fun listOrderTickets(@PathVariable orderId: UUID): List<Ticket> {
+    fun listOrderTickets(
+        @Parameter(description = "Идентификатор заказа") @PathVariable orderId: UUID
+    ): List<Ticket> {
         val userId = currentUserProvider.requireUserId()
         val order = orderService.getById(orderId) ?: throw NoSuchElementException("Order not found: $orderId")
         if (order.buyerUserId != userId) throw SecurityException("Access denied")
         return ticketService.listByOrderId(orderId)
     }
 
+    @Operation(
+        summary = "Валидировать билет",
+        description = "Проверяет подлинность и статус билета при входе на мероприятие. Доступно организатору или сотруднику площадки"
+    )
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Билет валиден"),
+        ApiResponse(responseCode = "401", description = "Не аутентифицирован"),
+        ApiResponse(responseCode = "403", description = "Нет прав для валидации данного мероприятия"),
+        ApiResponse(responseCode = "404", description = "Билет не найден"),
+        ApiResponse(responseCode = "409", description = "Билет уже был использован"),
+        ApiResponse(responseCode = "422", description = "Билет выдан для другого мероприятия")
+    )
     @PostMapping("/events/{eventId}/tickets/{ticketId}/validate")
     fun validateTicket(
-        @PathVariable eventId: UUID,
-        @PathVariable ticketId: UUID
+        @Parameter(description = "Идентификатор мероприятия") @PathVariable eventId: UUID,
+        @Parameter(description = "Идентификатор билета") @PathVariable ticketId: UUID
     ): ResponseEntity<TicketValidationResponse> {
         val callerId = currentUserProvider.requireUserId()
         return when (val result = validateTicketUseCase.execute(ticketId, eventId, callerId)) {
