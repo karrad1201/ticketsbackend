@@ -34,6 +34,8 @@ class LoginWithPhoneUseCase(
         val user = userRepository.findByPhone(phone)
             ?: throw NoSuchElementException("No account found for phone $phone. Please register first.")
 
+        authTokenRepository.deleteByUserId(user.id)
+
         val now = clock.instant()
         val authToken = authTokenRepository.save(
             AuthToken(

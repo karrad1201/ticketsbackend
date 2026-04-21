@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.support.MutableClock
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,6 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @SpringJUnitConfig(ApplicationServicesTestConfig::class)
@@ -30,11 +32,11 @@ class LoginWithPhoneUseCaseTests {
 
     private val phone = "+79001234567"
 
-    private fun saveValidCode(code: String = "123456") {
+    private fun saveValidCode(rawCode: String = "123456") {
         smsCodeRepository.save(
             SmsCode(
                 phone = phone,
-                code = code,
+                code = OtpHasher.hash(phone, rawCode),
                 expiresAt = mutableClock.instant().plusSeconds(300)
             )
         )
@@ -49,6 +51,21 @@ class LoginWithPhoneUseCaseTests {
 
         assertEquals(phone, result.user.phone)
         assertNotNull(authTokenRepository.findByToken(result.token))
+    }
+
+    @Test
+    fun `should invalidate old token on repeated login`() {
+        userRepository.save(User(fullName = "Ivan", phone = phone))
+
+        saveValidCode("111111")
+        val first = useCase.login(phone, "111111")
+
+        mutableClock.advanceByMinutes(1)
+        saveValidCode("222222")
+        val second = useCase.login(phone, "222222")
+
+        assertNull(authTokenRepository.findByToken(first.token), "Old token must be invalidated after re-login")
+        assertNotNull(authTokenRepository.findByToken(second.token), "New token must be active")
     }
 
     @Test
@@ -74,7 +91,7 @@ class LoginWithPhoneUseCaseTests {
         smsCodeRepository.save(
             SmsCode(
                 phone = phone,
-                code = "123456",
+                code = OtpHasher.hash(phone, "123456"),
                 expiresAt = mutableClock.instant().minusSeconds(1)
             )
         )
@@ -98,7 +115,7 @@ class LoginWithPhoneUseCaseTests {
     @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
-            SmsCode(phone = phone, code = "123456", expiresAt = mutableClock.instant().plusSeconds(300))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "123456"), expiresAt = mutableClock.instant().plusSeconds(300))
         )
         smsCodeRepository.markUsed(code.id)
         userRepository.save(User(fullName = "Ivan", phone = phone))

@@ -2,6 +2,7 @@ package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.service.ApplicationServicesTestConfig
 import com.karrad.bilets.domain.repository.SmsCodeRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.support.MutableClock
@@ -31,7 +32,7 @@ class SendSmsCodeUseCaseTests {
 
         val code = smsCodeRepository.findLatestByPhone("+79001234567")
         assertNotNull(code)
-        assertEquals("123456", code.code)
+        assertEquals(OtpHasher.hash("+79001234567", "123456"), code.code)
         assertEquals("123456", mockSmsGateway.sentCodes["+79001234567"])
     }
 
