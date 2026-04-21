@@ -68,10 +68,14 @@ class TBankCallbackController(
             payload = null
         )
 
-        runCatching { handlePaymentCallbackUseCase.handle(command) }
-            .onFailure { log.error("TBANK_CALLBACK_HANDLE_ERROR paymentId={}", notification.paymentId, it) }
-
-        return "OK"
+        return runCatching { handlePaymentCallbackUseCase.handle(command) }
+            .fold(
+                onSuccess = { "OK" },
+                onFailure = {
+                    log.error("TBANK_CALLBACK_HANDLE_ERROR paymentId={}", notification.paymentId, it)
+                    "ERROR"
+                }
+            )
     }
 
     private fun verifySignature(notification: TBankNotification): Boolean {
