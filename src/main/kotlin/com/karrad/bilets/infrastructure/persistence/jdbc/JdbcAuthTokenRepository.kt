@@ -23,6 +23,10 @@ class JdbcAuthTokenRepository(private val jdbcTemplate: JdbcTemplate) : AuthToke
         jdbcTemplate.update("delete from auth_tokens where token = ?", token)
     }
 
+    override fun deleteByUserId(userId: UUID) {
+        jdbcTemplate.update("delete from auth_tokens where user_id = ?", userId)
+    }
+
     override fun deleteExpired(before: Instant) {
         jdbcTemplate.update("delete from auth_tokens where expires_at < ?", Timestamp.from(before))
     }

@@ -20,6 +20,10 @@ class InMemoryAuthTokenRepository : AuthTokenRepository {
         storage.values.removeIf { it.token == token }
     }
 
+    override fun deleteByUserId(userId: UUID) {
+        storage.values.removeIf { it.userId == userId }
+    }
+
     override fun deleteExpired(before: Instant) {
         storage.values.removeIf { it.expiresAt.isBefore(before) }
     }
