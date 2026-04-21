@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
@@ -26,7 +27,7 @@ class RegisterWithPhoneUseCase(
         require(smsCode.isValid(clock.instant())) {
             if (smsCode.isExpired(clock.instant())) "Code expired" else "Code already used"
         }
-        require(smsCode.code == code) { "Invalid code" }
+        require(smsCode.code == OtpHasher.hash(phone, code)) { "Invalid code" }
 
         require(userRepository.findByPhone(phone) == null) {
             "Phone already registered: $phone"
