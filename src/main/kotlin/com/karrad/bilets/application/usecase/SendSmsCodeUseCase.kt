@@ -2,6 +2,7 @@ package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.domain.entity.SmsCode
 import com.karrad.bilets.domain.repository.SmsCodeRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.domain.sms.SmsRateLimiter
 import org.springframework.stereotype.Component
@@ -22,7 +23,7 @@ class SendSmsCodeUseCase(
         val code = codeSupplier()
         val smsCode = SmsCode(
             phone = phone,
-            code = code,
+            code = OtpHasher.hash(phone, code),
             expiresAt = now.plusSeconds(CODE_TTL_SECONDS)
         )
         smsCodeRepository.save(smsCode)
