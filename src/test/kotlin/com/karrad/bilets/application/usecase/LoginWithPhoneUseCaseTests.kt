@@ -113,6 +113,34 @@ class LoginWithPhoneUseCaseTests {
     }
 
     @Test
+    fun `brute force — code is single use, second attempt fails even with correct code`() {
+        saveValidCode("123456")
+        userRepository.save(User(fullName = "Ivan", phone = phone))
+
+        useCase.login(phone, "123456")
+
+        val ex = assertFailsWith<IllegalArgumentException> {
+            useCase.login(phone, "123456")
+        }
+        assertTrue(ex.message!!.contains("used"))
+    }
+
+    @Test
+    fun `brute force — multiple wrong codes do not consume the valid code`() {
+        saveValidCode("123456")
+        userRepository.save(User(fullName = "Ivan", phone = phone))
+
+        repeat(3) {
+            assertFailsWith<IllegalArgumentException> {
+                useCase.login(phone, "000000")
+            }
+        }
+
+        val result = useCase.login(phone, "123456")
+        assertNotNull(authTokenRepository.findByToken(result.token))
+    }
+
+    @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
             SmsCode(phone = phone, code = OtpHasher.hash(phone, "123456"), expiresAt = mutableClock.instant().plusSeconds(300))
