@@ -63,13 +63,41 @@ class JdbcVenueRepository(
         spaceId
     ).singleOrNull()
 
-    override fun findAll(): List<Venue> = jdbcTemplate.query(
-        """
-        select id, label, city_label, subject_label, organization_id, address
-        from venues
-        order by label, id
-        """.trimIndent()
-    ) { rs, _ -> mapVenue(rs) }
+    override fun findAll(): List<Venue> {
+        data class VenueRow(
+            val id: UUID, val label: String, val cityLabel: String,
+            val subjectLabel: String, val organizationId: UUID?, val address: String?
+        )
+
+        val rows = jdbcTemplate.query(
+            "select id, label, city_label, subject_label, organization_id, address from venues order by label, id"
+        ) { rs, _ ->
+            VenueRow(
+                id = rs.uuid("id"), label = rs.getString("label"),
+                cityLabel = rs.getString("city_label"), subjectLabel = rs.getString("subject_label"),
+                organizationId = rs.nullableUuid("organization_id"), address = rs.getString("address")
+            )
+        }
+        if (rows.isEmpty()) return emptyList()
+
+        val placeholders = rows.joinToString(",") { "?" }
+        val spacesById: Map<UUID, List<VenueSpace>> = jdbcTemplate.query(
+            "select venue_id, id, label from venue_spaces where venue_id in ($placeholders) order by label, id",
+            { rs, _ -> Triple(rs.uuid("venue_id"), rs.uuid("id"), rs.getString("label")) },
+            *rows.map { it.id }.toTypedArray()
+        ).groupBy({ it.first }, { VenueSpace(label = it.third, id = it.second) })
+
+        return rows.map { r ->
+            Venue(
+                label = r.label,
+                city = City(label = r.cityLabel, subject = Subject(r.subjectLabel)),
+                organizationId = r.organizationId,
+                id = r.id,
+                spaces = spacesById[r.id] ?: emptyList(),
+                address = r.address
+            )
+        }
+    }
 
     override fun deleteById(id: UUID): Boolean {
         jdbcTemplate.update("delete from venue_spaces where venue_id = ?", id)
