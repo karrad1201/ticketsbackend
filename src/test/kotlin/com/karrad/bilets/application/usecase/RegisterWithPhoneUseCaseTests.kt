@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.support.MutableClock
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,9 +31,9 @@ class RegisterWithPhoneUseCaseTests {
 
     private val phone = "+79001234567"
 
-    private fun saveValidCode(code: String = "654321") {
+    private fun saveValidCode(rawCode: String = "654321") {
         smsCodeRepository.save(
-            SmsCode(phone = phone, code = code, expiresAt = mutableClock.instant().plusSeconds(300))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, rawCode), expiresAt = mutableClock.instant().plusSeconds(300))
         )
     }
 
@@ -79,7 +80,7 @@ class RegisterWithPhoneUseCaseTests {
     @Test
     fun `should fail on expired code`() {
         smsCodeRepository.save(
-            SmsCode(phone = phone, code = "654321", expiresAt = mutableClock.instant().minusSeconds(1))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "654321"), expiresAt = mutableClock.instant().minusSeconds(1))
         )
 
         val ex = assertFailsWith<IllegalArgumentException> {
@@ -91,7 +92,7 @@ class RegisterWithPhoneUseCaseTests {
     @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
-            SmsCode(phone = phone, code = "654321", expiresAt = mutableClock.instant().plusSeconds(300))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "654321"), expiresAt = mutableClock.instant().plusSeconds(300))
         )
         smsCodeRepository.markUsed(code.id)
 

@@ -6,6 +6,7 @@ import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.domain.security.OtpHasher
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -123,7 +124,7 @@ class AuthControllerIntegrationTests {
         smsCodeRepository.save(
             SmsCode(
                 phone = phone,
-                code = code,
+                code = OtpHasher.hash(phone, code),
                 expiresAt = Instant.now().plusSeconds(300)
             )
         )
