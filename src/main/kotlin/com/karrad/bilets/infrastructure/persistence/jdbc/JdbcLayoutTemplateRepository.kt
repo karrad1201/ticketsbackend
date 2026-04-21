@@ -4,6 +4,8 @@ import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.JdbcTemplate
 import java.util.UUID
 
@@ -11,6 +13,7 @@ class JdbcLayoutTemplateRepository(
     private val jdbcTemplate: JdbcTemplate
 ) : LayoutTemplateRepository {
 
+    @CacheEvict(cacheNames = ["layoutTemplates.byVenueSpaceId"], allEntries = true)
     override fun save(layoutTemplate: LayoutTemplate): LayoutTemplate {
         jdbcTemplate.update(
             """
@@ -94,6 +97,7 @@ class JdbcLayoutTemplateRepository(
         }
     }
 
+    @Cacheable(value = ["layoutTemplates.byVenueSpaceId"], key = "#venueSpaceId")
     override fun findByVenueSpaceId(venueSpaceId: UUID): List<LayoutTemplate> {
         val templates = jdbcTemplate.query(
             """
@@ -115,6 +119,7 @@ class JdbcLayoutTemplateRepository(
         }
     }
 
+    @CacheEvict(cacheNames = ["layoutTemplates.byVenueSpaceId"], allEntries = true)
     override fun deleteById(id: UUID): Boolean {
         jdbcTemplate.update("delete from layout_template_rows where layout_template_id = ?", id)
         jdbcTemplate.update("delete from layout_template_sections where layout_template_id = ?", id)

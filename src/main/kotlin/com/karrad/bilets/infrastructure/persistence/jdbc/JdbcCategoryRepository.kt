@@ -2,6 +2,8 @@ package com.karrad.bilets.infrastructure.persistence.jdbc
 
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.repository.CategoryRepository
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.JdbcTemplate
 import java.util.UUID
 
@@ -9,6 +11,7 @@ class JdbcCategoryRepository(
     private val jdbcTemplate: JdbcTemplate
 ) : CategoryRepository {
 
+    @CacheEvict(cacheNames = ["categories.all"], allEntries = true)
     override fun save(category: Category): Category {
         jdbcTemplate.update(
             """
@@ -53,6 +56,7 @@ class JdbcCategoryRepository(
         code
     ).singleOrNull()
 
+    @Cacheable("categories.all")
     override fun findAll(): List<Category> = jdbcTemplate.query(
         """
         select id, code, label
@@ -67,6 +71,7 @@ class JdbcCategoryRepository(
         )
     }
 
+    @CacheEvict(cacheNames = ["categories.all"], allEntries = true)
     override fun deleteById(id: UUID): Boolean = jdbcTemplate.update(
         "delete from categories where id = ?",
         id
