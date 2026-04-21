@@ -1,10 +1,7 @@
-package com.karrad.bilets.application.query
+package com.karrad.bilets.infrastructure.persistence.jdbc
 
+import com.karrad.bilets.application.query.FavoriteQueryPort
 import com.karrad.bilets.domain.entity.Event
-import com.karrad.bilets.infrastructure.persistence.jdbc.instant
-import com.karrad.bilets.infrastructure.persistence.jdbc.nullableInstant
-import com.karrad.bilets.infrastructure.persistence.jdbc.nullableUuid
-import com.karrad.bilets.infrastructure.persistence.jdbc.uuid
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.JdbcTemplate
@@ -13,7 +10,7 @@ import java.util.UUID
 
 @Service
 @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "jdbc")
-class FavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : FavoriteQueryPort {
+class JdbcFavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : FavoriteQueryPort {
 
     @Cacheable(
         value = ["favorites"],
