@@ -7,7 +7,13 @@ import java.util.UUID
 class InMemoryOrganizationRepository : OrganizationRepository {
     private val storage = linkedMapOf<UUID, Organization>()
 
+    /** Атомарная проверка уникальности code + сохранение. Аналог UNIQUE constraint в БД. */
+    @Synchronized
     override fun save(organization: Organization): Organization {
+        val existing = storage.values.firstOrNull { it.code == organization.code }
+        require(existing == null || existing.id == organization.id) {
+            "Organization code already exists: ${organization.code}"
+        }
         storage[organization.id] = organization
         return organization
     }
