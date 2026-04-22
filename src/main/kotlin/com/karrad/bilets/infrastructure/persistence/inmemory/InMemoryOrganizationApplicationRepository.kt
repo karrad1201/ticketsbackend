@@ -4,9 +4,10 @@ import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryOrganizationApplicationRepository : OrganizationApplicationRepository {
-    private val storage = linkedMapOf<UUID, OrganizationApplication>()
+    private val storage = ConcurrentHashMap<UUID, OrganizationApplication>()
 
     override fun save(application: OrganizationApplication): OrganizationApplication {
         storage[application.id] = application

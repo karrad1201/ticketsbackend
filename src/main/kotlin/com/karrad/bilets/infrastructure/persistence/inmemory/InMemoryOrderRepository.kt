@@ -5,9 +5,10 @@ import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.repository.OrderRepository
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryOrderRepository : OrderRepository {
-    private val storage = linkedMapOf<UUID, Order>()
+    private val storage = ConcurrentHashMap<UUID, Order>()
 
     override fun save(order: Order): Order {
         storage[order.id] = order

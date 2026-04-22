@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.test.annotation.DirtiesContext
+import com.karrad.bilets.support.MockMvcSecurityHelper
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import org.springframework.test.web.servlet.MockMvc
@@ -57,7 +58,9 @@ class EventInventoryControllerIntegrationTests {
 
     @BeforeEach
     fun setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val builder = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+
+        mockMvc = MockMvcSecurityHelper.withSpringSecurity(builder).build()
         val admin = User(
             fullName = "Admin",
             email = "admin@example.com",

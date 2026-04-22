@@ -6,11 +6,12 @@ import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import java.time.ZoneOffset
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryEventRepository(
     private val venueRepository: VenueRepository
 ) : EventRepository {
-    private val storage = linkedMapOf<UUID, Event>()
+    private val storage = ConcurrentHashMap<UUID, Event>()
 
     override fun save(event: Event): Event {
         storage[event.id] = event

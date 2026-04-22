@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.UserRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryUserRepository : UserRepository {
-    private val storage = linkedMapOf<UUID, User>()
+    private val storage = ConcurrentHashMap<UUID, User>()
 
     override fun save(user: User): User {
         storage[user.id] = user

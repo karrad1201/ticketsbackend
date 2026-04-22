@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.PaymentAttempt
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryPaymentAttemptRepository : PaymentAttemptRepository {
-    private val storage = linkedMapOf<UUID, PaymentAttempt>()
+    private val storage = ConcurrentHashMap<UUID, PaymentAttempt>()
 
     override fun save(paymentAttempt: PaymentAttempt): PaymentAttempt {
         storage[paymentAttempt.id] = paymentAttempt

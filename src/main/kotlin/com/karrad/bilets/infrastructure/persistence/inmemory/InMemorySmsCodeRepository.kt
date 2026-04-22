@@ -4,9 +4,10 @@ import com.karrad.bilets.domain.entity.SmsCode
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemorySmsCodeRepository : SmsCodeRepository {
-    private val storage = linkedMapOf<UUID, SmsCode>()
+    private val storage = ConcurrentHashMap<UUID, SmsCode>()
 
     override fun save(smsCode: SmsCode): SmsCode {
         storage[smsCode.id] = smsCode

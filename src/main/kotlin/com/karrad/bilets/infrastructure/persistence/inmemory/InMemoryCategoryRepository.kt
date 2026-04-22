@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.Category
 import com.karrad.bilets.domain.repository.CategoryRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryCategoryRepository : CategoryRepository {
-    private val storage = linkedMapOf<UUID, Category>()
+    private val storage = ConcurrentHashMap<UUID, Category>()
 
     override fun save(category: Category): Category {
         storage[category.id] = category

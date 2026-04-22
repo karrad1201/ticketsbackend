@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.UserEventVisit
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryUserEventVisitRepository : UserEventVisitRepository {
-    private val storage = linkedMapOf<UUID, UserEventVisit>()
+    private val storage = ConcurrentHashMap<UUID, UserEventVisit>()
 
     override fun save(userEventVisit: UserEventVisit): UserEventVisit {
         storage[userEventVisit.id] = userEventVisit
