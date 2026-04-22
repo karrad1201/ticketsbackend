@@ -50,6 +50,8 @@ jobs:
         with:
           name: surefire-reports
           path: target/surefire-reports
+          retention-days: 7
+          overwrite: true
 
       - name: Upload coverage report
         if: always()
@@ -57,6 +59,8 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco
+          retention-days: 7
+          overwrite: true
 
   cd:
     name: Build Delivery Artifact
@@ -85,3 +89,5 @@ jobs:
           path: |
             target/*.jar
             !target/*-sources.jar
+          retention-days: 30
+          overwrite: true
