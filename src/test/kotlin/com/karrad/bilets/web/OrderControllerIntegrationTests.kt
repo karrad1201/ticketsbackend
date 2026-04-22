@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import com.karrad.bilets.support.MockMvcSecurityHelper
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
@@ -62,7 +63,9 @@ class OrderControllerIntegrationTests {
 
     @BeforeEach
     fun setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build()
+        val builder = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+
+        mockMvc = MockMvcSecurityHelper.withSpringSecurity(builder).build()
         val admin = User(
             email = "admin@example.com",
             fullName = "Platform Admin",
@@ -374,7 +377,10 @@ class OrderControllerIntegrationTests {
 
     @Test
     fun `should return not found for unknown order`() {
-        mockMvc.perform(get("/api/v1/orders/123e4567-e89b-12d3-a456-426614177999"))
+        mockMvc.perform(
+            get("/api/v1/orders/123e4567-e89b-12d3-a456-426614177999")
+                .header("Authorization", adminBearer)
+        )
             .andExpect(status().isNotFound)
     }
 
