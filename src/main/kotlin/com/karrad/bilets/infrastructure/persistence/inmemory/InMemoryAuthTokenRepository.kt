@@ -4,9 +4,10 @@ import com.karrad.bilets.domain.entity.AuthToken
 import com.karrad.bilets.domain.repository.AuthTokenRepository
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryAuthTokenRepository : AuthTokenRepository {
-    private val storage = linkedMapOf<UUID, AuthToken>()
+    private val storage = ConcurrentHashMap<UUID, AuthToken>()
 
     override fun save(authToken: AuthToken): AuthToken {
         storage[authToken.id] = authToken
