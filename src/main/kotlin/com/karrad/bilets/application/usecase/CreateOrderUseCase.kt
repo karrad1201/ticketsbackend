@@ -41,61 +41,58 @@ class CreateOrderUseCase(
     private val log = LoggerFactory.getLogger(CreateOrderUseCase::class.java)
 
     fun create(command: CreateOrderCommand): Order {
-        return eventLockManager.withEventLock(command.eventId) {
+        val now = clock.instant()
+        val orderId = UUID.randomUUID()
+        val expiresAt = now.plus(purchaseProperties.holdTtl)
+
+        // Фаза 1: проверка события + резервирование инвентаря под локом и в транзакции.
+        // Лок освобождается сразу после коммита, не удерживая DB-соединение на время HTTP-вызова.
+        val reservedInventory = eventLockManager.withEventLock(command.eventId) {
             orderFlowTransactionManager.inTransaction {
                 val event = requireNotNull(eventRepository.findById(command.eventId)) { "Event not found: ${command.eventId}" }
                 requireNotNull(userRepository.findById(command.buyerUserId)) { "User not found: ${command.buyerUserId}" }
-
-                val now = clock.instant()
-                require(!event.isSalesClosed(clock.instant())) {
-                    "Ticket sales are closed for event: ${command.eventId}"
-                }
-                val expiresAt = now.plus(purchaseProperties.holdTtl)
-                val orderId = UUID.randomUUID()
-                val reservedInventory = reserveInventory(
-                    orderId = orderId,
-                    eventId = command.eventId,
-                    command = command,
-                    expiresAt = expiresAt
-                )
-                val payment = try {
-                    paymentGateway.createPayment(
-                        orderId = orderId,
-                        amount = reservedInventory.amount,
-                        expiresAt = expiresAt
-                    )
-                } catch (e: Exception) {
-                    log.error("PAYMENT_GATEWAY_ERROR orderId={}: compensating inventory hold", orderId, e)
-                    orderInventoryRepository.releaseHold(orderId, command.eventId, command.seatKeys, command.admissionItems)
-                    throw e
-                }
-                val order = Order(
-                    eventId = command.eventId,
-                    buyerUserId = command.buyerUserId,
-                    amount = reservedInventory.amount,
-                    expiresAt = expiresAt,
-                    seatKeys = command.seatKeys,
-                    admissionItems = command.admissionItems,
-                    paymentReference = payment.reference,
-                    paymentUrl = payment.paymentUrl,
-                    id = orderId,
-                    createdAt = now
-                )
-
-                val savedOrder = orderRepository.save(order)
-                paymentAttemptRepository.save(
-                    PaymentAttempt(
-                        orderId = savedOrder.id,
-                        reference = payment.reference,
-                        amount = reservedInventory.amount,
-                        createdAt = now,
-                        updatedAt = now
-                    )
-                )
-                log.info("ORDER_CREATED orderId={} eventId={} userId={} amount={}",
-                    savedOrder.id, command.eventId, command.buyerUserId, reservedInventory.amount)
-                savedOrder
+                require(!event.isSalesClosed(now)) { "Ticket sales are closed for event: ${command.eventId}" }
+                reserveInventory(orderId = orderId, eventId = command.eventId, command = command, expiresAt = expiresAt)
             }
+        }
+
+        // Фаза 2: вызов платёжного шлюза вне лока и вне транзакции (HTTP, 1-3 сек).
+        // При ошибке — компенсирующая отмена резерва.
+        val payment = try {
+            paymentGateway.createPayment(orderId = orderId, amount = reservedInventory.amount, expiresAt = expiresAt)
+        } catch (e: Exception) {
+            log.error("PAYMENT_GATEWAY_ERROR orderId={}: compensating inventory hold", orderId, e)
+            orderInventoryRepository.releaseHold(orderId, command.eventId, command.seatKeys, command.admissionItems)
+            throw e
+        }
+
+        // Фаза 3: сохранение заказа и попытки оплаты в отдельной транзакции, уже без лока.
+        return orderFlowTransactionManager.inTransaction {
+            val order = Order(
+                eventId = command.eventId,
+                buyerUserId = command.buyerUserId,
+                amount = reservedInventory.amount,
+                expiresAt = expiresAt,
+                seatKeys = command.seatKeys,
+                admissionItems = command.admissionItems,
+                paymentReference = payment.reference,
+                paymentUrl = payment.paymentUrl,
+                id = orderId,
+                createdAt = now
+            )
+            val savedOrder = orderRepository.save(order)
+            paymentAttemptRepository.save(
+                PaymentAttempt(
+                    orderId = savedOrder.id,
+                    reference = payment.reference,
+                    amount = reservedInventory.amount,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            )
+            log.info("ORDER_CREATED orderId={} eventId={} userId={} amount={}",
+                savedOrder.id, command.eventId, command.buyerUserId, reservedInventory.amount)
+            savedOrder
         }
     }
 
