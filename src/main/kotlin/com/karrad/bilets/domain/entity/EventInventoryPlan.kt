@@ -157,13 +157,21 @@ data class EventInventoryPlan(
 
         fun generalAdmission(event: Event, ticketTypes: List<TicketType>): EventInventoryPlan {
             require(ticketTypes.isNotEmpty()) { "General admission inventory plan requires ticketTypes" }
+            val nullQuotaTypes = ticketTypes.filter { it.quota == null }.map { it.label }
+            require(nullQuotaTypes.isEmpty()) {
+                "TicketTypes must have a positive quota for general admission inventory: $nullQuotaTypes"
+            }
+            val zeroQuotaTypes = ticketTypes.filter { it.quota != null && it.quota <= 0 }.map { it.label }
+            require(zeroQuotaTypes.isEmpty()) {
+                "TicketTypes must have a positive quota for general admission inventory: $zeroQuotaTypes"
+            }
             val admissionInventory = ticketTypes.map { ticketType ->
                 EventAdmissionInventory(
                     eventId = event.id,
                     ticketTypeId = ticketType.id,
                     label = ticketType.label,
                     price = ticketType.price,
-                    capacity = ticketType.quota ?: 0
+                    capacity = ticketType.quota!!
                 )
             }
 

@@ -54,44 +54,31 @@ class NullQuotaInventoryTests {
     }
 
     @Test
-    fun `generalAdmission with null quota creates zero-capacity — buying any ticket fails`() {
-        // Этот тест документирует ТЕКУЩЕЕ (неправильное) поведение:
-        // quota=null → capacity=0 → никто не может купить билет
+    fun `generalAdmission with null quota must be rejected at plan creation`() {
         val event = event()
         val ticketType = TicketType(label = "Standard", price = 1000, quota = null)
 
-        val plan = EventInventoryPlan.generalAdmission(event, listOf(ticketType))
-
-        // Capacity=0, поэтому holdAdmission(qty=1) должна отклоняться
-        // Но ошибка будет "Not enough admission capacity" — вводящая в заблуждение
-        val ex = assertFailsWith<Exception> {
-            plan.holdAdmission(listOf(AdmissionQuantity(ticketType.id, quantity = 1)))
+        val ex = assertFailsWith<IllegalArgumentException> {
+            EventInventoryPlan.generalAdmission(event, listOf(ticketType))
         }
-
-        // Тест документирует факт: ошибка про "quota" не содержит — только про "capacity"
-        // После фикса либо план не создаётся, либо ошибка становится понятнее
         assertTrue(
-            ex.message?.contains("quota", ignoreCase = true) == false,
-            "BUG: error message about zero capacity does not mention quota: '${ex.message}'"
+            ex.message?.contains("quota", ignoreCase = true) == true,
+            "Error must mention quota: ${ex.message}"
         )
     }
 
     @Test
-    fun `generalAdmission with quota=0 explicitly must fail or warn`() {
-        // quota=0 явно задан — нет никакого смысла в таком инвентаре
-        // Это граничный случай: TicketType(quota=0) технически валиден,
-        // но создание плана с capacity=0 бессмысленно
+    fun `generalAdmission with quota=0 must be rejected at plan creation`() {
         val event = event()
         val ticketType = TicketType(label = "Sold Out", price = 500, quota = 0)
 
-        // Сейчас EventInventoryPlan.generalAdmission() принимает quota=0 и создаёт инвентарь
-        // EventAdmissionInventory(capacity=0) — valid по init, но бессмысленный
-        val plan = EventInventoryPlan.generalAdmission(event, listOf(ticketType))
-
-        val ex = assertFailsWith<Exception> {
-            plan.holdAdmission(listOf(AdmissionQuantity(ticketType.id, quantity = 1)))
+        val ex = assertFailsWith<IllegalArgumentException> {
+            EventInventoryPlan.generalAdmission(event, listOf(ticketType))
         }
-        assertTrue(ex.message != null, "Exception must carry a message")
+        assertTrue(
+            ex.message?.contains("quota", ignoreCase = true) == true,
+            "Error must mention quota: ${ex.message}"
+        )
     }
 
     @Test
