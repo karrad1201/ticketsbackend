@@ -1,0 +1,11 @@
+services:
+  k6:
+    image: grafana/k6:latest
+    volumes:
+      - ./k6:/k6
+    environment:
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:8080}
+      PROFILE: ${PROFILE:-load}
+    command: run -e BASE_URL=$BASE_URL -e PROFILE=$PROFILE /k6/load-test.js
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
