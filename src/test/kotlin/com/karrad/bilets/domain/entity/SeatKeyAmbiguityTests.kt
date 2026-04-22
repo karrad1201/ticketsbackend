@@ -66,17 +66,16 @@ class SeatKeyAmbiguityTests {
     }
 
     @Test
-    fun `SeatKey with colon creates ambiguous toString output — documents the bug`() {
-        // Этот тест ДОКУМЕНТИРУЕТ текущее (неправильное) поведение до исправления.
-        // После добавления валидации двоеточий в SeatKey — этот тест нужно удалить.
-        val key = SeatKey(sectionKey = "VIP:A", rowKey = "1", seatKey = "5")
-        val str = key.toString() // "VIP:A:1:5"
-        val parts = str.split(":")
-
-        // Демонстрируем неоднозначность: split даёт 4 части вместо 3
-        assertTrue(
-            parts.size != 3,
-            "BUG CONFIRMED: SeatKey('VIP:A','1','5').toString().split(':') gives ${parts.size} parts instead of 3: $parts"
+    fun `SeatKey toString produces exactly 3 colon-separated parts for valid keys`() {
+        val cases = listOf(
+            Triple("VIP", "A", "1"),
+            Triple("PARQUET", "12", "999"),
+            Triple("BALCONY", "ROW1", "50")
         )
+        for ((section, row, seat) in cases) {
+            val key = SeatKey(sectionKey = section, rowKey = row, seatKey = seat)
+            val parts = key.toString().split(":")
+            assertTrue(parts.size == 3, "toString() must produce 3 parts for ($section, $row, $seat): ${key}")
+        }
     }
 }
