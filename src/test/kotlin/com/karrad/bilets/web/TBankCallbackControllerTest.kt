@@ -13,11 +13,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.ArgumentCaptor
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -54,6 +53,20 @@ class TBankCallbackControllerTest {
         controller = TBankCallbackController(useCase, props, clock)
     }
 
+    // --- Обход Kotlin null-check для Mockito.any() (платформенный тип T!) ---
+    @Suppress("UNCHECKED_CAST")
+    private fun <T> anyArg(): T {
+        Mockito.any<T>()
+        return null as T
+    }
+
+    /** Возвращает аргумент HandlePaymentCallbackCommand из последнего реального вызова handle(). */
+    @Suppress("UNCHECKED_CAST")
+    private fun lastHandledCommand(): HandlePaymentCallbackCommand =
+        Mockito.mockingDetails(useCase).invocations
+            .last { it.method.name == "handle" }
+            .arguments[0] as HandlePaymentCallbackCommand
+
     // --- Верификация подписи ---
 
     @Test
@@ -66,20 +79,19 @@ class TBankCallbackControllerTest {
         val result = controller.handleCallback(notification)
 
         assertEquals("ERROR", result)
-        verify(useCase, never()).handle(org.mockito.ArgumentMatchers.any())
+        verify(useCase, never()).handle(anyArg())
     }
 
     @Test
     fun `valid signature with CONFIRMED status should call use case with SUCCEEDED and return OK`() {
         val notification = buildNotificationWithValidToken(status = "CONFIRMED", amount = 2000)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAID))
+        Mockito.doReturn(buildOrder(OrderStatus.PAID)).`when`(useCase).handle(anyArg())
 
         val result = controller.handleCallback(notification)
 
         assertEquals("OK", result)
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        val cmd = captor.value
+        verify(useCase).handle(anyArg())
+        val cmd = lastHandledCommand()
         assertEquals(PaymentCallbackStatus.SUCCEEDED, cmd.status)
         assertEquals(notification.paymentId.toString(), cmd.paymentReference)
         assertEquals(2000, cmd.paidAmount)
@@ -89,14 +101,13 @@ class TBankCallbackControllerTest {
     @Test
     fun `valid signature with REJECTED status should map to FAILED and return OK`() {
         val notification = buildNotificationWithValidToken(status = "REJECTED", amount = 2000)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAYMENT_FAILED))
+        Mockito.doReturn(buildOrder(OrderStatus.PAYMENT_FAILED)).`when`(useCase).handle(anyArg())
 
         val result = controller.handleCallback(notification)
 
         assertEquals("OK", result)
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        val cmd = captor.value
+        verify(useCase).handle(anyArg())
+        val cmd = lastHandledCommand()
         assertEquals(PaymentCallbackStatus.FAILED, cmd.status)
         assertNull(cmd.paidAmount)
         assertEquals("T-Bank status: REJECTED", cmd.failureReason)
@@ -105,27 +116,25 @@ class TBankCallbackControllerTest {
     @Test
     fun `valid signature with REVERSED status should map to FAILED`() {
         val notification = buildNotificationWithValidToken(status = "REVERSED", amount = 2000)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAYMENT_FAILED))
+        Mockito.doReturn(buildOrder(OrderStatus.PAYMENT_FAILED)).`when`(useCase).handle(anyArg())
 
         val result = controller.handleCallback(notification)
 
         assertEquals("OK", result)
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        assertEquals(PaymentCallbackStatus.FAILED, captor.value.status)
+        verify(useCase).handle(anyArg())
+        assertEquals(PaymentCallbackStatus.FAILED, lastHandledCommand().status)
     }
 
     @Test
     fun `valid signature with DEADLINE_EXPIRED status should map to EXPIRED`() {
         val notification = buildNotificationWithValidToken(status = "DEADLINE_EXPIRED", amount = 2000)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAYMENT_FAILED))
+        Mockito.doReturn(buildOrder(OrderStatus.PAYMENT_FAILED)).`when`(useCase).handle(anyArg())
 
         val result = controller.handleCallback(notification)
 
         assertEquals("OK", result)
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        assertEquals(PaymentCallbackStatus.EXPIRED, captor.value.status)
+        verify(useCase).handle(anyArg())
+        assertEquals(PaymentCallbackStatus.EXPIRED, lastHandledCommand().status)
     }
 
     @Test
@@ -135,55 +144,52 @@ class TBankCallbackControllerTest {
         val result = controller.handleCallback(notification)
 
         assertEquals("OK", result)
-        verify(useCase, never()).handle(org.mockito.ArgumentMatchers.any())
+        verify(useCase, never()).handle(anyArg())
     }
 
     @Test
-    fun `use case exception should be swallowed and controller should return OK`() {
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenThrow(RuntimeException("DB failure"))
+    fun `use case exception should be logged and controller should return ERROR`() {
+        Mockito.doThrow(RuntimeException("DB failure")).`when`(useCase).handle(anyArg())
         val notification = buildNotificationWithValidToken(status = "CONFIRMED", amount = 1500)
 
-        // Контроллер логирует ошибку, но всегда возвращает OK (чтобы TBank не ретраил)
+        // Контроллер логирует ошибку и возвращает ERROR, чтобы TBank повторил попытку (#234)
         val result = controller.handleCallback(notification)
 
-        assertEquals("OK", result)
+        assertEquals("ERROR", result)
     }
 
     @Test
     fun `FAILURE callback should not send paidAmount to use case`() {
         val notification = buildNotificationWithValidToken(status = "REJECTED", amount = 3000)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAYMENT_FAILED))
+        Mockito.doReturn(buildOrder(OrderStatus.PAYMENT_FAILED)).`when`(useCase).handle(anyArg())
 
         controller.handleCallback(notification)
 
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        assertNull(captor.value.paidAmount)
+        verify(useCase).handle(anyArg())
+        assertNull(lastHandledCommand().paidAmount)
     }
 
     @Test
     fun `EXPIRED callback should not send paidAmount to use case`() {
         val notification = buildNotificationWithValidToken(status = "DEADLINE_EXPIRED", amount = 1500)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAYMENT_FAILED))
+        Mockito.doReturn(buildOrder(OrderStatus.PAYMENT_FAILED)).`when`(useCase).handle(anyArg())
 
         controller.handleCallback(notification)
 
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        assertNull(captor.value.paidAmount)
+        verify(useCase).handle(anyArg())
+        assertNull(lastHandledCommand().paidAmount)
     }
 
     @Test
     fun `receivedAt should be taken from clock at the time of callback`() {
         val expectedInstant = clock.instant()
         val notification = buildNotificationWithValidToken(status = "CONFIRMED", amount = 1500)
-        `when`(useCase.handle(org.mockito.ArgumentMatchers.any())).thenReturn(buildOrder(OrderStatus.PAID))
+        Mockito.doReturn(buildOrder(OrderStatus.PAID)).`when`(useCase).handle(anyArg())
 
         controller.handleCallback(notification)
 
-        val captor = ArgumentCaptor.forClass(HandlePaymentCallbackCommand::class.java)
-        verify(useCase).handle(captor.capture())
-        assertEquals(expectedInstant, captor.value.receivedAt)
+        verify(useCase).handle(anyArg())
+        assertEquals(expectedInstant, lastHandledCommand().receivedAt)
     }
 
     // --- Вспомогательные методы ---
