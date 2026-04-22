@@ -5,6 +5,7 @@ import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.domain.sms.SmsRateLimiter
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Clock
 
@@ -14,13 +15,14 @@ class SendSmsCodeUseCase(
     private val smsGateway: SmsGateway,
     private val clock: Clock,
     private val smsRateLimiter: SmsRateLimiter,
+    @Value("\${sms.fixed-code:}") private val fixedCode: String = "",
     private val codeSupplier: () -> String = { (100000..999999).random().toString() }
 ) {
     fun send(phone: String) {
         require(phone.isNotBlank()) { "Phone must not be blank" }
         val now = clock.instant()
         smsRateLimiter.checkAndRecord(phone, now)
-        val code = codeSupplier()
+        val code = if (fixedCode.isNotBlank()) fixedCode else codeSupplier()
         val smsCode = SmsCode(
             phone = phone,
             code = OtpHasher.hash(phone, code),
