@@ -25,12 +25,13 @@ class PaymentSettlementService(
     private val transactionManager: OrderFlowTransactionManager
 ) {
     fun completePaidOrder(order: Order, settledAt: Instant): Order {
-        if (order.status != com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT) {
-            return order
+        val freshOrder = orderRepository.findById(order.id) ?: return order
+        if (freshOrder.status != com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT) {
+            return freshOrder
         }
         return transactionManager.inTransaction {
-            val confirmedInventory = orderInventoryRepository.confirm(order)
-            val paidOrder = orderRepository.save(order.markPaid(settledAt))
+            val confirmedInventory = orderInventoryRepository.confirm(freshOrder)
+            val paidOrder = orderRepository.save(freshOrder.markPaid(settledAt))
             creditOrganizationBalance(paidOrder)
             ticketRepository.saveAll(issueTickets(paidOrder, confirmedInventory))
             paidOrder
@@ -38,11 +39,12 @@ class PaymentSettlementService(
     }
 
     fun failPendingOrder(order: Order, failedAt: Instant): Order {
-        if (order.status != com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT) {
-            return order
+        val freshOrder = orderRepository.findById(order.id) ?: return order
+        if (freshOrder.status != com.karrad.bilets.domain.enums.OrderStatus.PENDING_PAYMENT) {
+            return freshOrder
         }
-        orderInventoryRepository.release(order)
-        return orderRepository.save(order.markPaymentFailed(failedAt))
+        orderInventoryRepository.release(freshOrder)
+        return orderRepository.save(freshOrder.markPaymentFailed(failedAt))
     }
 
     private fun creditOrganizationBalance(order: Order) {
