@@ -4,9 +4,10 @@ import com.karrad.bilets.domain.entity.Ticket
 import com.karrad.bilets.domain.repository.TicketRepository
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryTicketRepository : TicketRepository {
-    private val storage = linkedMapOf<UUID, Ticket>()
+    private val storage = ConcurrentHashMap<UUID, Ticket>()
 
     override fun save(ticket: Ticket): Ticket {
         storage[ticket.id] = ticket

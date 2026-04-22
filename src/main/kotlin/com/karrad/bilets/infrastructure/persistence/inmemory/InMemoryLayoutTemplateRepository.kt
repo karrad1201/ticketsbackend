@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.LayoutTemplate
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryLayoutTemplateRepository : LayoutTemplateRepository {
-    private val storage = linkedMapOf<UUID, LayoutTemplate>()
+    private val storage = ConcurrentHashMap<UUID, LayoutTemplate>()
 
     override fun save(layoutTemplate: LayoutTemplate): LayoutTemplate {
         storage[layoutTemplate.id] = layoutTemplate

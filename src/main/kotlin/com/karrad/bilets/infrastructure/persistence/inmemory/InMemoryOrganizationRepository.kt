@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.Organization
 import com.karrad.bilets.domain.repository.OrganizationRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryOrganizationRepository : OrganizationRepository {
-    private val storage = linkedMapOf<UUID, Organization>()
+    private val storage = ConcurrentHashMap<UUID, Organization>()
 
     /** Атомарная проверка уникальности code + сохранение. Аналог UNIQUE constraint в БД. */
     @Synchronized

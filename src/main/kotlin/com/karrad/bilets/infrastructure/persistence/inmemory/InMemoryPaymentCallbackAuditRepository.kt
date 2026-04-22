@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.PaymentCallbackAudit
 import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryPaymentCallbackAuditRepository : PaymentCallbackAuditRepository {
-    private val storage = linkedMapOf<UUID, PaymentCallbackAudit>()
+    private val storage = ConcurrentHashMap<UUID, PaymentCallbackAudit>()
 
     override fun save(audit: PaymentCallbackAudit): PaymentCallbackAudit {
         storage[audit.id] = audit

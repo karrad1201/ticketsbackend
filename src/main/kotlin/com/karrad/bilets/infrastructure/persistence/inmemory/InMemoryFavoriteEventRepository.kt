@@ -3,9 +3,10 @@ package com.karrad.bilets.infrastructure.persistence.inmemory
 import com.karrad.bilets.domain.entity.FavoriteEvent
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryFavoriteEventRepository : FavoriteEventRepository {
-    private val storage = linkedMapOf<UUID, FavoriteEvent>()
+    private val storage = ConcurrentHashMap<UUID, FavoriteEvent>()
 
     override fun save(favorite: FavoriteEvent): FavoriteEvent {
         val existing = storage.values.find { it.userId == favorite.userId && it.eventId == favorite.eventId }

@@ -4,9 +4,10 @@ import com.karrad.bilets.domain.entity.VenueAccessGrant
 import com.karrad.bilets.domain.enums.VenueAccessGrantStatus
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryVenueAccessGrantRepository : VenueAccessGrantRepository {
-    private val storage = linkedMapOf<UUID, VenueAccessGrant>()
+    private val storage = ConcurrentHashMap<UUID, VenueAccessGrant>()
 
     override fun save(grant: VenueAccessGrant): VenueAccessGrant {
         storage[grant.id] = grant
