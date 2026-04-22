@@ -7,16 +7,8 @@ import kotlin.test.assertTrue
 /**
  * Проверяет, что накопление баланса не ломается из-за переполнения Int.
  *
- * Issue: Organization.balance — тип Int (32-bit, max ≈ 2.1 млрд копеек ≈ 21.4 млн руб).
- * На тикетинговой платформе с высоким оборотом это реалистичный предел.
- *
- * При creditBalance(amount) когда balance + amount > Int.MAX_VALUE:
- *   Kotlin Int переполняется в отрицательное число
- *   → Organization.init { require(balance >= 0) } выбрасывает IllegalArgumentException
- *   → легитимная транзакция зачисления падает с ошибкой
- *
- * ОЖИДАЕМОЕ ПОВЕДЕНИЕ: зачисление не бросает исключение при крупных суммах.
- * ТЕКУЩЕЕ ПОВЕДЕНИЕ: throws IllegalArgumentException — тест УПАДЁТ до исправления.
+ * Issue #236: Organization.balance изменён с Int на Long (fix уже применён).
+ * Тесты проверяют корректность работы после исправления.
  */
 class OrganizationCreditOverflowTests {
 
@@ -26,12 +18,9 @@ class OrganizationCreditOverflowTests {
         val org = Organization(
             code = "overflow-org",
             name = "Overflow Test Org",
-            balance = Int.MAX_VALUE - 100
+            balance = Int.MAX_VALUE.toLong() - 100
         )
 
-        // Ещё 200 копеек — легитимная операция, но вызывает Int overflow
-        // Int.MAX_VALUE - 100 + 200 = Int.MAX_VALUE + 100 → wraps to Int.MIN_VALUE + 99 (negative)
-        // Organization.init выбросит: "Organization balance must not be negative"
         val updated = org.credit(200)
 
         assertTrue(updated.balance > org.balance, "Balance must increase after credit")
@@ -44,12 +33,10 @@ class OrganizationCreditOverflowTests {
             Organization(
                 code = "large-balance-org",
                 name = "Large Balance Org",
-                balance = Int.MAX_VALUE - 50
+                balance = Int.MAX_VALUE.toLong() - 50
             )
         )
 
-        // creditBalance вызывает org.copy(balance = balance + amount) → конструктор → init
-        // При overflow init выбросит IllegalArgumentException
         repo.creditBalance(org.id, 100)
 
         val updated = repo.findById(org.id)!!
@@ -60,10 +47,9 @@ class OrganizationCreditOverflowTests {
     fun `Organization credit must handle max Int value amount`() {
         val org = Organization(code = "zero-org", name = "Zero Balance Org", balance = 0)
 
-        // Int.MAX_VALUE копеек за один раз — теоретически допустимо
         val updated = org.credit(Int.MAX_VALUE)
 
-        assertTrue(updated.balance == Int.MAX_VALUE)
+        assertTrue(updated.balance == Int.MAX_VALUE.toLong())
     }
 
     @Test
@@ -77,8 +63,8 @@ class OrganizationCreditOverflowTests {
 
         val updated = repo.findById(org.id)!!
         assertTrue(
-            updated.balance == 2_500_000_000L.toInt() || updated.balance > 0,
-            "Combined balance of 25M rubles should be representable without overflow"
+            updated.balance == 2_500_000_000L,
+            "Combined balance of 25M rubles must equal exactly 2_500_000_000"
         )
     }
 }

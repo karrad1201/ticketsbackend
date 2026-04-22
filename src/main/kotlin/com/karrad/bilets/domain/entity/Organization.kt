@@ -5,13 +5,13 @@ import java.util.UUID
 data class Organization(
     val code: String,
     val name: String,
-    val balance: Int = 0,
+    val balance: Long = 0L,
     val id: UUID = UUID.randomUUID()
 ) {
     init {
         require(code.isNotBlank()) { "Organization code must not be blank" }
         require(name.isNotBlank()) { "Organization name must not be blank" }
-        require(balance >= 0) { "Organization balance must not be negative" }
+        require(balance >= 0L) { "Organization balance must not be negative" }
     }
 
     fun credit(amount: Int): Organization {

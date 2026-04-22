@@ -32,7 +32,7 @@ class JdbcOrganizationRepository(
             Organization(
                 code = rs.getString("code"),
                 name = rs.getString("name"),
-                balance = rs.getInt("balance"),
+                balance = rs.getLong("balance"),
                 id = rs.uuid("id")
             )
         },
@@ -49,7 +49,7 @@ class JdbcOrganizationRepository(
             Organization(
                 code = rs.getString("code"),
                 name = rs.getString("name"),
-                balance = rs.getInt("balance"),
+                balance = rs.getLong("balance"),
                 id = rs.uuid("id")
             )
         },
@@ -66,7 +66,7 @@ class JdbcOrganizationRepository(
         Organization(
             code = rs.getString("code"),
             name = rs.getString("name"),
-            balance = rs.getInt("balance"),
+            balance = rs.getLong("balance"),
             id = rs.uuid("id")
         )
     }
