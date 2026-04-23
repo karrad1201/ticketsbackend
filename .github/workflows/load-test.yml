@@ -88,6 +88,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: bilets
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
+          SPRING_PROFILES_ACTIVE: loadtest
           PAYMENT_GATEWAY_BASE_URL: http://localhost:8888
         run: |
           java -jar target/*.jar &

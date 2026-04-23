@@ -12,5 +12,5 @@ class FallbackRedisCacheConfig {
 
     @Bean("redisCacheManager")
     fun redisCacheManagerFallback(): CacheManager =
-        ConcurrentMapCacheManager("events", "discovery", "favorites")
+        ConcurrentMapCacheManager("events", "eventLists", "eventSearch", "discovery", "favorites", "authTokens", "users")
 }

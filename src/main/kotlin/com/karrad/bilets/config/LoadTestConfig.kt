@@ -25,9 +25,9 @@ class LoadTestConfig {
 
     @Bean
     @Primary
-    fun smsRateLimiter(): SmsRateLimiter = NoOpSmsRateLimiter()
+    fun loadTestSmsRateLimiter(): SmsRateLimiter = NoOpSmsRateLimiter()
 
     @Bean
     @Primary
-    fun bearerTokenRateLimiter(): BearerTokenRateLimiter = NoOpBearerTokenRateLimiter()
+    fun loadTestBearerTokenRateLimiter(): BearerTokenRateLimiter = NoOpBearerTokenRateLimiter()
 }

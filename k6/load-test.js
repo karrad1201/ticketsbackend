@@ -14,12 +14,12 @@ import { setup as prepareData } from './helpers/setup.js';
 import { browse } from './scenarios/browse.js';
 import { authFlow } from './scenarios/auth_flow.js';
 import { orderFlow } from './scenarios/order_flow.js';
-import { THRESHOLDS, PROFILES } from './config.js';
-
-const profile = __ENV.PROFILE || 'load';
+import { catalogFlow } from './scenarios/catalog_flow.js';
+import { accountFlow } from './scenarios/account_flow.js';
+import { THRESHOLDS, PROFILES, PROFILE } from './config.js';
 
 export const options = {
-    scenarios: PROFILES[profile].scenarios,
+    scenarios: PROFILES[PROFILE].scenarios,
     thresholds: THRESHOLDS,
     // Детальная статистика по перцентилям
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
@@ -49,6 +49,12 @@ export default function (data) {
             break;
         case 'order_flow':
             orderFlow(data);
+            break;
+        case 'catalog_flow':
+            catalogFlow(data);
+            break;
+        case 'account_flow':
+            accountFlow(data);
             break;
         default:
             browse(data);

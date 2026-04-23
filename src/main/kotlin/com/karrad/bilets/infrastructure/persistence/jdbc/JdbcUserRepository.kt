@@ -5,6 +5,9 @@ import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.UserRepository
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.CachePut
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.JdbcTemplate
 import java.util.UUID
 
@@ -14,6 +17,7 @@ class JdbcUserRepository(
 
     private val mapper = jacksonObjectMapper()
 
+    @CachePut(value = ["users"], cacheManager = "redisCacheManager", key = "#user.id")
     override fun save(user: User): User {
         val interestsJson = mapper.writeValueAsString(user.interests)
         jdbcTemplate.update(
@@ -29,6 +33,7 @@ class JdbcUserRepository(
         return user
     }
 
+    @Cacheable(value = ["users"], cacheManager = "redisCacheManager", key = "#id")
     override fun findById(id: UUID): User? = jdbcTemplate.query(
         "select id, email, phone, full_name, role, avatar_url, interests from users where id = ?",
         { rs, _ -> rs.toUser() },
@@ -51,6 +56,7 @@ class JdbcUserRepository(
         "select id, email, phone, full_name, role, avatar_url, interests from users order by full_name, id"
     ) { rs, _ -> rs.toUser() }
 
+    @CacheEvict(value = ["users"], cacheManager = "redisCacheManager", key = "#id")
     override fun deleteById(id: UUID): Boolean =
         jdbcTemplate.update("delete from users where id = ?", id) > 0
 

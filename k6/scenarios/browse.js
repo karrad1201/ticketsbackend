@@ -8,6 +8,7 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { BASE_URL } from '../config.js';
+import { pickEvent } from '../helpers/events.js';
 
 const CITIES = ['Москва', 'Санкт-Петербург', 'Екатеринбург', 'Казань', 'Новосибирск'];
 const QUERIES = ['концерт', 'спектакль', 'выставка', 'фестиваль', ''];
@@ -15,13 +16,21 @@ const QUERIES = ['концерт', 'спектакль', 'выставка', 'ф
 export function browse(data) {
     const city = CITIES[Math.floor(Math.random() * CITIES.length)];
     const q = QUERIES[Math.floor(Math.random() * QUERIES.length)];
+    const event = pickEvent(data);
 
     // 1. Лента Discovery (самый популярный эндпоинт)
     const discoveryRes = http.get(`${BASE_URL}/api/v1/discovery?city=${encodeURIComponent(city)}&size=10`);
     check(discoveryRes, {
         'discovery 200': (r) => r.status === 200,
         'discovery has events': (r) => {
-            try { return JSON.parse(r.body).events !== undefined; } catch { return false; }
+            try {
+                const body = JSON.parse(r.body);
+                if (Array.isArray(body.events)) return true;
+                if (Array.isArray(body.forYou)) return true;
+                return Array.isArray(body.byCategory) && body.byCategory.some((section) => Array.isArray(section.events));
+            } catch {
+                return false;
+            }
         },
     });
 
@@ -45,11 +54,11 @@ export function browse(data) {
 
     // 4. Детальная страница события (если есть eventId из setup)
     if (data && data.eventId) {
-        const detailRes = http.get(`${BASE_URL}/api/v1/events/${data.eventId}`);
+        const detailRes = http.get(`${BASE_URL}/api/v1/events/${event.eventId}`);
         check(detailRes, {
             'event detail 200': (r) => r.status === 200,
             'event detail has id': (r) => {
-                try { return JSON.parse(r.body).id === data.eventId; } catch { return false; }
+                try { return JSON.parse(r.body).id === event.eventId; } catch { return false; }
             },
         });
         sleep(0.1);

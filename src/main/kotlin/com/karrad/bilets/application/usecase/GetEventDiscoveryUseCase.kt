@@ -8,6 +8,7 @@ import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.web.dto.CategoryEventsEntry
 import com.karrad.bilets.web.dto.DiscoveryFeedResponse
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDate
@@ -22,6 +23,11 @@ class GetEventDiscoveryUseCase(
     private val userRepository: UserRepository,
     private val clock: Clock
 ) {
+    @Cacheable(
+        value = ["discovery"],
+        cacheManager = "redisCacheManager",
+        key = "(#userId ?: '') + ':' + #city.trim().toLowerCase() + ':' + #page + ':' + #size + ':' + (#date ?: '')"
+    )
     fun get(userId: UUID?, city: String, page: Int, size: Int, date: LocalDate? = null): DiscoveryFeedResponse {
         validatePagination(page, size)
 

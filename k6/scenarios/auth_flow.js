@@ -12,14 +12,16 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { BASE_URL } from '../config.js';
-import { __VU, __ITER } from 'k6/execution';
+import exec from 'k6/execution';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 /** Генерирует уникальный номер телефона для пары (VU, итерация). */
 function uniquePhone() {
     // VU от 1 до 999, ITER от 0 до 999 → уникальная пара в диапазоне до 999 999
-    const n = (__VU * 1000 + __ITER) % 9_000_000 + 1_000_000;
+    const vuId = exec.vu.idInTest || 1;
+    const iteration = exec.scenario.iterationInTest || 0;
+    const n = (vuId * 1000 + iteration) % 9_000_000 + 1_000_000;
     return `+7916${String(n).padStart(7, '0')}`;
 }
 
@@ -39,21 +41,37 @@ export function authFlow() {
     // ── Шаг 2: регистрация ───────────────────────────────────────────────────
     const regRes = http.post(
         `${BASE_URL}/auth/register`,
-        JSON.stringify({ phone, code: '123456', fullName: `K6 User ${__VU}-${__ITER}` }),
-        { headers: JSON_HEADERS }
+        JSON.stringify({ phone, code: '123456', fullName: `K6 User ${exec.vu.idInTest}-${exec.scenario.iterationInTest}` }),
+        { headers: JSON_HEADERS, responseCallback: http.expectedStatuses(201, 400, 409) }
     );
-    const regOk = check(regRes, {
-        'register 201': (r) => r.status === 201,
-        'register has token': (r) => {
-            try { return !!JSON.parse(r.body).token; } catch { return false; }
-        },
-    });
-    if (!regOk) {
-        sleep(1);
-        return;
+    let token = null;
+    if (regRes.status === 201) {
+        check(regRes, {
+            'register 201': (r) => r.status === 201,
+            'register has token': (r) => {
+                try { return !!JSON.parse(r.body).token; } catch { return false; }
+            },
+        });
+        token = JSON.parse(regRes.body).token;
+    } else {
+        http.post(`${BASE_URL}/auth/send-code`, JSON.stringify({ phone }), { headers: JSON_HEADERS });
+        const existingLoginRes = http.post(
+            `${BASE_URL}/auth/login`,
+            JSON.stringify({ phone, code: '123456' }),
+            { headers: JSON_HEADERS }
+        );
+        const loginOk = check(existingLoginRes, {
+            'existing user login 200': (r) => r.status === 200,
+            'existing user login has token': (r) => {
+                try { return !!JSON.parse(r.body).token; } catch { return false; }
+            },
+        });
+        if (!loginOk) {
+            sleep(1);
+            return;
+        }
+        token = JSON.parse(existingLoginRes.body).token;
     }
-
-    const token = JSON.parse(regRes.body).token;
     const authHeaders = { ...JSON_HEADERS, Authorization: `Bearer ${token}` };
 
     sleep(0.2);

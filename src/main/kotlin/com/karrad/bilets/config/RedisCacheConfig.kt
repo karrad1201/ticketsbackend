@@ -34,8 +34,12 @@ class RedisCacheConfig(private val objectMapper: ObjectMapper) {
             .withInitialCacheConfigurations(
                 mapOf(
                     "events" to base.entryTtl(Duration.ofMinutes(10)),
-                    "discovery" to base.entryTtl(Duration.ofMinutes(3)),
-                    "favorites" to base.entryTtl(Duration.ofMinutes(5))
+                    "eventLists" to base.entryTtl(Duration.ofSeconds(30)),
+                    "eventSearch" to base.entryTtl(Duration.ofSeconds(30)),
+                    "discovery" to base.entryTtl(Duration.ofSeconds(30)),
+                    "favorites" to base.entryTtl(Duration.ofMinutes(5)),
+                    "authTokens" to base.entryTtl(Duration.ofMinutes(5)),
+                    "users" to base.entryTtl(Duration.ofMinutes(5))
                 )
             )
             .build()

@@ -20,7 +20,7 @@ export function registerAndLogin(phone, fullName) {
     const regRes = http.post(
         `${BASE_URL}/auth/register`,
         JSON.stringify({ phone, code: '123456', fullName }),
-        { headers: JSON_HEADERS }
+        { headers: JSON_HEADERS, responseCallback: http.expectedStatuses(201, 400, 409) }
     );
     if (regRes.status === 201) {
         return JSON.parse(regRes.body).token;

@@ -3,6 +3,7 @@ package com.karrad.bilets.application.usecase
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.EventSearchCriteria
 import com.karrad.bilets.domain.repository.EventRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDate
@@ -13,6 +14,11 @@ class SearchEventsUseCase(
     private val eventRepository: EventRepository,
     private val clock: Clock
 ) {
+    @Cacheable(
+        value = ["eventSearch"],
+        cacheManager = "redisCacheManager",
+        key = "(#query == null ? '' : #query.trim()) + ':' + (#city == null ? '' : #city.trim()) + ':' + (#categoryId ?: '') + ':' + (#venueId ?: '') + ':' + (#dateFrom ?: '') + ':' + (#dateTo ?: '') + ':' + #page + ':' + #size"
+    )
     fun search(
         query: String?,
         city: String?,
