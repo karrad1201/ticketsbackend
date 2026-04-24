@@ -7,5 +7,6 @@ data class OrganizationMember(
     val organizationId: UUID,
     val userId: UUID,
     val role: OrganizationMemberRole,
+    val venueId: UUID? = null,
     val id: UUID = UUID.randomUUID()
 )
