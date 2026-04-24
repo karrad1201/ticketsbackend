@@ -1,7 +1,9 @@
 package com.karrad.bilets.web
 
+import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.application.service.OrderService
 import com.karrad.bilets.application.service.TicketService
+import com.karrad.bilets.application.service.VenueService
 import com.karrad.bilets.application.usecase.TicketValidationResult
 import com.karrad.bilets.application.usecase.ValidateTicketUseCase
 import com.karrad.bilets.domain.entity.Ticket
@@ -26,6 +28,8 @@ import java.util.UUID
 class TicketController(
     private val ticketService: TicketService,
     private val orderService: OrderService,
+    private val eventService: EventService,
+    private val venueService: VenueService,
     private val validateTicketUseCase: ValidateTicketUseCase,
     private val currentUserProvider: CurrentUserProvider
 ) {
@@ -35,8 +39,28 @@ class TicketController(
         ApiResponse(responseCode = "401", description = "Не аутентифицирован")
     )
     @GetMapping("/tickets/me")
-    fun listCurrentUserTickets(): List<Ticket> =
-        ticketService.listByUserId(currentUserProvider.requireUserId())
+    fun listCurrentUserTickets(): List<TicketResponse> {
+        val tickets = ticketService.listByUserId(currentUserProvider.requireUserId())
+        val events = tickets.map { it.eventId }.toSet()
+            .mapNotNull { eventService.getById(it) }
+            .associateBy { it.id }
+        val venues = events.values.map { it.venueId }.toSet()
+            .mapNotNull { venueService.getById(it) }
+            .associateBy { it.id }
+        return tickets.map { ticket ->
+            val event = events[ticket.eventId]
+            TicketResponse(
+                id = ticket.id,
+                eventId = ticket.eventId,
+                eventLabel = event?.label ?: "—",
+                seat = ticket.seatKey?.toString(),
+                price = ticket.price,
+                usedAt = ticket.usedAt,
+                venueName = event?.let { venues[it.venueId]?.label },
+                eventTime = event?.time
+            )
+        }
+    }
 
     @Operation(summary = "Билеты по заказу", description = "Возвращает список билетов, входящих в указанный заказ")
     @ApiResponses(
@@ -113,6 +137,17 @@ class TicketController(
         }
     }
 }
+
+data class TicketResponse(
+    val id: UUID,
+    val eventId: UUID,
+    val eventLabel: String,
+    val seat: String? = null,
+    val price: Int,
+    val usedAt: Instant? = null,
+    val venueName: String? = null,
+    val eventTime: Instant? = null
+)
 
 data class TicketValidationResponse(
     val status: String,
