@@ -71,7 +71,7 @@ class JdbcOrganizationMemberRepository(
         organizationId = rs.uuid("organization_id"),
         userId = rs.uuid("user_id"),
         role = OrganizationMemberRole.valueOf(rs.getString("role")),
-        venueId = rs.uuid("venue_id"),
+        venueId = rs.nullableUuid("venue_id"),
         id = rs.uuid("id")
     )
 }
