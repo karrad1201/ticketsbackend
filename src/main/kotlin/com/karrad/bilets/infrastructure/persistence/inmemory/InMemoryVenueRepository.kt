@@ -20,5 +20,8 @@ class InMemoryVenueRepository : VenueRepository {
 
     override fun findAll(): List<Venue> = storage.values.toList()
 
+    override fun findByOrganizationId(organizationId: UUID): List<Venue> =
+        storage.values.filter { it.organizationId == organizationId }
+
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null
 }

@@ -28,4 +28,7 @@ class InMemoryVenueAccessGrantRepository : VenueAccessGrantRepository {
             it.requestingOrgId == orgId &&
             it.status == VenueAccessGrantStatus.APPROVED
         }
+
+    override fun findByRequestingOrgId(orgId: UUID): List<VenueAccessGrant> =
+        storage.values.filter { it.requestingOrgId == orgId }.sortedByDescending { it.createdAt }
 }

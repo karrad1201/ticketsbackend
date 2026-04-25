@@ -10,4 +10,5 @@ interface VenueAccessGrantRepository {
     fun findByVenueId(venueId: UUID): List<VenueAccessGrant>
     fun findByVenueIdAndStatus(venueId: UUID, status: VenueAccessGrantStatus): List<VenueAccessGrant>
     fun findApprovedByVenueIdAndOrgId(venueId: UUID, orgId: UUID): VenueAccessGrant?
+    fun findByRequestingOrgId(orgId: UUID): List<VenueAccessGrant>
 }

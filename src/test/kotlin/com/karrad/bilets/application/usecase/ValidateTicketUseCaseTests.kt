@@ -166,4 +166,31 @@ class ValidateTicketUseCaseTests {
         assertIs<TicketValidationResult.AlreadyUsed>(result)
         assertEquals(usedAt, result.usedAt)
     }
+
+    @Test
+    fun `should return Valid for STAFF assigned to the correct venue`() {
+        val ticket = seed()
+        val staffId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000010")
+        organizationMemberRepository.save(
+            OrganizationMember(organizationId = orgId, userId = staffId, role = OrganizationMemberRole.STAFF, venueId = venueId)
+        )
+
+        val result = useCase.execute(ticket.id, eventId, staffId)
+
+        assertIs<TicketValidationResult.Valid>(result)
+    }
+
+    @Test
+    fun `should return Unauthorized for STAFF assigned to a different venue`() {
+        seed()
+        val staffId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000011")
+        val otherVenueId = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000012")
+        organizationMemberRepository.save(
+            OrganizationMember(organizationId = orgId, userId = staffId, role = OrganizationMemberRole.STAFF, venueId = otherVenueId)
+        )
+
+        val result = useCase.execute(UUID.randomUUID(), eventId, staffId)
+
+        assertIs<TicketValidationResult.Unauthorized>(result)
+    }
 }

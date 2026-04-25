@@ -1,5 +1,6 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.TicketRepository
@@ -66,9 +67,14 @@ class ValidateTicketUseCase(
 
         // Права: вызывающий — член организации этого ивента
         val orgId = scannedEvent.organizationId
-        if (orgId == null || organizationMemberRepository
-                .findByOrganizationIdAndUserId(orgId, callerId) == null
-        ) {
+        val member = if (orgId != null)
+            organizationMemberRepository.findByOrganizationIdAndUserId(orgId, callerId)
+        else null
+
+        if (member == null) return TicketValidationResult.Unauthorized
+
+        // STAFF может сканировать только в своей площадке
+        if (member.role == OrganizationMemberRole.STAFF && member.venueId != scannedEvent.venueId) {
             return TicketValidationResult.Unauthorized
         }
 

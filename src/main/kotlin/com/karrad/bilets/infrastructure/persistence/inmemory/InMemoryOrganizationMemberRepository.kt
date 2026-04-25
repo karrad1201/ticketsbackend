@@ -1,6 +1,7 @@
 package com.karrad.bilets.infrastructure.persistence.inmemory
 
 import com.karrad.bilets.domain.entity.OrganizationMember
+import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -25,6 +26,9 @@ class InMemoryOrganizationMemberRepository : OrganizationMemberRepository {
 
     override fun findByOrganizationIdAndUserId(organizationId: UUID, userId: UUID): OrganizationMember? =
         storage.values.firstOrNull { it.organizationId == organizationId && it.userId == userId }
+
+    override fun findByOrganizationIdAndRole(organizationId: UUID, role: OrganizationMemberRole): List<OrganizationMember> =
+        storage.values.filter { it.organizationId == organizationId && it.role == role }
 
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null
 }

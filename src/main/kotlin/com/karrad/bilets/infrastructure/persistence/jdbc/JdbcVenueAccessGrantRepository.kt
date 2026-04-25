@@ -67,4 +67,10 @@ class JdbcVenueAccessGrantRepository(
             venueId,
             orgId
         ).singleOrNull()
+
+    override fun findByRequestingOrgId(orgId: UUID): List<VenueAccessGrant> = jdbcTemplate.query(
+        "$selectAll\nwhere requesting_org_id = ?\norder by created_at desc",
+        { rs, _ -> rowMapper(rs) },
+        orgId
+    )
 }
