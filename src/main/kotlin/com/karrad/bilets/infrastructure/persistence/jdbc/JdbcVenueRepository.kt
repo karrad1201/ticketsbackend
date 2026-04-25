@@ -99,6 +99,12 @@ class JdbcVenueRepository(
         }
     }
 
+    override fun findByOrganizationId(organizationId: UUID): List<Venue> = jdbcTemplate.query(
+        "select id, label, city_label, subject_label, organization_id, address from venues where organization_id = ? order by label, id",
+        { rs, _ -> mapVenue(rs) },
+        organizationId
+    )
+
     override fun deleteById(id: UUID): Boolean {
         jdbcTemplate.update("delete from venue_spaces where venue_id = ?", id)
         return jdbcTemplate.update("delete from venues where id = ?", id) > 0

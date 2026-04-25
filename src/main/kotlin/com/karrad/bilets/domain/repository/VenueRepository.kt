@@ -8,5 +8,6 @@ interface VenueRepository {
     fun findById(id: UUID): Venue?
     fun findBySpaceId(spaceId: UUID): Venue?
     fun findAll(): List<Venue>
+    fun findByOrganizationId(organizationId: UUID): List<Venue>
     fun deleteById(id: UUID): Boolean
 }
