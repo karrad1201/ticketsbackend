@@ -1,0 +1,10 @@
+.git
+.github
+target/
+*.log
+*.err
+k6/
+k6-*.json
+docs/
+wiremock/
+uploads/

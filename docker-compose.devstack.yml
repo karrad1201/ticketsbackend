@@ -1,0 +1,82 @@
+services:
+
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bilets
+      POSTGRES_USER: bilets
+      POSTGRES_PASSWORD: bilets
+    volumes:
+      - devstack_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bilets -d bilets"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - devstack_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Application instances ───────────────────────────────────────────────────
+
+  app1:
+    image: ${BILETS_IMAGE:-karradm/bilets-backend:latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: devstack
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: on-failure
+
+  app2:
+    image: ${BILETS_IMAGE:-karradm/bilets-backend:latest}
+    environment:
+      SPRING_PROFILES_ACTIVE: devstack
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: on-failure
+
+  # ── Nginx (single exposed port) ─────────────────────────────────────────────
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  devstack_postgres:
+  devstack_redis:

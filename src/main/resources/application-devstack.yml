@@ -1,0 +1,49 @@
+# DevStack profile — локальный prod-like стек через docker-compose.devstack.yml
+# Активируется автоматически при запуске через этот compose-файл.
+#
+# Отличия от prod:
+#  - MockSmsGateway (код всегда 123456, реальные SMS не отправляются)
+#  - MockPaymentGateway (фейковый URL оплаты, T-Bank не нужен)
+#  - NoOp rate limiters (SMS и Bearer-token)
+#  - Предзасеянные аккаунты с фиксированными токенами (см. DevStackSeedDataConfig)
+#  - Swagger UI включён для удобства ручного тестирования
+
+spring:
+  data:
+    redis:
+      host: redis
+      port: 6379
+  datasource:
+    url: jdbc:postgresql://postgres:5432/bilets
+    driver-class-name: org.postgresql.Driver
+    username: bilets
+    password: bilets
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+order-flow:
+  persistence: jdbc
+
+sms:
+  fixed-code: "123456"
+
+app:
+  cors:
+    allowed-origins: "*"
+
+# Mock payment gateway (see MockPaymentGateway — profile !prod already handles it)
+tbank:
+  base-url: http://localhost:8888
+  terminal-key: devstack
+  password: devstack
+  notification-url: http://localhost/api/payments/callbacks/tbank
+
+zvonok:
+  base-url: http://localhost:8888
+  public-key: devstack
+  campaign-id: devstack
+
+operations:
+  scheduling:
+    enabled: false
