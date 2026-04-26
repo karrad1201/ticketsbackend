@@ -8,8 +8,10 @@ import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.web.dto.VenueAccessGrantResponse
 import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
@@ -80,6 +82,28 @@ class MyOrganizationController(
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Not a member of any organization")
         return venueAccessGrantRepository.findByRequestingOrgId(member.organizationId)
             .map(VenueAccessGrantResponse::from)
+    }
+
+    /**
+     * Выйти из организации. OWNER может выйти только если в организации есть другой OWNER.
+     */
+    @DeleteMapping("/membership")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun leaveOrganization() {
+        val callerId = currentUserProvider.requireUserId()
+        val member = organizationMemberRepository.findByUserId(callerId).firstOrNull()
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "Not a member of any organization")
+
+        if (member.role == OrganizationMemberRole.OWNER) {
+            val ownerCount = organizationMemberRepository
+                .findByOrganizationIdAndRole(member.organizationId, OrganizationMemberRole.OWNER)
+                .size
+            check(ownerCount > 1) {
+                "SOLE_OWNER: Cannot leave — you are the only owner. Transfer OWNER role to another member first."
+            }
+        }
+
+        organizationMemberRepository.deleteById(member.id)
     }
 }
 
