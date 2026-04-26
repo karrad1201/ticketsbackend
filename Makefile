@@ -45,8 +45,9 @@ devstack-build:
 	./mvnw -B -DskipTests package -q
 	docker build -t $(IMAGE):$(TAG) .
 
-## Запустить весь стек в фоне
+## Запустить весь стек в фоне (с pull свежего образа)
 devstack-up:
+	$(COMPOSE_DEVSTACK) pull
 	$(COMPOSE_DEVSTACK) up -d
 
 ## Остановить и удалить контейнеры (данные volumes сохраняются)
