@@ -127,22 +127,13 @@ class DevStackSeedDataConfig {
                 )
             )
 
-        // ── Org memberships ───────────────────────────────────────────────────
+        // ── Owner membership (без venueId — до создания venue) ───────────────
         organizationMemberRepository.save(
             OrganizationMember(
                 id = Ids.ownerMemberId,
                 organizationId = org.id,
                 userId = owner.id,
                 role = OrganizationMemberRole.OWNER
-            )
-        )
-        organizationMemberRepository.save(
-            OrganizationMember(
-                id = Ids.staffMemberId,
-                organizationId = org.id,
-                userId = staff.id,
-                role = OrganizationMemberRole.STAFF,
-                venueId = Ids.venueId
             )
         )
 
@@ -154,6 +145,17 @@ class DevStackSeedDataConfig {
                 city = City(label = "Москва", subject = Subject("Москва")),
                 organizationId = org.id,
                 address = "ул. Тестовая, 1"
+            )
+        )
+
+        // ── Staff membership (после venue — FK constraint) ────────────────────
+        organizationMemberRepository.save(
+            OrganizationMember(
+                id = Ids.staffMemberId,
+                organizationId = org.id,
+                userId = staff.id,
+                role = OrganizationMemberRole.STAFF,
+                venueId = venue.id
             )
         )
 
