@@ -2,9 +2,15 @@ package com.karrad.bilets.web
 
 import com.karrad.bilets.application.service.OrganizationMemberService
 import com.karrad.bilets.domain.entity.OrganizationMember
+import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import com.karrad.bilets.domain.repository.UserRepository
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Pattern
 import org.springframework.http.HttpStatus
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,11 +22,13 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/my/organization/members")
 class MyOrganizationMembersController(
     private val organizationMemberService: OrganizationMemberService,
     private val organizationMemberRepository: OrganizationMemberRepository,
+    private val userRepository: UserRepository,
     private val currentUserProvider: CurrentUserProvider
 ) {
 
@@ -85,6 +93,49 @@ class MyOrganizationMembersController(
         return OrganizationMemberResponse(updated)
     }
 
+    /**
+     * Добавить участника по номеру телефона.
+     * Если аккаунта нет — создаётся stub-пользователь (fullName = phone).
+     * Если уже состоит в любой организации — 409.
+     */
+    @PostMapping("/by-phone")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun addByPhone(@Valid @RequestBody body: AddMemberByPhoneRequest): AddMemberByPhoneResponse {
+        val membership = requireMembership(setOf(OrganizationMemberRole.OWNER, OrganizationMemberRole.MANAGER))
+
+        if (membership.role == OrganizationMemberRole.MANAGER && body.role != OrganizationMemberRole.STAFF) {
+            throw SecurityException("MANAGER can only add STAFF members")
+        }
+        if (body.role == OrganizationMemberRole.STAFF && body.venueId == null) {
+            throw IllegalArgumentException("venueId is required for STAFF members")
+        }
+
+        val existingUser = userRepository.findByPhone(body.phone)
+        val accountCreated: Boolean
+        val user: User
+
+        if (existingUser != null) {
+            user = existingUser
+            accountCreated = false
+        } else {
+            user = userRepository.save(User(fullName = body.phone, phone = body.phone))
+            accountCreated = true
+        }
+
+        val alreadyMember = organizationMemberRepository.findByUserId(user.id).isNotEmpty()
+        check(!alreadyMember) { "ALREADY_MEMBER: User is already a member of an organization" }
+
+        val member = organizationMemberService.create(
+            OrganizationMember(
+                organizationId = membership.organizationId,
+                userId = user.id,
+                role = body.role,
+                venueId = body.venueId
+            )
+        )
+        return AddMemberByPhoneResponse(member = OrganizationMemberResponse(member), accountCreated = accountCreated)
+    }
+
     @DeleteMapping("/{memberId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun remove(@PathVariable memberId: UUID) {
@@ -130,3 +181,16 @@ data class OrganizationMemberResponse(
         venueId = m.venueId
     )
 }
+
+data class AddMemberByPhoneRequest(
+    @field:NotBlank(message = "Phone must not be blank")
+    @field:Pattern(regexp = "^\\+7\\d{10}$", message = "Phone must be in +7XXXXXXXXXX format")
+    val phone: String,
+    val role: OrganizationMemberRole,
+    val venueId: UUID? = null
+)
+
+data class AddMemberByPhoneResponse(
+    val member: OrganizationMemberResponse,
+    val accountCreated: Boolean
+)

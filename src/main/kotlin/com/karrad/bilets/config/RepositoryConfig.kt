@@ -18,10 +18,12 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import com.karrad.bilets.domain.repository.VenueApplicationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCityRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventInventoryPlanRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventRepository
@@ -140,6 +142,10 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
     fun favoriteEventRepository(): FavoriteEventRepository = InMemoryFavoriteEventRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+    fun venueApplicationRepository(): VenueApplicationRepository = InMemoryVenueApplicationRepository()
 
     @Bean
     @Profile("!prod")
