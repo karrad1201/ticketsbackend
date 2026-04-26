@@ -47,7 +47,6 @@ class SecurityConfig {
                     // Browsing (публичные GET)
                     .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/api/v1/categories").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/discovery").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/geo/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/organizations", "/api/v1/organizations/**").permitAll()

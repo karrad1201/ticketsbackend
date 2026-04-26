@@ -116,7 +116,7 @@ class UserControllerIntegrationTests {
                     )
                 )
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isForbidden)
     }
 
     @Test

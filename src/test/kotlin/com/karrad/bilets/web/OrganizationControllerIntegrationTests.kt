@@ -119,7 +119,7 @@ class OrganizationControllerIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "ufa-jazz", "name" to "Ufa Jazz Collective")))
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isForbidden)
     }
 
     private fun demoAdmin(): User {

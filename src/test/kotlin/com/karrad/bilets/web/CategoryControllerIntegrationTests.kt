@@ -2,7 +2,11 @@ package com.karrad.bilets.web
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.Category
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
+import com.karrad.bilets.domain.repository.AuthTokenRepository
 import com.karrad.bilets.domain.repository.CategoryRepository
+import com.karrad.bilets.domain.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,6 +38,12 @@ class CategoryControllerIntegrationTests {
     @Autowired
     lateinit var categoryRepository: CategoryRepository
 
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
+    lateinit var authTokenRepository: AuthTokenRepository
+
     @BeforeEach
     fun setUp() {
         val builder = MockMvcBuilders.webAppContextSetup(webApplicationContext)
@@ -43,8 +53,17 @@ class CategoryControllerIntegrationTests {
 
     @Test
     fun `should create and read categories over http`() {
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175210")
+        )
+        userRepository.save(admin)
+
         mockMvc.perform(
             post("/api/v1/categories")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Theatre")))
         )
@@ -64,13 +83,51 @@ class CategoryControllerIntegrationTests {
 
     @Test
     fun `should reject duplicate category code over http`() {
+        val admin = User(
+            email = "admin@example.com",
+            fullName = "Platform Admin",
+            role = UserRole.ADMIN,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175211")
+        )
+        userRepository.save(admin)
+
         categoryRepository.save(Category(code = "theatre", label = "Theatre", id = UUID.fromString("123e4567-e89b-12d3-a456-426614175201")))
 
         mockMvc.perform(
             post("/api/v1/categories")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(admin.id)}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Drama")))
         )
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should reject category creation without authentication`() {
+        mockMvc.perform(
+            post("/api/v1/categories")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Theatre")))
+        )
+            .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `should reject category creation for non admin user`() {
+        val user = User(
+            email = "user@example.com",
+            fullName = "Regular User",
+            role = UserRole.USER,
+            id = UUID.fromString("123e4567-e89b-12d3-a456-426614175212")
+        )
+        userRepository.save(user)
+
+        mockMvc.perform(
+            post("/api/v1/categories")
+                .header("Authorization", "Bearer ${authTokenRepository.bearerFor(user.id)}")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("code" to "theatre", "label" to "Theatre")))
+        )
+            .andExpect(status().isForbidden)
     }
 }

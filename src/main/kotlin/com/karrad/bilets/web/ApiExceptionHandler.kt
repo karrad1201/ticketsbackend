@@ -28,6 +28,11 @@ class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, sanitize(exception.message) ?: "Forbidden")
     }
 
+    @ExceptionHandler(ForbiddenException::class)
+    fun handleForbidden(exception: ForbiddenException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, sanitize(exception.message) ?: "Forbidden")
+    }
+
     @ExceptionHandler(UnauthorizedException::class)
     fun handleUnauthorized(exception: UnauthorizedException): ProblemDetail {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, sanitize(exception.message) ?: "Unauthorized")

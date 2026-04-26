@@ -24,7 +24,8 @@ import java.util.UUID
 @RequestMapping("/api/v1/categories")
 class CategoryController(
     private val createCategoryUseCase: CreateCategoryUseCase,
-    private val categoryService: CategoryService
+    private val categoryService: CategoryService,
+    private val currentUserProvider: CurrentUserProvider
 ) {
 
     @Operation(summary = "Создать категорию", description = "Добавляет новую категорию мероприятий")
@@ -37,6 +38,7 @@ class CategoryController(
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun create(@RequestBody request: CreateCategoryRequest): Category {
+        currentUserProvider.requireAdmin()
         return createCategoryUseCase.create(request.toDomain())
     }
 

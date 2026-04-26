@@ -46,7 +46,9 @@ class CurrentUserProvider(
      */
     fun requireAdmin(): User {
         val user = requireUser()
-        require(user.role == UserRole.ADMIN) { "Authenticated user must be admin: ${user.id}" }
+        if (user.role != UserRole.ADMIN) {
+            throw ForbiddenException("Authenticated user must be admin: ${user.id}")
+        }
         return user
     }
 }
