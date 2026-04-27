@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 import java.util.UUID
 
 @Service
-@ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
 class InMemoryFavoriteQueryService(
     private val favoriteEventRepository: FavoriteEventRepository,
     private val eventRepository: EventRepository
