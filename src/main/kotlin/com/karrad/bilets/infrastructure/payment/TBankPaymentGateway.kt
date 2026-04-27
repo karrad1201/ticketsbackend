@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.karrad.bilets.config.TBankProperties
 import com.karrad.bilets.domain.entity.PaymentSession
 import com.karrad.bilets.domain.payment.PaymentGateway
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.web.client.RestClient
 import java.security.MessageDigest
 import java.time.Instant
@@ -18,6 +19,10 @@ class TBankPaymentGateway(
     private val props: TBankProperties,
     private val restClient: RestClient = RestClient.builder()
         .baseUrl(props.baseUrl)
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(15_000)
+        })
         .build()
 ) : PaymentGateway() {
 

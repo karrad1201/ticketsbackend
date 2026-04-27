@@ -6,6 +6,7 @@ import com.karrad.bilets.config.ZvonokProperties
 import com.karrad.bilets.domain.sms.SmsGateway
 import org.slf4j.LoggerFactory
 import org.springframework.http.MediaType
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.web.client.RestClient
 
@@ -17,6 +18,10 @@ class ZvonokSmsGateway(
     private val props: ZvonokProperties,
     private val restClient: RestClient = RestClient.builder()
         .baseUrl(props.baseUrl)
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(5_000)
+            setReadTimeout(10_000)
+        })
         .build()
 ) : SmsGateway() {
 
