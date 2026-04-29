@@ -43,6 +43,8 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRe
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsRateLimiter
@@ -173,4 +175,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnMissingBean(EventLockManager::class)
     fun eventLockManager(): EventLockManager = InMemoryEventLockManager()
+
+    @Bean
+    @ConditionalOnMissingBean(AdminCredentialRepository::class)
+    fun adminCredentialRepository(): AdminCredentialRepository = InMemoryAdminCredentialRepository()
 }

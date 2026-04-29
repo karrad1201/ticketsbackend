@@ -59,6 +59,9 @@ class SecurityConfig {
                     // Платёжные callbacks (публичные — вызываются шлюзом)
                     .requestMatchers(HttpMethod.POST, "/api/v1/payments/callbacks/**").permitAll()
 
+                    // Админский вход по паролю (без SMS)
+                    .requestMatchers(HttpMethod.POST, "/admin/auth/login").permitAll()
+
                     // Инфраструктура
                     .requestMatchers("/actuator/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()

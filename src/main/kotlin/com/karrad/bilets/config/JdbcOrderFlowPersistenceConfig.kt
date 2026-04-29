@@ -56,6 +56,8 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
+import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAdminCredentialRepository
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
 import org.springframework.beans.factory.annotation.Value
@@ -206,4 +208,8 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun refreshTokenRepository(redisTemplate: StringRedisTemplate): RefreshTokenRepository =
         RedisRefreshTokenRepository(redisTemplate)
+
+    @Bean
+    fun adminCredentialRepository(jdbcTemplate: JdbcTemplate): AdminCredentialRepository =
+        JdbcAdminCredentialRepository(jdbcTemplate)
 }
