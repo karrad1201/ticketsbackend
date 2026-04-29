@@ -30,8 +30,12 @@ import com.karrad.bilets.infrastructure.sms.InMemorySmsRateLimiter
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
+import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
@@ -226,4 +230,10 @@ class ApplicationServicesTestConfig {
         paymentAttemptRepository: PaymentAttemptRepository,
         orderRepository: OrderRepository
     ): PaymentReconciliationService = PaymentReconciliationService(paymentAttemptRepository, orderRepository)
+
+    @Bean
+    fun adminCredentialRepository(): AdminCredentialRepository = InMemoryAdminCredentialRepository()
+
+    @Bean
+    fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
 }
