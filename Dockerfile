@@ -8,7 +8,7 @@ WORKDIR /build
 # Cache Maven dependencies before copying source
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN ./mvnw -B dependency:go-offline -q
+RUN chmod +x mvnw && ./mvnw -B dependency:go-offline -q
 
 COPY src/ src/
 RUN ./mvnw -B -DskipTests package -q
