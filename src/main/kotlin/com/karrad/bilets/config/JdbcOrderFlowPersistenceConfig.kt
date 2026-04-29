@@ -20,6 +20,7 @@ import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import com.karrad.bilets.domain.repository.VenueApplicationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.payment.PaymentGateway
@@ -51,6 +52,7 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcOrganizationReposit
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcTicketRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
@@ -126,6 +128,10 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun venueRepository(jdbcTemplate: JdbcTemplate): VenueRepository = JdbcVenueRepository(jdbcTemplate)
+
+    @Bean
+    fun venueApplicationRepository(jdbcTemplate: JdbcTemplate): VenueApplicationRepository =
+        JdbcVenueApplicationRepository(jdbcTemplate)
 
     @Bean
     fun venueAccessGrantRepository(jdbcTemplate: JdbcTemplate): VenueAccessGrantRepository =

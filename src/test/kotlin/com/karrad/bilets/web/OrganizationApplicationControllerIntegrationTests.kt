@@ -131,7 +131,7 @@ class OrganizationApplicationControllerIntegrationTests {
             post("/api/v1/organization-applications/${application.id}/approve")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(applicant.id)}")
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isForbidden)
     }
 
     private fun demoUser(): User {
