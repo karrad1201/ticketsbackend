@@ -160,7 +160,7 @@ class VenueApplicationControllerIntegrationTests {
             post("/api/v1/venue-applications/${application.id}/approve")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerId)}")
         )
-            .andExpect(status().isBadRequest)
+            .andExpect(status().isForbidden)
     }
 
     @Test
