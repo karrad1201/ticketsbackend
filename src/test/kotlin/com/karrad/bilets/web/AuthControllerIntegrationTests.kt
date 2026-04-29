@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.karrad.bilets.domain.entity.SmsCode
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.RefreshTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.security.OtpHasher
@@ -35,6 +36,7 @@ class AuthControllerIntegrationTests {
     @Autowired lateinit var userRepository: UserRepository
     @Autowired lateinit var smsCodeRepository: SmsCodeRepository
     @Autowired lateinit var authTokenRepository: AuthTokenRepository
+    @Autowired lateinit var refreshTokenRepository: RefreshTokenRepository
 
     private val phone = "+79991234567"
     private val code = "123456"
@@ -69,7 +71,7 @@ class AuthControllerIntegrationTests {
                 )))
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.token").isNotEmpty)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
             .andExpect(jsonPath("$.user.fullName").value("Test User"))
             .andExpect(jsonPath("$.user.phone").value(phone))
     }
@@ -88,7 +90,7 @@ class AuthControllerIntegrationTests {
                 )))
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.token").isNotEmpty)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
             .andExpect(jsonPath("$.user.fullName").value("Existing User"))
     }
 
@@ -121,6 +123,39 @@ class AuthControllerIntegrationTests {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").value(user.id.toString()))
             .andExpect(jsonPath("$.fullName").value("Me User"))
+    }
+
+    @Test
+    fun `should refresh token pair`() {
+        userRepository.save(User(fullName = "Refresh User", phone = phone, id = UUID.fromString("aaaaaaaa-0000-0000-0000-000000000003")))
+        seedSmsCode()
+
+        val loginResponse = mockMvc.perform(
+            post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("phone" to phone, "code" to code)))
+        ).andExpect(status().isOk).andReturn()
+
+        val body = objectMapper.readTree(loginResponse.response.contentAsString)
+        val refreshToken = body.get("refreshToken").asText()
+
+        mockMvc.perform(
+            post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("refreshToken" to refreshToken)))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.refreshToken").isNotEmpty)
+    }
+
+    @Test
+    fun `refresh with invalid token returns 401`() {
+        mockMvc.perform(
+            post("/auth/refresh")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(mapOf("refreshToken" to "invalid-token")))
+        ).andExpect(status().isUnauthorized)
     }
 
     private fun seedSmsCode() {

@@ -18,6 +18,7 @@ import com.karrad.bilets.domain.repository.OrderInventoryRepository
 import com.karrad.bilets.domain.repository.TicketRepository
 import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.RefreshTokenRepository
 import com.karrad.bilets.domain.repository.SmsCodeRepository
 import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
@@ -33,6 +34,7 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEve
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.sms.MockSmsGateway
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
@@ -81,6 +83,9 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun authTokenRepository(): AuthTokenRepository = InMemoryAuthTokenRepository()
+
+    @Bean
+    fun refreshTokenRepository(): RefreshTokenRepository = InMemoryRefreshTokenRepository()
 
     @Bean
     fun bearerTokenRateLimiter(): BearerTokenRateLimiter = InMemoryBearerTokenRateLimiter()

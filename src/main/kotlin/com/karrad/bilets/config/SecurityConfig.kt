@@ -40,6 +40,7 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/auth/send-code").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                     .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
                     // Venue preview (публичная HTML-страница)
                     .requestMatchers(HttpMethod.GET, "/").permitAll()

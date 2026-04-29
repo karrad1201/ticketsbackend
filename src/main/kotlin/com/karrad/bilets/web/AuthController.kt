@@ -1,12 +1,15 @@
 package com.karrad.bilets.web
 
 import com.karrad.bilets.application.usecase.LoginWithPhoneUseCase
+import com.karrad.bilets.application.usecase.RefreshAccessTokenUseCase
 import com.karrad.bilets.application.usecase.RegisterWithPhoneUseCase
 import com.karrad.bilets.application.usecase.SendSmsCodeUseCase
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.repository.AuthTokenRepository
+import com.karrad.bilets.domain.repository.RefreshTokenRepository
 import com.karrad.bilets.web.dto.AuthResponse
 import com.karrad.bilets.web.dto.LoginRequest
+import com.karrad.bilets.web.dto.RefreshRequest
 import com.karrad.bilets.web.dto.RegisterRequest
 import com.karrad.bilets.web.dto.SendCodeRequest
 import com.karrad.bilets.web.dto.UserResponse
@@ -26,6 +29,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
+data class TokenPairResponse(val accessToken: String, val refreshToken: String)
+
 @Tag(name = "Auth", description = "Аутентификация и управление сессией пользователя")
 @Validated
 @RestController
@@ -34,8 +39,10 @@ class AuthController(
     private val sendSmsCodeUseCase: SendSmsCodeUseCase,
     private val loginWithPhoneUseCase: LoginWithPhoneUseCase,
     private val registerWithPhoneUseCase: RegisterWithPhoneUseCase,
+    private val refreshAccessTokenUseCase: RefreshAccessTokenUseCase,
     private val currentUserProvider: CurrentUserProvider,
-    private val authTokenRepository: AuthTokenRepository
+    private val authTokenRepository: AuthTokenRepository,
+    private val refreshTokenRepository: RefreshTokenRepository
 ) {
     @Operation(summary = "Отправить SMS-код", description = "Отправляет одноразовый код подтверждения на указанный номер телефона")
     @ApiResponses(
@@ -48,16 +55,20 @@ class AuthController(
         sendSmsCodeUseCase.send(request.phone)
     }
 
-    @Operation(summary = "Войти по номеру телефона", description = "Авторизует пользователя по номеру телефона и SMS-коду, возвращает токен сессии")
+    @Operation(summary = "Войти по номеру телефона", description = "Авторизует пользователя по номеру телефона и SMS-коду, возвращает токены доступа")
     @ApiResponses(
-        ApiResponse(responseCode = "200", description = "Успешная авторизация, токен возвращён"),
+        ApiResponse(responseCode = "200", description = "Успешная авторизация, токены возвращены"),
         ApiResponse(responseCode = "400", description = "Неверный код подтверждения или номер телефона"),
-        ApiResponse(responseCode = "401", description = "Пользователь не найден или код истёк")
+        ApiResponse(responseCode = "404", description = "Пользователь не найден")
     )
     @PostMapping("/login")
     fun login(@Valid @RequestBody request: LoginRequest): AuthResponse {
         val result = loginWithPhoneUseCase.login(request.phone, request.code)
-        return AuthResponse(token = result.token, user = result.user.toResponse())
+        return AuthResponse(
+            accessToken = result.accessToken,
+            refreshToken = result.refreshToken,
+            user = result.user.toResponse()
+        )
     }
 
     @Operation(summary = "Зарегистрировать нового пользователя", description = "Создаёт учётную запись по номеру телефона и SMS-коду")
@@ -70,20 +81,43 @@ class AuthController(
     @ResponseStatus(HttpStatus.CREATED)
     fun register(@Valid @RequestBody request: RegisterRequest): AuthResponse {
         val result = registerWithPhoneUseCase.register(request.phone, request.code, request.fullName)
-        return AuthResponse(token = result.token, user = result.user.toResponse())
+        return AuthResponse(
+            accessToken = result.accessToken,
+            refreshToken = result.refreshToken,
+            user = result.user.toResponse()
+        )
     }
 
-    @Operation(summary = "Выйти из системы", description = "Инвалидирует текущий Bearer-токен")
+    @Operation(summary = "Обновить токен доступа", description = "Обменивает действующий refresh-токен на новую пару токенов")
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "Новая пара токенов выдана"),
+        ApiResponse(responseCode = "401", description = "Refresh-токен недействителен или истёк")
+    )
+    @PostMapping("/refresh")
+    fun refresh(@Valid @RequestBody request: RefreshRequest): TokenPairResponse {
+        val result = refreshAccessTokenUseCase.refresh(request.refreshToken)
+        return TokenPairResponse(accessToken = result.accessToken, refreshToken = result.refreshToken)
+    }
+
+    @Operation(summary = "Выйти из системы", description = "Инвалидирует текущий access-токен и refresh-токен")
     @ApiResponses(
         ApiResponse(responseCode = "204", description = "Сессия успешно завершена"),
         ApiResponse(responseCode = "401", description = "Токен не передан или уже недействителен")
     )
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun logout(request: HttpServletRequest) {
-        val authHeader = request.getHeader("Authorization") ?: return
-        if (authHeader.startsWith("Bearer ")) {
-            authTokenRepository.deleteByToken(authHeader.removePrefix("Bearer ").trim())
+    fun logout(request: HttpServletRequest, @Valid @RequestBody(required = false) body: RefreshRequest?) {
+        val authHeader = request.getHeader("Authorization")
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            val accessToken = authHeader.removePrefix("Bearer ").trim()
+            val authToken = authTokenRepository.findByToken(accessToken)
+            if (authToken != null) {
+                refreshTokenRepository.deleteByUserId(authToken.userId)
+                authTokenRepository.deleteByToken(accessToken)
+            }
+        }
+        if (body != null) {
+            refreshTokenRepository.deleteByToken(body.refreshToken)
         }
     }
 

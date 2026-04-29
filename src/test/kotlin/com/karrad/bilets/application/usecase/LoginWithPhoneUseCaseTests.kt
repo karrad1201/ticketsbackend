@@ -50,7 +50,7 @@ class LoginWithPhoneUseCaseTests {
         val result = useCase.login(phone, "123456")
 
         assertEquals(phone, result.user.phone)
-        assertNotNull(authTokenRepository.findByToken(result.token))
+        assertNotNull(authTokenRepository.findByToken(result.accessToken))
     }
 
     @Test
@@ -64,8 +64,8 @@ class LoginWithPhoneUseCaseTests {
         saveValidCode("222222")
         val second = useCase.login(phone, "222222")
 
-        assertNull(authTokenRepository.findByToken(first.token), "Old token must be invalidated after re-login")
-        assertNotNull(authTokenRepository.findByToken(second.token), "New token must be active")
+        assertNull(authTokenRepository.findByToken(first.accessToken), "Old token must be invalidated after re-login")
+        assertNotNull(authTokenRepository.findByToken(second.accessToken), "New token must be active")
     }
 
     @Test
@@ -137,7 +137,7 @@ class LoginWithPhoneUseCaseTests {
         }
 
         val result = useCase.login(phone, "123456")
-        assertNotNull(authTokenRepository.findByToken(result.token))
+        assertNotNull(authTokenRepository.findByToken(result.accessToken))
     }
 
     @Test

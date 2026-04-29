@@ -31,7 +31,12 @@ data class RegisterRequest(
     val fullName: String
 )
 
-data class AuthResponse(val token: String, val user: UserResponse)
+data class RefreshRequest(
+    @field:NotBlank(message = "Refresh token must not be blank")
+    val refreshToken: String
+)
+
+data class AuthResponse(val accessToken: String, val refreshToken: String, val user: UserResponse)
 
 data class UserResponse(
     val id: String,

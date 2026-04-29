@@ -46,7 +46,7 @@ class RegisterWithPhoneUseCaseTests {
         assertEquals(phone, result.user.phone)
         assertEquals("Новый Пользователь", result.user.fullName)
         assertNotNull(userRepository.findByPhone(phone))
-        assertNotNull(authTokenRepository.findByToken(result.token))
+        assertNotNull(authTokenRepository.findByToken(result.accessToken))
     }
 
     @Test
