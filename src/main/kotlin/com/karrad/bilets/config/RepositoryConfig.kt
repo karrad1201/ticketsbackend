@@ -18,6 +18,7 @@ import com.karrad.bilets.domain.repository.UserRepository
 import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import com.karrad.bilets.domain.repository.RefreshTokenRepository
 import com.karrad.bilets.domain.repository.VenueApplicationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryCategoryRepository
@@ -39,6 +40,7 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepos
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserEventVisitRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
 import com.karrad.bilets.application.lock.EventLockManager
@@ -146,6 +148,10 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
     fun venueApplicationRepository(): VenueApplicationRepository = InMemoryVenueApplicationRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
+    fun refreshTokenRepository(): RefreshTokenRepository = InMemoryRefreshTokenRepository()
 
     @Bean
     @Profile("!prod")

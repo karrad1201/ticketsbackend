@@ -20,6 +20,7 @@ import com.karrad.bilets.domain.repository.UserEventVisitRepository
 import com.karrad.bilets.domain.repository.CityRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.FavoriteEventRepository
+import com.karrad.bilets.domain.repository.RefreshTokenRepository
 import com.karrad.bilets.domain.repository.VenueApplicationRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.application.lock.EventLockManager
@@ -28,6 +29,7 @@ import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.domain.sms.SmsRateLimiter
 import com.karrad.bilets.infrastructure.lock.RedisEventLockManager
+import com.karrad.bilets.infrastructure.persistence.redis.RedisRefreshTokenRepository
 import com.karrad.bilets.infrastructure.payment.TBankPaymentGateway
 import com.karrad.bilets.infrastructure.sms.ZvonokSmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
@@ -200,4 +202,8 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun eventLockManager(redisTemplate: StringRedisTemplate): EventLockManager =
         RedisEventLockManager(redisTemplate)
+
+    @Bean
+    fun refreshTokenRepository(redisTemplate: StringRedisTemplate): RefreshTokenRepository =
+        RedisRefreshTokenRepository(redisTemplate)
 }

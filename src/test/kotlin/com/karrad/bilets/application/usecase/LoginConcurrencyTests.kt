@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.SmsCode
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.security.OtpHasher
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryUserRepository
 import com.karrad.bilets.support.MutableClock
@@ -42,7 +43,7 @@ class LoginConcurrencyTests {
         smsCodeRepository = InMemorySmsCodeRepository()
         userRepository = InMemoryUserRepository()
         authTokenRepository = InMemoryAuthTokenRepository()
-        useCase = LoginWithPhoneUseCase(smsCodeRepository, userRepository, authTokenRepository, clock)
+        useCase = LoginWithPhoneUseCase(smsCodeRepository, userRepository, authTokenRepository, InMemoryRefreshTokenRepository(), clock)
     }
 
     @Test
