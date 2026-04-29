@@ -30,6 +30,7 @@ import com.karrad.bilets.domain.sms.SmsGateway
 import com.karrad.bilets.domain.sms.SmsRateLimiter
 import com.karrad.bilets.infrastructure.lock.RedisEventLockManager
 import com.karrad.bilets.infrastructure.persistence.redis.RedisRefreshTokenRepository
+import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.payment.TBankPaymentGateway
 import com.karrad.bilets.infrastructure.sms.ZvonokSmsGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
@@ -181,17 +182,12 @@ class JdbcOrderFlowPersistenceConfig {
         JdbcFavoriteEventRepository(jdbcTemplate)
 
     @Bean
-    @Profile("!prod")
-    @ConditionalOnMissingBean(SmsGateway::class)
-    fun smsGateway(): SmsGateway = MockSmsGateway()
+    fun smsGateway(props: ZvonokProperties): SmsGateway =
+        if (props.publicKey.isBlank()) MockSmsGateway() else ZvonokSmsGateway(props)
 
     @Bean
-    @Profile("prod")
-    fun zvonokSmsGateway(props: ZvonokProperties): SmsGateway = ZvonokSmsGateway(props)
-
-    @Bean
-    @Profile("prod")
-    fun tbankPaymentGateway(props: TBankProperties): PaymentGateway = TBankPaymentGateway(props)
+    fun paymentGateway(props: TBankProperties): PaymentGateway =
+        if (props.terminalKey.isBlank()) MockPaymentGateway() else TBankPaymentGateway(props)
 
     @Bean
     fun bearerTokenRateLimiter(redisTemplate: StringRedisTemplate): BearerTokenRateLimiter =
