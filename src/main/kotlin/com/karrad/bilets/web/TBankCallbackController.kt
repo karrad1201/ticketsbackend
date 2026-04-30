@@ -28,11 +28,8 @@ class TBankCallbackController(
 
     @PostConstruct
     fun validateConfig() {
-        require(tbankProperties.password.isNotBlank()) {
-            "TBANK_PASSWORD must not be empty in production"
-        }
-        require(tbankProperties.terminalKey.isNotBlank()) {
-            "TBANK_TERMINAL_KEY must not be empty in production"
+        if (tbankProperties.password.isBlank() || tbankProperties.terminalKey.isBlank()) {
+            log.warn("TBank payment callbacks are DISABLED — TBANK_PASSWORD or TBANK_TERMINAL_KEY is not set")
         }
     }
 
