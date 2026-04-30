@@ -112,7 +112,14 @@ jobs:
 
       - name: Export OpenAPI spec
         run: |
-          sleep 15
+          echo "Waiting for backend to be healthy..."
+          for i in $(seq 1 24); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" https://api.visit-kalmykia.ru/actuator/health)
+            echo "Attempt $i: HTTP $status"
+            [ "$status" = "200" ] && break
+            [ "$i" = "24" ] && echo "Timed out waiting for backend" && exit 1
+            sleep 10
+          done
           curl -fsSL https://api.visit-kalmykia.ru/v3/api-docs -o openapi.json
           echo "Spec size: $(wc -c < openapi.json) bytes"
 
