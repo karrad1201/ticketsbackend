@@ -39,7 +39,7 @@ class AuthControllerIntegrationTests {
     @Autowired lateinit var refreshTokenRepository: RefreshTokenRepository
 
     private val phone = "+79991234567"
-    private val code = "123456"
+    private val code = "1234"
 
     @BeforeEach
     fun setUp() {
@@ -103,7 +103,7 @@ class AuthControllerIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(mapOf(
                     "phone" to phone,
-                    "code" to "000000"
+                    "code" to "0000"
                 )))
         ).andExpect(status().isBadRequest)
     }

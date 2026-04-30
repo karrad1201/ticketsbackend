@@ -32,7 +32,7 @@ import com.karrad.bilets.infrastructure.lock.RedisEventLockManager
 import com.karrad.bilets.infrastructure.persistence.redis.RedisRefreshTokenRepository
 import com.karrad.bilets.infrastructure.payment.MockPaymentGateway
 import com.karrad.bilets.infrastructure.payment.TBankPaymentGateway
-import com.karrad.bilets.infrastructure.sms.ZvonokSmsGateway
+import com.karrad.bilets.infrastructure.sms.ZvonokFlashCallGateway
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAuthTokenRepository
 import com.karrad.bilets.infrastructure.security.RedisBearerTokenRateLimiter
 import com.karrad.bilets.infrastructure.sms.RedisSmsRateLimiter
@@ -183,7 +183,7 @@ class JdbcOrderFlowPersistenceConfig {
 
     @Bean
     fun smsGateway(props: ZvonokProperties): SmsGateway =
-        if (props.publicKey.isBlank()) MockSmsGateway() else ZvonokSmsGateway(props)
+        if (props.publicKey.isBlank()) MockSmsGateway() else ZvonokFlashCallGateway(props)
 
     @Bean
     fun paymentGateway(props: TBankProperties): PaymentGateway =

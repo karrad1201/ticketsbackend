@@ -26,7 +26,7 @@ order-flow:
   persistence: jdbc
 
 sms:
-  fixed-code: "123456"
+  fixed-code: "1234"
 
 app:
   cors:

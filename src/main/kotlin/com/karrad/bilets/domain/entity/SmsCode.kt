@@ -12,7 +12,7 @@ data class SmsCode(
 ) {
     init {
         require(phone.isNotBlank()) { "SmsCode phone must not be blank" }
-        require(code.matches(Regex("\\d{6}|[0-9a-f]{64}"))) { "SmsCode code must be a 6-digit code or a 64-char SHA-256 hex hash" }
+        require(code.matches(Regex("\\d{4}|[0-9a-f]{64}"))) { "SmsCode code must be a 4-digit code or a 64-char SHA-256 hex hash" }
     }
 
     fun isExpired(now: Instant): Boolean = now.isAfter(expiresAt)

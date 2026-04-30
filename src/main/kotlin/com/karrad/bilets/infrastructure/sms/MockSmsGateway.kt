@@ -18,8 +18,10 @@ class MockSmsGateway : SmsGateway() {
     /** phone → last code sent; thread-safe for concurrent test/dev requests */
     val sentCodes = java.util.concurrent.ConcurrentHashMap<String, String>()
 
-    override fun sendCode(phone: String, code: String) {
+    override fun sendCode(phone: String): String {
+        val code = "1234"
         sentCodes[phone] = code
-        log.info("[MOCK SMS] Code sent to ...${phone.takeLast(4)}")
+        log.info("[MOCK FLASH CALL] Code for ...${phone.takeLast(4)} = $code")
+        return code
     }
 }

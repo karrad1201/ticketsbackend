@@ -12,33 +12,33 @@ class SmsCodeTests {
 
     @Test
     fun `valid code is not expired and not used`() {
-        val code = SmsCode(phone = "+79001234567", code = "123456", expiresAt = now.plusSeconds(300))
+        val code = SmsCode(phone = "+79001234567", code = "1234", expiresAt = now.plusSeconds(300))
         assertTrue(code.isValid(now))
         assertFalse(code.isExpired(now))
     }
 
     @Test
     fun `expired code is not valid`() {
-        val code = SmsCode(phone = "+79001234567", code = "123456", expiresAt = now.minusSeconds(1))
+        val code = SmsCode(phone = "+79001234567", code = "1234", expiresAt = now.minusSeconds(1))
         assertFalse(code.isValid(now))
         assertTrue(code.isExpired(now))
     }
 
     @Test
     fun `used code is not valid`() {
-        val code = SmsCode(phone = "+79001234567", code = "123456", expiresAt = now.plusSeconds(300), used = true)
+        val code = SmsCode(phone = "+79001234567", code = "1234", expiresAt = now.plusSeconds(300), used = true)
         assertFalse(code.isValid(now))
     }
 
     @Test
     fun `should reject blank phone`() {
         assertFailsWith<IllegalArgumentException> {
-            SmsCode(phone = "", code = "123456", expiresAt = now.plusSeconds(300))
+            SmsCode(phone = "", code = "1234", expiresAt = now.plusSeconds(300))
         }
     }
 
     @Test
-    fun `should reject code that is not 6 digits`() {
+    fun `should reject code that is not 4 digits`() {
         assertFailsWith<IllegalArgumentException> {
             SmsCode(phone = "+79001234567", code = "12345", expiresAt = now.plusSeconds(300))
         }

@@ -15,7 +15,7 @@ data class LoginRequest(
     @field:Pattern(regexp = "^\\+7\\d{10}$", message = "Phone must be in +7XXXXXXXXXX format")
     val phone: String,
     @field:NotBlank(message = "Code must not be blank")
-    @field:Pattern(regexp = "^\\d{6}$", message = "Code must be exactly 6 digits")
+    @field:Pattern(regexp = "^\\d{4}$", message = "Code must be exactly 4 digits")
     val code: String
 )
 
@@ -24,7 +24,7 @@ data class RegisterRequest(
     @field:Pattern(regexp = "^\\+7\\d{10}$", message = "Phone must be in +7XXXXXXXXXX format")
     val phone: String,
     @field:NotBlank(message = "Code must not be blank")
-    @field:Pattern(regexp = "^\\d{6}$", message = "Code must be exactly 6 digits")
+    @field:Pattern(regexp = "^\\d{4}$", message = "Code must be exactly 4 digits")
     val code: String,
     @field:NotBlank(message = "Full name must not be blank")
     @field:Size(min = 2, max = 100, message = "Full name must be between 2 and 100 characters")

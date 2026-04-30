@@ -57,9 +57,6 @@ zvonok:
   public-key: ""
   campaign-id: ""
 
-sms:
-  fixed-code: "123456"
-
 order-flow:
   persistence: jdbc
 
