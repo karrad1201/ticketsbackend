@@ -64,7 +64,8 @@ class SecurityConfig {
 
                     // Инфраструктура
                     .requestMatchers("/actuator/**").permitAll()
-                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+                    .requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll()
 
                     // Всё остальное требует аутентификации
                     .anyRequest().authenticated()
