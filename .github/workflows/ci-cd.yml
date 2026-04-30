@@ -109,3 +109,17 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_ACTOR: ${{ github.actor }}
+
+      - name: Export OpenAPI spec
+        run: |
+          sleep 15
+          curl -fsSL https://api.visit-kalmykia.ru/v3/api-docs -o openapi.json
+          echo "Spec size: $(wc -c < openapi.json) bytes"
+
+      - name: Upload OpenAPI spec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec
+          path: openapi.json
+          retention-days: 90
+          overwrite: true
