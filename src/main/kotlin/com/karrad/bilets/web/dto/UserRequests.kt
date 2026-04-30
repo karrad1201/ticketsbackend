@@ -10,3 +10,5 @@ data class CreateUserRequest(
 ) {
     fun toDomain(): User = User(fullName = fullName, email = email, role = role)
 }
+
+data class PatchUserRoleRequest(val role: UserRole)

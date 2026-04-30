@@ -5,6 +5,7 @@ import com.karrad.bilets.application.usecase.CreateUserUseCase
 import com.karrad.bilets.domain.entity.User
 import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.web.dto.CreateUserRequest
+import com.karrad.bilets.web.dto.PatchUserRoleRequest
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -68,5 +70,16 @@ class UserController(
     ): User {
         currentUserProvider.requireAdmin()
         return userService.getById(userId) ?: throw NoSuchElementException("User not found: $userId")
+    }
+
+    @Operation(summary = "Изменить роль пользователя", description = "Устанавливает роль USER или ADMIN (только администратор)")
+    @PatchMapping("/{userId}/role")
+    fun updateRole(
+        @Parameter(description = "Идентификатор пользователя") @PathVariable userId: UUID,
+        @RequestBody request: PatchUserRoleRequest
+    ): User {
+        currentUserProvider.requireAdmin()
+        val user = userService.getById(userId) ?: throw NoSuchElementException("User not found: $userId")
+        return userService.update(user.copy(role = request.role))
     }
 }
