@@ -31,7 +31,7 @@ class RegisterWithPhoneUseCaseTests {
 
     private val phone = "+79001234567"
 
-    private fun saveValidCode(rawCode: String = "654321") {
+    private fun saveValidCode(rawCode: String = "6543") {
         smsCodeRepository.save(
             SmsCode(phone = phone, code = OtpHasher.hash(phone, rawCode), expiresAt = mutableClock.instant().plusSeconds(300))
         )
@@ -41,7 +41,7 @@ class RegisterWithPhoneUseCaseTests {
     fun `should register new user`() {
         saveValidCode()
 
-        val result = useCase.register(phone, "654321", "Новый Пользователь")
+        val result = useCase.register(phone, "6543", "Новый Пользователь")
 
         assertEquals(phone, result.user.phone)
         assertEquals("Новый Пользователь", result.user.fullName)
@@ -52,7 +52,7 @@ class RegisterWithPhoneUseCaseTests {
     @Test
     fun `should fail when no code was sent`() {
         assertFailsWith<IllegalArgumentException> {
-            useCase.register(phone, "654321", "User")
+            useCase.register(phone, "6543", "User")
         }
     }
 
@@ -61,7 +61,7 @@ class RegisterWithPhoneUseCaseTests {
         saveValidCode()
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.register(phone, "000000", "User")
+            useCase.register(phone, "0000", "User")
         }
         assertTrue(ex.message!!.contains("Invalid code"))
     }
@@ -72,7 +72,7 @@ class RegisterWithPhoneUseCaseTests {
         userRepository.save(User(fullName = "Existing", phone = phone))
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.register(phone, "654321", "New User")
+            useCase.register(phone, "6543", "New User")
         }
         assertTrue(ex.message!!.contains("already registered"))
     }
@@ -80,11 +80,11 @@ class RegisterWithPhoneUseCaseTests {
     @Test
     fun `should fail on expired code`() {
         smsCodeRepository.save(
-            SmsCode(phone = phone, code = OtpHasher.hash(phone, "654321"), expiresAt = mutableClock.instant().minusSeconds(1))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "6543"), expiresAt = mutableClock.instant().minusSeconds(1))
         )
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.register(phone, "654321", "User")
+            useCase.register(phone, "6543", "User")
         }
         assertTrue(ex.message!!.contains("expired"))
     }
@@ -92,12 +92,12 @@ class RegisterWithPhoneUseCaseTests {
     @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
-            SmsCode(phone = phone, code = OtpHasher.hash(phone, "654321"), expiresAt = mutableClock.instant().plusSeconds(300))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "6543"), expiresAt = mutableClock.instant().plusSeconds(300))
         )
         smsCodeRepository.markUsed(code.id)
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.register(phone, "654321", "User")
+            useCase.register(phone, "6543", "User")
         }
         assertTrue(ex.message!!.contains("used"))
     }

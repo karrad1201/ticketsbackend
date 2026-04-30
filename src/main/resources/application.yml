@@ -48,14 +48,14 @@ app:
 
 tbank:
   base-url: http://localhost:8888
-  terminal-key: test
+  terminal-key: ""
   password: ""
   notification-url: http://localhost:8080/api/payments/callbacks/tbank
 
 zvonok:
   base-url: http://localhost:8888
-  public-key: test
-  campaign-id: test
+  public-key: ""
+  campaign-id: ""
 
 order-flow:
   persistence: jdbc

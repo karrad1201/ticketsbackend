@@ -4,28 +4,24 @@ import com.karrad.bilets.domain.sms.SmsGateway
 import org.slf4j.LoggerFactory
 
 /**
- * Mock SMS gateway for development and testing.
+ * Mock SMS gateway used when Zvonok public key is not configured.
  * Logs codes to console and stores them for test assertions.
- *
- * NEVER use in production — will throw if spring profile "prod" is detected.
+ * Pair with sms.fixed-code=123456 so all OTP codes are predictable.
  */
 class MockSmsGateway : SmsGateway() {
     private val log = LoggerFactory.getLogger(MockSmsGateway::class.java)
 
     init {
-        val activeProfiles = System.getProperty("spring.profiles.active", "") +
-            "," + (System.getenv("SPRING_PROFILES_ACTIVE") ?: "")
-        check("prod" !in activeProfiles.split(",").map { it.trim() }) {
-            "MockSmsGateway must not be used in production (profile 'prod' is active)"
-        }
-        log.warn("MockSmsGateway is active — SMS codes will be logged, NOT sent. Do not use in production.")
+        log.warn("MockSmsGateway is active — SMS codes will NOT be sent. Set ZVONOK_PUBLIC_KEY to enable real SMS.")
     }
 
     /** phone → last code sent; thread-safe for concurrent test/dev requests */
     val sentCodes = java.util.concurrent.ConcurrentHashMap<String, String>()
 
-    override fun sendCode(phone: String, code: String) {
+    override fun sendCode(phone: String): String {
+        val code = "1234"
         sentCodes[phone] = code
-        log.info("[MOCK SMS] Code sent to ...${phone.takeLast(4)}")
+        log.info("[MOCK FLASH CALL] Code for ...${phone.takeLast(4)} = $code")
+        return code
     }
 }

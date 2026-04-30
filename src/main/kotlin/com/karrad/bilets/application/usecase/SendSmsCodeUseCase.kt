@@ -15,21 +15,20 @@ class SendSmsCodeUseCase(
     private val smsGateway: SmsGateway,
     private val clock: Clock,
     private val smsRateLimiter: SmsRateLimiter,
-    @Value("\${sms.fixed-code:}") private val fixedCode: String = "",
-    private val codeSupplier: () -> String = { (100000..999999).random().toString() }
+    @Value("\${sms.fixed-code:}") private val fixedCode: String = ""
 ) {
     fun send(phone: String) {
         require(phone.isNotBlank()) { "Phone must not be blank" }
         val now = clock.instant()
         smsRateLimiter.checkAndRecord(phone, now)
-        val code = if (fixedCode.isNotBlank()) fixedCode else codeSupplier()
+        // fixedCode используется только в loadtest/devstack; в prod шлюз возвращает реальный код
+        val code = if (fixedCode.isNotBlank()) fixedCode else smsGateway.sendCode(phone)
         val smsCode = SmsCode(
             phone = phone,
             code = OtpHasher.hash(phone, code),
             expiresAt = now.plusSeconds(CODE_TTL_SECONDS)
         )
         smsCodeRepository.save(smsCode)
-        smsGateway.sendCode(phone, code)
     }
 
     companion object {

@@ -35,7 +35,7 @@ class LoginConcurrencyTests {
     private lateinit var useCase: LoginWithPhoneUseCase
 
     private val phone = "+79001234567"
-    private val rawCode = "123456"
+    private val rawCode = "1234"
 
     @BeforeEach
     fun setUp() {

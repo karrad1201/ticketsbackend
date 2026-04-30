@@ -27,7 +27,9 @@ class ZvonokSmsGateway(
 
     private val log = LoggerFactory.getLogger(ZvonokSmsGateway::class.java)
 
-    override fun sendCode(phone: String, code: String) {
+    override fun sendCode(phone: String): String {
+        val code = (1000..9999).random().toString()
+
         val form = LinkedMultiValueMap<String, String>().apply {
             add("public_key", props.publicKey)
             add("campaign_id", props.campaignId)
@@ -48,6 +50,7 @@ class ZvonokSmsGateway(
         }
 
         log.info("SMS_SENT phone={}...{}", phone.take(4), phone.takeLast(2))
+        return code
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

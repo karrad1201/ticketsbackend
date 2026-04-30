@@ -26,19 +26,19 @@ class SendSmsCodeUseCaseTests {
 
     @Test
     fun `should send code and store it`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter()) { "123456" }
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
 
         useCase.send("+79001234567")
 
         val code = smsCodeRepository.findLatestByPhone("+79001234567")
         assertNotNull(code)
-        assertEquals(OtpHasher.hash("+79001234567", "123456"), code.code)
-        assertEquals("123456", mockSmsGateway.sentCodes["+79001234567"])
+        assertEquals(OtpHasher.hash("+79001234567", "1234"), code.code)
+        assertEquals("1234", mockSmsGateway.sentCodes["+79001234567"])
     }
 
     @Test
     fun `should store code with correct expiry`() {
-        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter()) { "654321" }
+        val useCase = SendSmsCodeUseCase(smsCodeRepository, mockSmsGateway, mutableClock, InMemorySmsRateLimiter())
 
         useCase.send("+79001234567")
 

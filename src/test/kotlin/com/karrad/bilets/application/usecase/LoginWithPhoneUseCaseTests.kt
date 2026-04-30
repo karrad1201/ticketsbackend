@@ -32,7 +32,7 @@ class LoginWithPhoneUseCaseTests {
 
     private val phone = "+79001234567"
 
-    private fun saveValidCode(rawCode: String = "123456") {
+    private fun saveValidCode(rawCode: String = "1234") {
         smsCodeRepository.save(
             SmsCode(
                 phone = phone,
@@ -44,10 +44,10 @@ class LoginWithPhoneUseCaseTests {
 
     @Test
     fun `should login existing user`() {
-        saveValidCode("123456")
+        saveValidCode("1234")
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
-        val result = useCase.login(phone, "123456")
+        val result = useCase.login(phone, "1234")
 
         assertEquals(phone, result.user.phone)
         assertNotNull(authTokenRepository.findByToken(result.accessToken))
@@ -57,12 +57,12 @@ class LoginWithPhoneUseCaseTests {
     fun `should invalidate old token on repeated login`() {
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
-        saveValidCode("111111")
-        val first = useCase.login(phone, "111111")
+        saveValidCode("1111")
+        val first = useCase.login(phone, "1111")
 
         mutableClock.advanceByMinutes(1)
-        saveValidCode("222222")
-        val second = useCase.login(phone, "222222")
+        saveValidCode("2222")
+        val second = useCase.login(phone, "2222")
 
         assertNull(authTokenRepository.findByToken(first.accessToken), "Old token must be invalidated after re-login")
         assertNotNull(authTokenRepository.findByToken(second.accessToken), "New token must be active")
@@ -71,17 +71,17 @@ class LoginWithPhoneUseCaseTests {
     @Test
     fun `should fail when no code was sent`() {
         assertFailsWith<IllegalArgumentException> {
-            useCase.login(phone, "123456")
+            useCase.login(phone, "1234")
         }
     }
 
     @Test
     fun `should fail on wrong code`() {
-        saveValidCode("123456")
+        saveValidCode("1234")
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.login(phone, "000000")
+            useCase.login(phone, "0000")
         }
         assertTrue(ex.message!!.contains("Invalid code"))
     }
@@ -91,65 +91,65 @@ class LoginWithPhoneUseCaseTests {
         smsCodeRepository.save(
             SmsCode(
                 phone = phone,
-                code = OtpHasher.hash(phone, "123456"),
+                code = OtpHasher.hash(phone, "1234"),
                 expiresAt = mutableClock.instant().minusSeconds(1)
             )
         )
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.login(phone, "123456")
+            useCase.login(phone, "1234")
         }
         assertTrue(ex.message!!.contains("expired"))
     }
 
     @Test
     fun `should fail when user not found for phone`() {
-        saveValidCode("123456")
+        saveValidCode("1234")
 
         assertFailsWith<NoSuchElementException> {
-            useCase.login(phone, "123456")
+            useCase.login(phone, "1234")
         }
     }
 
     @Test
     fun `brute force — code is single use, second attempt fails even with correct code`() {
-        saveValidCode("123456")
+        saveValidCode("1234")
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
-        useCase.login(phone, "123456")
+        useCase.login(phone, "1234")
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.login(phone, "123456")
+            useCase.login(phone, "1234")
         }
         assertTrue(ex.message!!.contains("used"))
     }
 
     @Test
     fun `brute force — multiple wrong codes do not consume the valid code`() {
-        saveValidCode("123456")
+        saveValidCode("1234")
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
         repeat(3) {
             assertFailsWith<IllegalArgumentException> {
-                useCase.login(phone, "000000")
+                useCase.login(phone, "0000")
             }
         }
 
-        val result = useCase.login(phone, "123456")
+        val result = useCase.login(phone, "1234")
         assertNotNull(authTokenRepository.findByToken(result.accessToken))
     }
 
     @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
-            SmsCode(phone = phone, code = OtpHasher.hash(phone, "123456"), expiresAt = mutableClock.instant().plusSeconds(300))
+            SmsCode(phone = phone, code = OtpHasher.hash(phone, "1234"), expiresAt = mutableClock.instant().plusSeconds(300))
         )
         smsCodeRepository.markUsed(code.id)
         userRepository.save(User(fullName = "Ivan", phone = phone))
 
         val ex = assertFailsWith<IllegalArgumentException> {
-            useCase.login(phone, "123456")
+            useCase.login(phone, "1234")
         }
         assertTrue(ex.message!!.contains("used"))
     }
