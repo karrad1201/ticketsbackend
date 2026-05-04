@@ -83,7 +83,7 @@ class LoginWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.login(phone, "0000")
         }
-        assertTrue(ex.message!!.contains("Invalid code"))
+        assertTrue(ex.message!!.contains("Неверный"))
     }
 
     @Test
@@ -100,7 +100,7 @@ class LoginWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.login(phone, "1234")
         }
-        assertTrue(ex.message!!.contains("expired"))
+        assertTrue(ex.message!!.contains("истёк"))
     }
 
     @Test
@@ -122,7 +122,7 @@ class LoginWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.login(phone, "1234")
         }
-        assertTrue(ex.message!!.contains("used"))
+        assertTrue(ex.message!!.contains("использован"))
     }
 
     @Test
@@ -151,6 +151,6 @@ class LoginWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.login(phone, "1234")
         }
-        assertTrue(ex.message!!.contains("used"))
+        assertTrue(ex.message!!.contains("использован"))
     }
 }

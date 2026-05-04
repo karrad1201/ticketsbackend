@@ -25,17 +25,17 @@ class LoginWithPhoneUseCase(
 ) {
     fun login(phone: String, code: String, deviceId: String? = null): LoginResult {
         val smsCode = smsCodeRepository.findLatestByPhone(phone)
-            ?: throw IllegalArgumentException("No code sent to $phone")
+            ?: throw IllegalArgumentException("Неверный код или номер телефона")
 
         require(smsCode.isValid(clock.instant())) {
-            if (smsCode.isExpired(clock.instant())) "Code expired" else "Code already used"
+            if (smsCode.isExpired(clock.instant())) "Код истёк" else "Код уже использован"
         }
-        require(smsCode.code == OtpHasher.hash(phone, code)) { "Invalid code" }
+        require(smsCode.code == OtpHasher.hash(phone, code)) { "Неверный код" }
 
-        require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Code already used" }
+        require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Код уже использован" }
 
         val user = userRepository.findByPhone(phone)
-            ?: throw NoSuchElementException("No account found for phone $phone. Please register first.")
+            ?: throw NoSuchElementException("Аккаунт не найден. Пройдите регистрацию.")
 
         authTokenRepository.deleteByUserId(user.id)
         refreshTokenRepository.deleteByUserId(user.id)

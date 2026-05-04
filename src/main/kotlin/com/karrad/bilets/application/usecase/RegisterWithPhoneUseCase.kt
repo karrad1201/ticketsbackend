@@ -25,15 +25,15 @@ class RegisterWithPhoneUseCase(
 ) {
     fun register(phone: String, code: String, fullName: String, deviceId: String? = null): RegisterResult {
         val smsCode = smsCodeRepository.findLatestByPhone(phone)
-            ?: throw IllegalArgumentException("No code sent to $phone")
+            ?: throw IllegalArgumentException("Неверный код или номер телефона")
 
         require(smsCode.isValid(clock.instant())) {
-            if (smsCode.isExpired(clock.instant())) "Code expired" else "Code already used"
+            if (smsCode.isExpired(clock.instant())) "Код истёк" else "Код уже использован"
         }
-        require(smsCode.code == OtpHasher.hash(phone, code)) { "Invalid code" }
+        require(smsCode.code == OtpHasher.hash(phone, code)) { "Неверный код" }
 
         require(userRepository.findByPhone(phone) == null) {
-            "Phone already registered: $phone"
+            "Номер уже зарегистрирован"
         }
 
         require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Code already used" }
