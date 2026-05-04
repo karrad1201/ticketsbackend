@@ -148,7 +148,7 @@ class LoginConcurrencyTests {
             error("Expected IllegalArgumentException but no exception was thrown")
         } catch (e: IllegalArgumentException) {
             assertTrue(
-                e.message?.contains("used") == true || e.message?.contains("expired") == true,
+                e.message?.contains("использован") == true || e.message?.contains("истёк") == true,
                 "Must fail with 'already used' or 'expired', but got: ${e.message}"
             )
         }

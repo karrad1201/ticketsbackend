@@ -63,7 +63,7 @@ class RegisterWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.register(phone, "0000", "User")
         }
-        assertTrue(ex.message!!.contains("Invalid code"))
+        assertTrue(ex.message!!.contains("Неверный"))
     }
 
     @Test
@@ -74,7 +74,7 @@ class RegisterWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.register(phone, "6543", "New User")
         }
-        assertTrue(ex.message!!.contains("already registered"))
+        assertTrue(ex.message!!.contains("зарегистрирован"))
     }
 
     @Test
@@ -86,7 +86,7 @@ class RegisterWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.register(phone, "6543", "User")
         }
-        assertTrue(ex.message!!.contains("expired"))
+        assertTrue(ex.message!!.contains("истёк"))
     }
 
     @Test
@@ -99,6 +99,6 @@ class RegisterWithPhoneUseCaseTests {
         val ex = assertFailsWith<IllegalArgumentException> {
             useCase.register(phone, "6543", "User")
         }
-        assertTrue(ex.message!!.contains("used"))
+        assertTrue(ex.message!!.contains("использован"))
     }
 }
