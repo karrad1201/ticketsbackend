@@ -39,3 +39,6 @@ bin/
 ### Mac OS ###
 .DS_Store
 uploads/
+k6*.err
+k6*.log
+k6-summary-*.json
