@@ -43,6 +43,7 @@ class MyOrganizationMembersControllerIntegrationTests {
     private val managerId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000003")
     private val outsiderId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000004")
     private val targetUserId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000005")
+    private val venueId = UUID.fromString("bbbbbbbb-0000-0000-0000-000000000006")
 
     @BeforeEach
     fun setUp() {
@@ -98,7 +99,7 @@ class MyOrganizationMembersControllerIntegrationTests {
             post("/api/v1/my/organization/members")
                 .header("Authorization", "Bearer ${authTokenRepository.bearerFor(ownerId)}")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""{"userId":"$targetUserId","role":"MANAGER"}""")
+                .content("""{"userId":"$targetUserId","role":"MANAGER","venueId":"$venueId"}""")
         )
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.role").value("MANAGER"))

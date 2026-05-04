@@ -57,9 +57,13 @@ class MyOrganizationMembersController(
         if (membership.role == OrganizationMemberRole.MANAGER && body.role != OrganizationMemberRole.STAFF) {
             throw SecurityException("MANAGER can only add STAFF members")
         }
-        // STAFF должен иметь venueId
-        if (body.role == OrganizationMemberRole.STAFF && body.venueId == null) {
-            throw IllegalArgumentException("venueId is required for STAFF members")
+        // MANAGER и STAFF должны иметь venueId
+        if (body.role in setOf(OrganizationMemberRole.MANAGER, OrganizationMemberRole.STAFF) && body.venueId == null) {
+            throw IllegalArgumentException("venueId is required for MANAGER and STAFF members")
+        }
+        // MANAGER может добавлять STAFF только в свою площадку
+        if (membership.role == OrganizationMemberRole.MANAGER && body.venueId != membership.venueId) {
+            throw SecurityException("MANAGER can only add members to their own venue")
         }
 
         val member = organizationMemberService.create(
@@ -106,8 +110,11 @@ class MyOrganizationMembersController(
         if (membership.role == OrganizationMemberRole.MANAGER && body.role != OrganizationMemberRole.STAFF) {
             throw SecurityException("MANAGER can only add STAFF members")
         }
-        if (body.role == OrganizationMemberRole.STAFF && body.venueId == null) {
-            throw IllegalArgumentException("venueId is required for STAFF members")
+        if (body.role in setOf(OrganizationMemberRole.MANAGER, OrganizationMemberRole.STAFF) && body.venueId == null) {
+            throw IllegalArgumentException("venueId is required for MANAGER and STAFF members")
+        }
+        if (membership.role == OrganizationMemberRole.MANAGER && body.venueId != membership.venueId) {
+            throw SecurityException("MANAGER can only add members to their own venue")
         }
 
         val existingUser = userRepository.findByPhone(body.phone)
@@ -149,9 +156,14 @@ class MyOrganizationMembersController(
         if (existing.userId == membership.userId) {
             throw IllegalStateException("Cannot remove yourself. Use leave organization instead.")
         }
-        // MANAGER может удалять только STAFF
-        if (membership.role == OrganizationMemberRole.MANAGER && existing.role != OrganizationMemberRole.STAFF) {
-            throw SecurityException("MANAGER can only remove STAFF members")
+        // MANAGER может удалять только STAFF своей площадки
+        if (membership.role == OrganizationMemberRole.MANAGER) {
+            if (existing.role != OrganizationMemberRole.STAFF) {
+                throw SecurityException("MANAGER can only remove STAFF members")
+            }
+            if (existing.venueId != membership.venueId) {
+                throw SecurityException("MANAGER can only remove members of their own venue")
+            }
         }
 
         organizationMemberService.deleteById(memberId)

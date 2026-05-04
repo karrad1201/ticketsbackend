@@ -133,7 +133,7 @@ class LeaveOrganizationAndAddByPhoneIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        mapOf("phone" to "+79001234567", "role" to "MANAGER")
+                        mapOf("phone" to "+79001234567", "role" to "MANAGER", "venueId" to venueId.toString())
                     )
                 )
         )
@@ -152,7 +152,7 @@ class LeaveOrganizationAndAddByPhoneIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        mapOf("phone" to "+79009998877", "role" to "MANAGER")
+                        mapOf("phone" to "+79009998877", "role" to "MANAGER", "venueId" to venueId.toString())
                     )
                 )
         )
@@ -179,7 +179,7 @@ class LeaveOrganizationAndAddByPhoneIntegrationTests {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     objectMapper.writeValueAsString(
-                        mapOf("phone" to "+79111111111", "role" to "MANAGER")
+                        mapOf("phone" to "+79111111111", "role" to "MANAGER", "venueId" to venueId.toString())
                     )
                 )
         )
