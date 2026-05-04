@@ -20,6 +20,8 @@ import com.karrad.bilets.support.MockMvcSecurityHelper
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.UUID
 
 @SpringBootTest
@@ -46,9 +48,14 @@ class EventSearchIntegrationTests {
 
     @Test
     fun `should search events by text and filters over http`() {
+        val day1 = LocalDate.now(ZoneOffset.UTC).plusDays(10)
+        val day2 = LocalDate.now(ZoneOffset.UTC).plusDays(11)
+        val time1 = day1.atTime(18, 0).toInstant(ZoneOffset.UTC)
+        val time2 = day2.atTime(18, 0).toInstant(ZoneOffset.UTC)
+
         venueRepository.save(demoVenue())
-        eventRepository.save(demoEvent(UUID.fromString("123e4567-e89b-12d3-a456-426614176502"), "Rock Arena", Instant.parse("2026-05-01T18:00:00Z")))
-        eventRepository.save(demoEvent(UUID.fromString("123e4567-e89b-12d3-a456-426614176503"), "Arena Afterparty", Instant.parse("2026-05-02T18:00:00Z")))
+        eventRepository.save(demoEvent(UUID.fromString("123e4567-e89b-12d3-a456-426614176502"), "Rock Arena", time1))
+        eventRepository.save(demoEvent(UUID.fromString("123e4567-e89b-12d3-a456-426614176503"), "Arena Afterparty", time2))
 
         mockMvc.perform(
             get("/api/v1/events/search")
@@ -56,8 +63,8 @@ class EventSearchIntegrationTests {
                 .param("city", "Ekaterinburg")
                 .param("venueId", venueId().toString())
                 .param("categoryId", categoryId().toString())
-                .param("dateFrom", "2026-05-01")
-                .param("dateTo", "2026-05-02")
+                .param("dateFrom", day1.toString())
+                .param("dateTo", day2.toString())
                 .param("page", "0")
                 .param("size", "10")
         )
