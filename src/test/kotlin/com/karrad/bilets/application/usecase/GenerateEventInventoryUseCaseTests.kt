@@ -7,9 +7,13 @@ import com.karrad.bilets.domain.entity.Row
 import com.karrad.bilets.domain.entity.Section
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.entity.InventoryMode
+import com.karrad.bilets.domain.entity.User
+import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.EventInventoryPlanRepository
 import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.LayoutTemplateRepository
+import com.karrad.bilets.domain.repository.UserRepository
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -37,7 +41,17 @@ class GenerateEventInventoryUseCaseTests {
     lateinit var eventInventoryPlanRepository: EventInventoryPlanRepository
 
     @Autowired
+    lateinit var userRepository: UserRepository
+
+    @Autowired
     lateinit var useCase: GenerateEventInventoryUseCase
+
+    private val adminId: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+
+    @BeforeEach
+    fun setUpAdmin() {
+        userRepository.save(User(id = adminId, fullName = "Test Admin", phone = "+70000000001", role = UserRole.ADMIN))
+    }
 
     @Test
     fun `should generate seated inventory plan and persist it`() {
@@ -48,7 +62,8 @@ class GenerateEventInventoryUseCaseTests {
 
         val result = useCase.generateSeated(
             eventId = event.id,
-            layoutTemplateId = layoutTemplate.id
+            layoutTemplateId = layoutTemplate.id,
+            callerUserId = adminId
         )
 
         assertEquals(InventoryMode.SEATED, result.mode)
@@ -64,7 +79,8 @@ class GenerateEventInventoryUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.generateSeated(
                 eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174202"),
-                layoutTemplateId = layoutTemplate.id
+                layoutTemplateId = layoutTemplate.id,
+                callerUserId = adminId
             )
         }
 
@@ -79,7 +95,8 @@ class GenerateEventInventoryUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.generateSeated(
                 eventId = event.id,
-                layoutTemplateId = UUID.fromString("123e4567-e89b-12d3-a456-426614174203")
+                layoutTemplateId = UUID.fromString("123e4567-e89b-12d3-a456-426614174203"),
+                callerUserId = adminId
             )
         }
 
@@ -93,10 +110,10 @@ class GenerateEventInventoryUseCaseTests {
         eventRepository.save(event)
         layoutTemplateRepository.save(layoutTemplate)
 
-        useCase.generateSeated(event.id, layoutTemplate.id)
+        useCase.generateSeated(event.id, layoutTemplate.id, adminId)
 
         val exception = assertFailsWith<IllegalStateException> {
-            useCase.generateSeated(event.id, layoutTemplate.id)
+            useCase.generateSeated(event.id, layoutTemplate.id, adminId)
         }
 
         assertTrue(exception.message!!.contains("already exists"))
@@ -112,7 +129,8 @@ class GenerateEventInventoryUseCaseTests {
             ticketTypes = listOf(
                 TicketType(label = "Standard", price = 1500, quota = 100),
                 TicketType(label = "VIP", price = 3000, quota = 20)
-            )
+            ),
+            callerUserId = adminId
         )
 
         assertEquals(InventoryMode.GENERAL_ADMISSION, result.mode)
@@ -125,7 +143,8 @@ class GenerateEventInventoryUseCaseTests {
         val exception = assertFailsWith<IllegalArgumentException> {
             useCase.generateGeneralAdmission(
                 eventId = UUID.fromString("123e4567-e89b-12d3-a456-426614174204"),
-                ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100))
+                ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100)),
+                callerUserId = adminId
             )
         }
 
@@ -139,7 +158,8 @@ class GenerateEventInventoryUseCaseTests {
 
         val result = useCase.generateGeneralAdmission(
             eventId = event.id,
-            ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100))
+            ticketTypes = listOf(TicketType(label = "Standard", price = 1500, quota = 100)),
+            callerUserId = adminId
         )
 
         val stored = eventInventoryPlanRepository.findByEventId(event.id)
