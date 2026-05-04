@@ -15,7 +15,7 @@ data class Row(
         require(endSeat - startSeat < MAX_SEATS_PER_ROW) {
             "Row seat range must not exceed $MAX_SEATS_PER_ROW seats, got ${endSeat - startSeat + 1}"
         }
-        require(price >= 0) { "Row price must not be negative" }
+        require(price > 0) { "Row price must be positive" }
     }
 
     companion object {
