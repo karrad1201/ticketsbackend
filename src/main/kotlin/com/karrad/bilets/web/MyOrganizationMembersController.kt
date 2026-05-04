@@ -146,6 +146,9 @@ class MyOrganizationMembersController(
         if (existing.organizationId != membership.organizationId) {
             throw SecurityException("Member belongs to a different organization")
         }
+        if (existing.userId == membership.userId) {
+            throw IllegalStateException("Cannot remove yourself. Use leave organization instead.")
+        }
         // MANAGER может удалять только STAFF
         if (membership.role == OrganizationMemberRole.MANAGER && existing.role != OrganizationMemberRole.STAFF) {
             throw SecurityException("MANAGER can only remove STAFF members")
