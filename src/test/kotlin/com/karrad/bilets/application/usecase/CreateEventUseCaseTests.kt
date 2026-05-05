@@ -98,6 +98,30 @@ class CreateEventUseCaseTests {
     }
 
     @Test
+    fun `should reject event creation when age rating is blank`() {
+        val venue = demoVenue()
+        val category = demoCategory()
+        val actorUserId = UUID.fromString("123e4567-e89b-12d3-a456-426614174414")
+        seedOrganizationAccess(actorUserId)
+        categoryRepository.save(category)
+        venueRepository.save(venue)
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            useCase.create(
+                demoEvent(
+                    categoryId = category.id,
+                    venueId = venue.id,
+                    venueSpaceId = null,
+                    ageRating = null
+                ),
+                actorUserId
+            )
+        }
+
+        assertTrue(exception.message!!.contains("ageRating is required"))
+    }
+
+    @Test
     fun `should reject event creation when venue does not exist`() {
         val category = demoCategory()
         categoryRepository.save(category)
@@ -230,7 +254,7 @@ class CreateEventUseCaseTests {
         )
     }
 
-    private fun demoEvent(categoryId: UUID, venueId: UUID, venueSpaceId: UUID?): Event {
+    private fun demoEvent(categoryId: UUID, venueId: UUID, venueSpaceId: UUID?, ageRating: String? = "18+"): Event {
         return Event(
             label = "Demo Event",
             description = "Use case test event",
@@ -238,6 +262,7 @@ class CreateEventUseCaseTests {
             categoryId = categoryId,
             time = Instant.parse("2026-04-10T18:00:00Z"),
             venueSpaceId = venueSpaceId,
+            ageRating = ageRating,
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614174412")
         )
     }

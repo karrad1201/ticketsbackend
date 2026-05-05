@@ -41,12 +41,8 @@ class TicketController(
     @GetMapping("/tickets/me")
     fun listCurrentUserTickets(): List<TicketResponse> {
         val tickets = ticketService.listByUserId(currentUserProvider.requireUserId())
-        val events = tickets.map { it.eventId }.toSet()
-            .mapNotNull { eventService.getById(it) }
-            .associateBy { it.id }
-        val venues = events.values.map { it.venueId }.toSet()
-            .mapNotNull { venueService.getById(it) }
-            .associateBy { it.id }
+        val events = eventService.getByIds(tickets.map { it.eventId }.toSet())
+        val venues = venueService.getByIds(events.values.map { it.venueId }.toSet())
         return tickets.map { ticket ->
             val event = events[ticket.eventId]
             TicketResponse(

@@ -6,6 +6,7 @@ import java.util.UUID
 interface VenueRepository {
     fun save(venue: Venue): Venue
     fun findById(id: UUID): Venue?
+    fun findAllByIds(ids: Collection<UUID>): List<Venue>
     fun findBySpaceId(spaceId: UUID): Venue?
     fun findAll(): List<Venue>
     fun findByOrganizationId(organizationId: UUID): List<Venue>

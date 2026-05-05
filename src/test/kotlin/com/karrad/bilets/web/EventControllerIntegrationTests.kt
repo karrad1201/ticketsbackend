@@ -91,7 +91,8 @@ class EventControllerIntegrationTests {
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
-                            "venueSpaceId" to venue.spaces.first().id
+                            "venueSpaceId" to venue.spaces.first().id,
+                            "ageRating" to "18+"
                         )
                     )
                 )
@@ -123,7 +124,8 @@ class EventControllerIntegrationTests {
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
-                            "venueSpaceId" to null
+                            "venueSpaceId" to null,
+                            "ageRating" to "0+"
                         )
                     )
                 )
@@ -260,7 +262,8 @@ class EventControllerIntegrationTests {
                             "venueId" to venue.id,
                             "categoryId" to category.id,
                             "time" to "2026-04-10T18:00:00Z",
-                            "venueSpaceId" to venue.spaces.first().id
+                            "venueSpaceId" to venue.spaces.first().id,
+                            "ageRating" to "16+"
                         )
                     )
                 )
@@ -297,7 +300,8 @@ class EventControllerIntegrationTests {
                             "categoryId" to category.id,
                             "time" to "2026-05-01T18:00:00Z",
                             "venueSpaceId" to venue.spaces.first().id,
-                            "hasSeatMap" to true
+                            "hasSeatMap" to true,
+                            "ageRating" to "6+"
                         )
                     )
                 )
@@ -325,7 +329,8 @@ class EventControllerIntegrationTests {
                             "description" to "Film screening",
                             "venueId" to venue.id,
                             "categoryId" to category.id,
-                            "time" to "2026-05-02T20:00:00Z"
+                            "time" to "2026-05-02T20:00:00Z",
+                            "ageRating" to "12+"
                         )
                     )
                 )
@@ -353,7 +358,8 @@ class EventControllerIntegrationTests {
                             "description" to "Evening show",
                             "venueId" to venue.id,
                             "categoryId" to category.id,
-                            "time" to "2026-04-10T18:00:00Z"
+                            "time" to "2026-04-10T18:00:00Z",
+                            "ageRating" to "18+"
                         )
                     )
                 )
