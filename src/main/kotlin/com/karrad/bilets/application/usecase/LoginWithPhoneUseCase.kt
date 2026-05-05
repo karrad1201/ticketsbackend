@@ -30,7 +30,15 @@ class LoginWithPhoneUseCase(
         require(smsCode.isValid(clock.instant())) {
             if (smsCode.isExpired(clock.instant())) "Код истёк" else "Код уже использован"
         }
-        require(smsCode.code == OtpHasher.hash(phone, code)) { "Неверный код" }
+
+        if (smsCode.code != OtpHasher.hash(phone, code)) {
+            val updated = smsCodeRepository.incrementAttempts(smsCode.id)
+            if (updated.attempts >= MAX_OTP_ATTEMPTS) {
+                smsCodeRepository.tryMarkUsed(smsCode.id)
+                throw OtpBruteForceException("Слишком много неверных попыток. Запросите новый код.")
+            }
+            throw IllegalArgumentException("Неверный код")
+        }
 
         require(smsCodeRepository.tryMarkUsed(smsCode.id)) { "Код уже использован" }
 
@@ -59,5 +67,9 @@ class LoginWithPhoneUseCase(
             )
         )
         return LoginResult(accessToken = authToken.token, refreshToken = refreshToken.token, user = user)
+    }
+
+    companion object {
+        const val MAX_OTP_ATTEMPTS = 5
     }
 }

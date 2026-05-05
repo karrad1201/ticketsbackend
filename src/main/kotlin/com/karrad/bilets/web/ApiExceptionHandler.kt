@@ -1,5 +1,6 @@
 package com.karrad.bilets.web
 
+import com.karrad.bilets.application.usecase.OtpBruteForceException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ProblemDetail
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -41,6 +42,11 @@ class ApiExceptionHandler {
     @ExceptionHandler(TooManyRequestsException::class)
     fun handleTooManyRequests(exception: TooManyRequestsException): ProblemDetail {
         return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, sanitize(exception.message) ?: "Too many requests")
+    }
+
+    @ExceptionHandler(OtpBruteForceException::class)
+    fun handleOtpBruteForce(exception: OtpBruteForceException): ProblemDetail {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS, sanitize(exception.message) ?: "Too many attempts")
     }
 
     /** Удаляет PII из сообщений об ошибках перед отправкой клиенту. */

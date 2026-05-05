@@ -9,5 +9,7 @@ interface SmsCodeRepository {
     fun markUsed(id: UUID): SmsCode
     /** Атомарно помечает код как использованный. Возвращает false если уже был использован. */
     fun tryMarkUsed(id: UUID): Boolean
+    /** Атомарно увеличивает счётчик попыток. Возвращает обновлённый код. */
+    fun incrementAttempts(id: UUID): SmsCode
     fun deleteExpired(before: java.time.Instant)
 }
