@@ -243,7 +243,7 @@ class JdbcOrderFlowProfileIntegrationTests {
             id = UUID.fromString("123e4567-e89b-12d3-a456-426614179125")
         )
 
-        generateEventInventoryUseCase.generateGeneralAdmission(event.id, listOf(ticketType))
+        generateEventInventoryUseCase.generateGeneralAdmission(event.id, listOf(ticketType), organizer.id)
         val order = createOrderUseCase.create(
             CreateOrderCommand(
                 eventId = event.id,
@@ -349,7 +349,7 @@ class JdbcOrderFlowProfileIntegrationTests {
             organizer.id
         )
 
-        generateEventInventoryUseCase.generateSeated(event.id, layoutTemplate.id)
+        generateEventInventoryUseCase.generateSeated(event.id, layoutTemplate.id, organizer.id)
         val order = createOrderUseCase.create(
             CreateOrderCommand(
                 eventId = event.id,

@@ -66,10 +66,11 @@ class EventInventoryController(
         @Parameter(description = "Идентификатор мероприятия") @PathVariable eventId: UUID,
         @RequestBody request: SeatedInventoryGenerationRequest
     ): EventInventoryPlan {
-        currentUserProvider.requireAdmin()
+        val callerId = currentUserProvider.requireUserId()
         return generateEventInventoryUseCase.generateSeated(
             eventId = eventId,
-            layoutTemplateId = request.layoutTemplateId
+            layoutTemplateId = request.layoutTemplateId,
+            callerUserId = callerId
         )
     }
 
@@ -85,10 +86,11 @@ class EventInventoryController(
         @Parameter(description = "Идентификатор мероприятия") @PathVariable eventId: UUID,
         @RequestBody request: GeneralAdmissionInventoryGenerationRequest
     ): EventInventoryPlan {
-        currentUserProvider.requireAdmin()
+        val callerId = currentUserProvider.requireUserId()
         return generateEventInventoryUseCase.generateGeneralAdmission(
             eventId = eventId,
-            ticketTypes = request.ticketTypes.map { it.toDomain() }
+            ticketTypes = request.ticketTypes.map { it.toDomain() },
+            callerUserId = callerId
         )
     }
 
