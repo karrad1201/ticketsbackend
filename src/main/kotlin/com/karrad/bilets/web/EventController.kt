@@ -4,17 +4,21 @@ import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.application.usecase.CloseEventSalesUseCase
 import com.karrad.bilets.application.usecase.CreateEventUseCase
 import com.karrad.bilets.application.usecase.SearchEventsUseCase
+import com.karrad.bilets.application.usecase.UploadEventCoverUseCase
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.web.dto.CreateEventRequest
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.servlet.view.RedirectView
 import java.time.LocalDate
 import java.util.UUID
 
@@ -23,6 +27,7 @@ import java.util.UUID
 class EventController(
     private val createEventUseCase: CreateEventUseCase,
     private val closeEventSalesUseCase: CloseEventSalesUseCase,
+    private val uploadEventCoverUseCase: UploadEventCoverUseCase,
     private val eventService: EventService,
     private val searchEventsUseCase: SearchEventsUseCase,
     private val currentUserProvider: CurrentUserProvider
@@ -66,4 +71,22 @@ class EventController(
     @GetMapping("/{eventId}")
     fun getById(@PathVariable eventId: java.util.UUID): Event =
         eventService.getById(eventId) ?: throw NoSuchElementException("Event not found: $eventId")
+
+    @PostMapping("/{eventId}/cover", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadCover(
+        @PathVariable eventId: UUID,
+        @RequestParam("file") file: MultipartFile
+    ): Event {
+        val callerId = currentUserProvider.requireUserId()
+        return uploadEventCoverUseCase.upload(eventId, file, callerId)
+    }
+
+    @GetMapping("/{eventId}/cover")
+    fun getCover(@PathVariable eventId: UUID): RedirectView {
+        val event = eventService.getById(eventId)
+            ?: throw NoSuchElementException("Event not found: $eventId")
+        val imageUrl = event.imageUrl
+            ?: throw NoSuchElementException("Event $eventId has no cover image")
+        return RedirectView(imageUrl)
+    }
 }
