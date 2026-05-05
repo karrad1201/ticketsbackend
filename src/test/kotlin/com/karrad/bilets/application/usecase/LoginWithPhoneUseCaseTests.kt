@@ -141,6 +141,28 @@ class LoginWithPhoneUseCaseTests {
     }
 
     @Test
+    fun `brute force — 5 wrong attempts invalidate the code with OtpBruteForceException`() {
+        saveValidCode("1234")
+        userRepository.save(User(fullName = "Ivan", phone = phone))
+
+        repeat(LoginWithPhoneUseCase.MAX_OTP_ATTEMPTS - 1) {
+            assertFailsWith<IllegalArgumentException> {
+                useCase.login(phone, "0000")
+            }
+        }
+
+        assertFailsWith<OtpBruteForceException> {
+            useCase.login(phone, "0000")
+        }
+
+        // Code must now be invalidated — even correct code fails
+        val ex = assertFailsWith<IllegalArgumentException> {
+            useCase.login(phone, "1234")
+        }
+        assertTrue(ex.message!!.contains("использован"))
+    }
+
+    @Test
     fun `should fail on already used code`() {
         val code = smsCodeRepository.save(
             SmsCode(phone = phone, code = OtpHasher.hash(phone, "1234"), expiresAt = mutableClock.instant().plusSeconds(300))

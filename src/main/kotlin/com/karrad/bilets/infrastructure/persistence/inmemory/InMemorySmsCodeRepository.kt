@@ -32,6 +32,14 @@ class InMemorySmsCodeRepository : SmsCodeRepository {
         return true
     }
 
+    @Synchronized
+    override fun incrementAttempts(id: UUID): SmsCode {
+        val code = requireNotNull(storage[id]) { "SmsCode not found: $id" }
+        val updated = code.copy(attempts = code.attempts + 1)
+        storage[id] = updated
+        return updated
+    }
+
     override fun deleteExpired(before: Instant) {
         storage.values.removeIf { it.expiresAt.isBefore(before) }
     }
