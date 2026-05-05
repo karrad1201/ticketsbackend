@@ -15,6 +15,8 @@ class InMemoryVenueRepository : VenueRepository {
 
     override fun findById(id: UUID): Venue? = storage[id]
 
+    override fun findAllByIds(ids: Collection<UUID>): List<Venue> = ids.mapNotNull { storage[it] }
+
     override fun findBySpaceId(spaceId: UUID): Venue? =
         storage.values.firstOrNull { venue -> venue.spaces.any { it.id == spaceId } }
 

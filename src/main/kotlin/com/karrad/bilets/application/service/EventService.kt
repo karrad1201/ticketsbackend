@@ -24,6 +24,9 @@ class EventService(
     @Cacheable(value = ["events"], cacheManager = "redisCacheManager", key = "#id")
     fun getById(id: UUID): Event? = eventRepository.findById(id)
 
+    fun getByIds(ids: Collection<UUID>): Map<UUID, Event> =
+        eventRepository.findAllByIds(ids).associateBy { it.id }
+
     @Cacheable(value = ["eventLists"], cacheManager = "redisCacheManager", key = "#page + ':' + #size")
     fun list(page: Int = 0, size: Int = 50): List<Event> = eventRepository.findAll(offset = page * size, limit = size)
 

@@ -205,7 +205,8 @@ class VenueAccessGrantUseCaseTests {
                 description = "Cross-org event",
                 venueId = venueId,
                 categoryId = categoryId,
-                time = Instant.parse("2027-01-12T19:00:00Z")
+                time = Instant.parse("2027-01-12T19:00:00Z"),
+                ageRating = "18+"
             ),
             actorUserId = guestUserId
         )
@@ -224,7 +225,8 @@ class VenueAccessGrantUseCaseTests {
                     description = "No access",
                     venueId = venueId,
                     categoryId = categoryId,
-                    time = Instant.parse("2027-01-12T19:00:00Z")
+                    time = Instant.parse("2027-01-12T19:00:00Z"),
+                    ageRating = "18+"
                 ),
                 actorUserId = guestUserId
             )
@@ -245,7 +247,8 @@ class VenueAccessGrantUseCaseTests {
                     description = "Rejected grant",
                     venueId = venueId,
                     categoryId = categoryId,
-                    time = Instant.parse("2027-01-12T19:00:00Z")
+                    time = Instant.parse("2027-01-12T19:00:00Z"),
+                    ageRating = "18+"
                 ),
                 actorUserId = guestUserId
             )
@@ -261,7 +264,8 @@ class VenueAccessGrantUseCaseTests {
                 description = "Direct owner",
                 venueId = venueId,
                 categoryId = categoryId,
-                time = Instant.parse("2027-01-12T19:00:00Z")
+                time = Instant.parse("2027-01-12T19:00:00Z"),
+                ageRating = "18+"
             ),
             actorUserId = venueOwnerUserId
         )

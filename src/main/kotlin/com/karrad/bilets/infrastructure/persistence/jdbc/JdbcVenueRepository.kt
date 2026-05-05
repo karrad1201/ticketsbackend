@@ -52,6 +52,20 @@ class JdbcVenueRepository(
         id
     ).singleOrNull()
 
+    override fun findAllByIds(ids: Collection<UUID>): List<Venue> {
+        if (ids.isEmpty()) return emptyList()
+        return jdbcTemplate.query(
+            { conn ->
+                conn.prepareStatement(
+                    "select id, label, city_label, subject_label, organization_id, address from venues where id = ANY(?)"
+                ).apply {
+                    setArray(1, conn.createArrayOf("uuid", ids.toTypedArray()))
+                }
+            },
+            { rs, _ -> mapVenue(rs) }
+        )
+    }
+
     override fun findBySpaceId(spaceId: UUID): Venue? = jdbcTemplate.query(
         """
         select v.id, v.label, v.city_label, v.subject_label, v.organization_id, v.address

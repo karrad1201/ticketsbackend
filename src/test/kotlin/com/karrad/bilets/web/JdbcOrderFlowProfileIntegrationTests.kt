@@ -232,7 +232,8 @@ class JdbcOrderFlowProfileIntegrationTests {
                 time = Instant.parse("2026-07-05T18:00:00Z"),
                 venueSpaceId = null,
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179124"),
-                organizationId = organization.id
+                organizationId = organization.id,
+                ageRating = "18+"
             ),
             organizer.id
         )
@@ -344,7 +345,8 @@ class JdbcOrderFlowProfileIntegrationTests {
                 time = Instant.parse("2026-07-06T18:00:00Z"),
                 venueSpaceId = venue.spaces.first().id,
                 id = UUID.fromString("123e4567-e89b-12d3-a456-426614179227"),
-                organizationId = organization.id
+                organizationId = organization.id,
+                ageRating = "18+"
             ),
             organizer.id
         )

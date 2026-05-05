@@ -19,6 +19,10 @@ class CreateEventUseCase(
     private val eventRepository: EventRepository
 ) {
     fun create(event: Event, actorUserId: UUID): Event {
+        require(!event.ageRating.isNullOrBlank()) {
+            "Event ageRating is required"
+        }
+
         requireNotNull(categoryRepository.findById(event.categoryId)) {
             "Category not found: ${event.categoryId}"
         }

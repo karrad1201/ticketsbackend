@@ -13,6 +13,9 @@ class VenueService(
 
     fun getById(id: UUID): Venue? = venueRepository.findById(id)
 
+    fun getByIds(ids: Collection<UUID>): Map<UUID, Venue> =
+        venueRepository.findAllByIds(ids).associateBy { it.id }
+
     fun list(): List<Venue> = venueRepository.findAll()
 
     fun update(venue: Venue): Venue {
