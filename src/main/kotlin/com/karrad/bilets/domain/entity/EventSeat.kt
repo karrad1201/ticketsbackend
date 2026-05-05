@@ -10,7 +10,7 @@ data class EventSeat(
     val status: SeatStatus = SeatStatus.AVAILABLE
 ) {
     init {
-        require(price >= 0) { "EventSeat price must not be negative" }
+        require(price > 0) { "EventSeat price must be positive" }
     }
 
     val sectionKey: String

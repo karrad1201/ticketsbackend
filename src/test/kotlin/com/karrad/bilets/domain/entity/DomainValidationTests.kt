@@ -99,7 +99,7 @@ class DomainValidationTests {
             assertFailsWith<IllegalArgumentException> { TicketType(label = "", price = 1000) }.message
         )
         assertEquals(
-            "TicketType price must not be negative",
+            "TicketType price must be positive",
             assertFailsWith<IllegalArgumentException> { TicketType(label = "Standard", price = -1) }.message
         )
         assertEquals(
@@ -164,7 +164,7 @@ class DomainValidationTests {
             assertFailsWith<IllegalArgumentException> { Row(label = "Row 1", startSeat = 2, endSeat = 1, price = 1000) }.message
         )
         assertEquals(
-            "Row price must not be negative",
+            "Row price must be positive",
             assertFailsWith<IllegalArgumentException> { Row(label = "Row 1", startSeat = 1, endSeat = 1, price = -1) }.message
         )
         assertEquals(
