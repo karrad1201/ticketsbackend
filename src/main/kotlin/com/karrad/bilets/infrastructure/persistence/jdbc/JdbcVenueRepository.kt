@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.VenueSpaceType
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.springframework.jdbc.core.JdbcTemplate
 import java.util.UUID
@@ -30,12 +31,14 @@ class JdbcVenueRepository(
         venue.spaces.forEach { space ->
             jdbcTemplate.update(
                 """
-                insert into venue_spaces (id, venue_id, label)
-                values (?, ?, ?)
+                insert into venue_spaces (id, venue_id, label, type, capacity)
+                values (?, ?, ?, ?, ?)
                 """.trimIndent(),
                 space.id,
                 venue.id,
-                space.label
+                space.label,
+                space.type.name,
+                space.capacity
             )
         }
 
@@ -96,10 +99,10 @@ class JdbcVenueRepository(
 
         val placeholders = rows.joinToString(",") { "?" }
         val spacesById: Map<UUID, List<VenueSpace>> = jdbcTemplate.query(
-            "select venue_id, id, label from venue_spaces where venue_id in ($placeholders) order by label, id",
-            { rs, _ -> Triple(rs.uuid("venue_id"), rs.uuid("id"), rs.getString("label")) },
+            "select venue_id, id, label, type, capacity from venue_spaces where venue_id in ($placeholders) order by label, id",
+            { rs, _ -> Pair(rs.uuid("venue_id"), mapSpace(rs)) },
             *rows.map { it.id }.toTypedArray()
-        ).groupBy({ it.first }, { VenueSpace(label = it.third, id = it.second) })
+        ).groupBy({ it.first }, { it.second })
 
         return rows.map { r ->
             Venue(
@@ -139,19 +142,34 @@ class JdbcVenueRepository(
         )
     }
 
+    override fun addSpace(venueId: UUID, space: VenueSpace): VenueSpace {
+        jdbcTemplate.update(
+            """
+            insert into venue_spaces (id, venue_id, label, type, capacity)
+            values (?, ?, ?, ?, ?)
+            on conflict (id) do update set
+              label = excluded.label, type = excluded.type, capacity = excluded.capacity
+            """.trimIndent(),
+            space.id, venueId, space.label, space.type.name, space.capacity
+        )
+        return space
+    }
+
     private fun findSpaces(venueId: UUID): List<VenueSpace> = jdbcTemplate.query(
         """
-        select id, label
+        select id, label, type, capacity
         from venue_spaces
         where venue_id = ?
         order by label, id
         """.trimIndent(),
-        { rs, _ ->
-            VenueSpace(
-                label = rs.getString("label"),
-                id = rs.uuid("id")
-            )
-        },
+        { rs, _ -> mapSpace(rs) },
         venueId
+    )
+
+    private fun mapSpace(rs: java.sql.ResultSet) = VenueSpace(
+        label = rs.getString("label"),
+        type = VenueSpaceType.valueOf(rs.getString("type")),
+        capacity = rs.getInt("capacity"),
+        id = rs.uuid("id")
     )
 }

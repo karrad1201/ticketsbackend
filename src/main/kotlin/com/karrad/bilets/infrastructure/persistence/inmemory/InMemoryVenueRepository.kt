@@ -1,6 +1,7 @@
 package com.karrad.bilets.infrastructure.persistence.inmemory
 
 import com.karrad.bilets.domain.entity.Venue
+import com.karrad.bilets.domain.entity.VenueSpace
 import com.karrad.bilets.domain.repository.VenueRepository
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -26,4 +27,10 @@ class InMemoryVenueRepository : VenueRepository {
         storage.values.filter { it.organizationId == organizationId }
 
     override fun deleteById(id: UUID): Boolean = storage.remove(id) != null
+
+    override fun addSpace(venueId: UUID, space: VenueSpace): VenueSpace {
+        val venue = requireNotNull(storage[venueId]) { "Venue not found: $venueId" }
+        storage[venueId] = venue.copy(spaces = venue.spaces + space)
+        return space
+    }
 }
