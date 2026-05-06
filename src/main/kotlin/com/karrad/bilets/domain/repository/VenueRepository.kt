@@ -1,6 +1,7 @@
 package com.karrad.bilets.domain.repository
 
 import com.karrad.bilets.domain.entity.Venue
+import com.karrad.bilets.domain.entity.VenueSpace
 import java.util.UUID
 
 interface VenueRepository {
@@ -11,4 +12,5 @@ interface VenueRepository {
     fun findAll(): List<Venue>
     fun findByOrganizationId(organizationId: UUID): List<Venue>
     fun deleteById(id: UUID): Boolean
+    fun addSpace(venueId: UUID, space: VenueSpace): VenueSpace
 }

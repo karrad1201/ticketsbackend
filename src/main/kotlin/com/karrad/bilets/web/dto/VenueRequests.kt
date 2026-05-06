@@ -4,6 +4,7 @@ import com.karrad.bilets.domain.entity.City
 import com.karrad.bilets.domain.entity.Subject
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.entity.VenueSpace
+import com.karrad.bilets.domain.enums.VenueSpaceType
 import java.util.UUID
 
 data class CreateVenueRequest(
@@ -44,13 +45,13 @@ data class SubjectRequest(
 
 data class VenueSpaceRequest(
     val label: String,
+    val type: VenueSpaceType? = null,
+    val capacity: Int? = null,
     val id: UUID? = null
 ) {
-    fun toDomain(): VenueSpace {
-        return if (id == null) {
-            VenueSpace(label = label)
-        } else {
-            VenueSpace(label = label, id = id)
-        }
+    fun toDomain(): VenueSpace = if (id == null) {
+        VenueSpace(label = label, type = type ?: VenueSpaceType.ADMISSION, capacity = capacity ?: 0)
+    } else {
+        VenueSpace(label = label, type = type ?: VenueSpaceType.ADMISSION, capacity = capacity ?: 0, id = id)
     }
 }
