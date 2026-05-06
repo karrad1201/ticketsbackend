@@ -60,7 +60,7 @@ class JdbcEventRepository(
     """.trimIndent()
 
     override fun findById(id: UUID): Event? = jdbcTemplate.query(
-        "$selectAll\nwhere id = ?",
+        "$selectAll\nwhere e.id = ?",
         { rs, _ -> rowMapper(rs) },
         id
     ).singleOrNull()
@@ -69,7 +69,7 @@ class JdbcEventRepository(
         if (ids.isEmpty()) return emptyList()
         return jdbcTemplate.query(
             { conn ->
-                conn.prepareStatement("$selectAll\nwhere id = ANY(?)").apply {
+                conn.prepareStatement("$selectAll\nwhere e.id = ANY(?)").apply {
                     setArray(1, conn.createArrayOf("uuid", ids.toTypedArray()))
                 }
             },
@@ -78,18 +78,18 @@ class JdbcEventRepository(
     }
 
     override fun findAll(): List<Event> = jdbcTemplate.query(
-        "$selectAll\norder by event_time, id"
+        "$selectAll\norder by e.event_time, e.id"
     ) { rs, _ -> rowMapper(rs) }
 
     override fun findAll(offset: Int, limit: Int): List<Event> = jdbcTemplate.query(
-        "$selectAll\norder by event_time, id\nLIMIT ? OFFSET ?",
+        "$selectAll\norder by e.event_time, e.id\nLIMIT ? OFFSET ?",
         { rs, _ -> rowMapper(rs) },
         limit,
         offset
     )
 
     override fun findByVenueId(venueId: UUID): List<Event> = jdbcTemplate.query(
-        "$selectAll\nwhere venue_id = ?\norder by event_time, id",
+        "$selectAll\nwhere e.venue_id = ?\norder by e.event_time, e.id",
         { rs, _ -> rowMapper(rs) },
         venueId
     )
@@ -191,7 +191,7 @@ class JdbcEventRepository(
 
     override fun findUpcomingByOrganizationId(organizationId: UUID, now: java.time.Instant): List<Event> =
         jdbcTemplate.query(
-            "$selectAll\nwhere organization_id = ?\n  and event_time > ?\norder by event_time, id",
+            "$selectAll\nwhere e.organization_id = ?\n  and e.event_time > ?\norder by e.event_time, e.id",
             { rs, _ -> rowMapper(rs) },
             organizationId,
             Timestamp.from(now)
