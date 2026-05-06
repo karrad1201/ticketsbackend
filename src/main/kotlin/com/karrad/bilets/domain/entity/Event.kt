@@ -17,7 +17,9 @@ data class Event(
     val imageUrl: String? = null,
     val minPrice: Int? = null,
     val ageRating: String? = null,
-    val hasSeatMap: Boolean = false
+    val hasSeatMap: Boolean = false,
+    val venueLabel: String? = null,
+    val categoryLabel: String? = null
 ) {
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }

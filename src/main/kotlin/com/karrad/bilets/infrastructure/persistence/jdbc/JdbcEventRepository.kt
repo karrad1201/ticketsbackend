@@ -44,16 +44,23 @@ class JdbcEventRepository(
         imageUrl = rs.getString("image_url"),
         minPrice = rs.getObject("min_price") as Int?,
         ageRating = rs.getString("age_rating"),
-        hasSeatMap = rs.getBoolean("has_seat_map")
+        hasSeatMap = rs.getBoolean("has_seat_map"),
+        venueLabel = rs.getString("venue_label"),
+        categoryLabel = rs.getString("category_label")
     )
 
     private val selectAll = """
-        select id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map
-        from events
+        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time,
+               e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url,
+               e.min_price, e.age_rating, e.has_seat_map,
+               v.label as venue_label, c.label as category_label
+        from events e
+        left join venues v on v.id = e.venue_id
+        left join categories c on c.id = e.category_id
     """.trimIndent()
 
     override fun findById(id: UUID): Event? = jdbcTemplate.query(
-        "$selectAll\nwhere id = ?",
+        "$selectAll\nwhere e.id = ?",
         { rs, _ -> rowMapper(rs) },
         id
     ).singleOrNull()
@@ -62,7 +69,7 @@ class JdbcEventRepository(
         if (ids.isEmpty()) return emptyList()
         return jdbcTemplate.query(
             { conn ->
-                conn.prepareStatement("$selectAll\nwhere id = ANY(?)").apply {
+                conn.prepareStatement("$selectAll\nwhere e.id = ANY(?)").apply {
                     setArray(1, conn.createArrayOf("uuid", ids.toTypedArray()))
                 }
             },
@@ -71,27 +78,29 @@ class JdbcEventRepository(
     }
 
     override fun findAll(): List<Event> = jdbcTemplate.query(
-        "$selectAll\norder by event_time, id"
+        "$selectAll\norder by e.event_time, e.id"
     ) { rs, _ -> rowMapper(rs) }
 
     override fun findAll(offset: Int, limit: Int): List<Event> = jdbcTemplate.query(
-        "$selectAll\norder by event_time, id\nLIMIT ? OFFSET ?",
+        "$selectAll\norder by e.event_time, e.id\nLIMIT ? OFFSET ?",
         { rs, _ -> rowMapper(rs) },
         limit,
         offset
     )
 
     override fun findByVenueId(venueId: UUID): List<Event> = jdbcTemplate.query(
-        "$selectAll\nwhere venue_id = ?\norder by event_time, id",
+        "$selectAll\nwhere e.venue_id = ?\norder by e.event_time, e.id",
         { rs, _ -> rowMapper(rs) },
         venueId
     )
 
     override fun findAvailableByCity(city: String, now: java.time.Instant): List<Event> = jdbcTemplate.query(
         """
-        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
+        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+               v.label as venue_label, c.label as category_label
         from events e
         join venues v on v.id = e.venue_id
+        left join categories c on c.id = e.category_id
         where lower(v.city_label) = ?
           and e.sales_closed_at is null
           and e.event_time > ?
@@ -114,9 +123,11 @@ class JdbcEventRepository(
         params += limit
         return jdbcTemplate.query(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+                   v.label as venue_label, c.label as category_label
             from events e
             join venues v on v.id = e.venue_id
+            left join categories c on c.id = e.category_id
             where lower(v.city_label) = ?
               and e.sales_closed_at is null
               and e.event_time > ?
@@ -132,9 +143,11 @@ class JdbcEventRepository(
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+                   v.label as venue_label, c.label as category_label
             from events e
             join venues v on v.id = e.venue_id
+            left join categories c on c.id = e.category_id
             where e.sales_closed_at is null
               and e.event_time > ?
             """.trimIndent()
@@ -178,7 +191,7 @@ class JdbcEventRepository(
 
     override fun findUpcomingByOrganizationId(organizationId: UUID, now: java.time.Instant): List<Event> =
         jdbcTemplate.query(
-            "$selectAll\nwhere organization_id = ?\n  and event_time > ?\norder by event_time, id",
+            "$selectAll\nwhere e.organization_id = ?\n  and e.event_time > ?\norder by e.event_time, e.id",
             { rs, _ -> rowMapper(rs) },
             organizationId,
             Timestamp.from(now)
