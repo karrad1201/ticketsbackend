@@ -22,9 +22,12 @@ class JdbcFavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : Favorit
             """
             SELECT e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time,
                    e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url,
-                   e.min_price, e.age_rating, e.has_seat_map
+                   e.min_price, e.age_rating, e.has_seat_map,
+                   v.label as venue_label, c.label as category_label
             FROM favorite_events f
             JOIN events e ON e.id = f.event_id
+            LEFT JOIN venues v ON v.id = e.venue_id
+            LEFT JOIN categories c ON c.id = e.category_id
             WHERE f.user_id = ?
             ORDER BY f.created_at DESC, e.id
             """.trimIndent(),
@@ -42,7 +45,9 @@ class JdbcFavoriteQueryService(private val jdbcTemplate: JdbcTemplate) : Favorit
                     imageUrl = rs.getString("image_url"),
                     minPrice = rs.getObject("min_price") as Int?,
                     ageRating = rs.getString("age_rating"),
-                    hasSeatMap = rs.getBoolean("has_seat_map")
+                    hasSeatMap = rs.getBoolean("has_seat_map"),
+                    venueLabel = rs.getString("venue_label"),
+                    categoryLabel = rs.getString("category_label")
                 )
             },
             userId
