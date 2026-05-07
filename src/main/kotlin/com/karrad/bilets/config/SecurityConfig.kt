@@ -45,6 +45,9 @@ class SecurityConfig {
                     // Venue preview (публичная HTML-страница)
                     .requestMatchers(HttpMethod.GET, "/").permitAll()
 
+                    // Статические файлы (обложки мероприятий)
+                    .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+
                     // Browsing (публичные GET)
                     .requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/categories", "/api/v1/categories/**").permitAll()

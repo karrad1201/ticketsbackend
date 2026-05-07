@@ -31,12 +31,7 @@ class GenerateEventInventoryUseCase(
 
         val plan = EventInventoryPlan.seated(event = event, layoutTemplate = layoutTemplate)
         val savedPlan = eventInventoryPlanRepository.save(plan)
-
-        val minPrice = plan.seatInventory.minOfOrNull { it.price }
-        if (minPrice != null) {
-            eventRepository.save(event.copy(minPrice = minPrice))
-        }
-
+        eventRepository.save(event.copy(minPrice = plan.seatInventory.minOf { it.price }))
         return savedPlan
     }
 
@@ -48,12 +43,7 @@ class GenerateEventInventoryUseCase(
 
         val plan = EventInventoryPlan.generalAdmission(event = event, ticketTypes = ticketTypes)
         val savedPlan = eventInventoryPlanRepository.save(plan)
-
-        val minPrice = ticketTypes.minOfOrNull { it.price }
-        if (minPrice != null) {
-            eventRepository.save(event.copy(minPrice = minPrice))
-        }
-
+        eventRepository.save(event.copy(minPrice = ticketTypes.minOf { it.price }))
         return savedPlan
     }
 

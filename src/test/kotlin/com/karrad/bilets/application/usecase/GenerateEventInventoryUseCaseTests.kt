@@ -169,6 +169,37 @@ class GenerateEventInventoryUseCaseTests {
         assertEquals(1, eventInventoryPlanRepository.findAll().size)
     }
 
+    @Test
+    fun `should set minPrice on event after generating seated inventory`() {
+        val event = seatedEvent()
+        val layoutTemplate = seatedLayoutTemplate(requireNotNull(event.venueSpaceId))
+        eventRepository.save(event)
+        layoutTemplateRepository.save(layoutTemplate)
+
+        useCase.generateSeated(event.id, layoutTemplate.id, adminId)
+
+        val updated = eventRepository.findById(event.id)
+        assertEquals(2000, updated?.minPrice)
+    }
+
+    @Test
+    fun `should set minPrice on event after generating general admission inventory`() {
+        val event = generalAdmissionEvent()
+        eventRepository.save(event)
+
+        useCase.generateGeneralAdmission(
+            eventId = event.id,
+            ticketTypes = listOf(
+                TicketType(label = "Standard", price = 800, quota = 50),
+                TicketType(label = "VIP", price = 2000, quota = 10)
+            ),
+            callerUserId = adminId
+        )
+
+        val updated = eventRepository.findById(event.id)
+        assertEquals(800, updated?.minPrice)
+    }
+
     private fun seatedEvent(): Event {
         return Event(
             label = "Hamlet",
