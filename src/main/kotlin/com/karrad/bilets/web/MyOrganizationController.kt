@@ -1,8 +1,12 @@
 package com.karrad.bilets.web
 
+import com.karrad.bilets.application.service.InventoryPlanService
 import com.karrad.bilets.application.usecase.GetMyOrganizationEventsUseCase
+import com.karrad.bilets.domain.entity.EventInventoryPlan
+import com.karrad.bilets.domain.entity.InventoryMode
 import com.karrad.bilets.domain.entity.Venue
 import com.karrad.bilets.domain.enums.OrganizationMemberRole
+import com.karrad.bilets.domain.enums.SeatStatus
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
@@ -21,6 +25,7 @@ import java.util.UUID
 @RequestMapping("/api/v1/my/organization")
 class MyOrganizationController(
     private val getMyOrganizationEventsUseCase: GetMyOrganizationEventsUseCase,
+    private val inventoryPlanService: InventoryPlanService,
     private val organizationMemberRepository: OrganizationMemberRepository,
     private val venueRepository: VenueRepository,
     private val venueAccessGrantRepository: VenueAccessGrantRepository,
@@ -29,8 +34,17 @@ class MyOrganizationController(
     @GetMapping("/events")
     fun myEvents(): List<MyOrganizationEventItem> {
         val callerId = currentUserProvider.requireUserId()
-        return getMyOrganizationEventsUseCase.execute(callerId).map {
-            MyOrganizationEventItem(id = it.id, label = it.label, time = it.time)
+        return getMyOrganizationEventsUseCase.execute(callerId).map { event ->
+            val plan = inventoryPlanService.getByEventId(event.id)
+            MyOrganizationEventItem(
+                id = event.id,
+                label = event.label,
+                time = event.time,
+                venueLabel = event.venueLabel,
+                hasInventory = plan != null,
+                sold = plan?.soldCount() ?: 0,
+                capacity = plan?.totalCapacity() ?: 0
+            )
         }
     }
 
@@ -110,8 +124,22 @@ class MyOrganizationController(
 data class MyOrganizationEventItem(
     val id: UUID,
     val label: String,
-    val time: Instant
+    val time: Instant,
+    val venueLabel: String?,
+    val hasInventory: Boolean,
+    val sold: Int,
+    val capacity: Int
 )
+
+private fun EventInventoryPlan.soldCount(): Int = when (mode) {
+    InventoryMode.GENERAL_ADMISSION -> admissionInventory.sumOf { it.sold }
+    InventoryMode.SEATED -> seatInventory.count { it.status == SeatStatus.SOLD }
+}
+
+private fun EventInventoryPlan.totalCapacity(): Int = when (mode) {
+    InventoryMode.GENERAL_ADMISSION -> admissionInventory.sumOf { it.capacity }
+    InventoryMode.SEATED -> seatInventory.size
+}
 
 data class MyMembershipResponse(
     val memberId: UUID,
