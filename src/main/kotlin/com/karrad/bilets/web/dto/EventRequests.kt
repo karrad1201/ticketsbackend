@@ -4,6 +4,13 @@ import com.karrad.bilets.domain.entity.Event
 import java.time.Instant
 import java.util.UUID
 
+data class UpdateEventRequest(
+    val label: String? = null,
+    val description: String? = null,
+    val time: String? = null,
+    val ageRating: String? = null
+)
+
 data class CreateEventRequest(
     val label: String,
     val description: String,

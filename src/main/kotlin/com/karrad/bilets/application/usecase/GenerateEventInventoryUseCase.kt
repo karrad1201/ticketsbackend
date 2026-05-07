@@ -30,7 +30,14 @@ class GenerateEventInventoryUseCase(
         }
 
         val plan = EventInventoryPlan.seated(event = event, layoutTemplate = layoutTemplate)
-        return eventInventoryPlanRepository.save(plan)
+        val savedPlan = eventInventoryPlanRepository.save(plan)
+
+        val minPrice = plan.seatInventory.minOfOrNull { it.price }
+        if (minPrice != null) {
+            eventRepository.save(event.copy(minPrice = minPrice))
+        }
+
+        return savedPlan
     }
 
     fun generateGeneralAdmission(eventId: UUID, ticketTypes: List<TicketType>, callerUserId: UUID): EventInventoryPlan {
@@ -40,7 +47,14 @@ class GenerateEventInventoryUseCase(
         requirePermission(callerUserId, event.organizationId)
 
         val plan = EventInventoryPlan.generalAdmission(event = event, ticketTypes = ticketTypes)
-        return eventInventoryPlanRepository.save(plan)
+        val savedPlan = eventInventoryPlanRepository.save(plan)
+
+        val minPrice = ticketTypes.minOfOrNull { it.price }
+        if (minPrice != null) {
+            eventRepository.save(event.copy(minPrice = minPrice))
+        }
+
+        return savedPlan
     }
 
     private fun requirePermission(callerUserId: UUID, organizationId: UUID?) {

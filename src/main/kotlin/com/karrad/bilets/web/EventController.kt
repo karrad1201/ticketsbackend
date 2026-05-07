@@ -3,13 +3,17 @@ package com.karrad.bilets.web
 import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.application.usecase.CloseEventSalesUseCase
 import com.karrad.bilets.application.usecase.CreateEventUseCase
+import com.karrad.bilets.application.usecase.EventPatch
 import com.karrad.bilets.application.usecase.SearchEventsUseCase
+import com.karrad.bilets.application.usecase.UpdateEventUseCase
 import com.karrad.bilets.application.usecase.UploadEventCoverUseCase
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.web.dto.CreateEventRequest
+import com.karrad.bilets.web.dto.UpdateEventRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.servlet.view.RedirectView
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -28,6 +33,7 @@ class EventController(
     private val createEventUseCase: CreateEventUseCase,
     private val closeEventSalesUseCase: CloseEventSalesUseCase,
     private val uploadEventCoverUseCase: UploadEventCoverUseCase,
+    private val updateEventUseCase: UpdateEventUseCase,
     private val eventService: EventService,
     private val searchEventsUseCase: SearchEventsUseCase,
     private val currentUserProvider: CurrentUserProvider
@@ -39,6 +45,20 @@ class EventController(
         @RequestBody request: CreateEventRequest
     ): Event {
         return createEventUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
+    }
+
+    @PatchMapping("/{eventId}")
+    fun update(
+        @PathVariable eventId: UUID,
+        @RequestBody request: UpdateEventRequest
+    ): Event {
+        val patch = EventPatch(
+            label = request.label,
+            description = request.description,
+            time = request.time?.let { Instant.parse(it) },
+            ageRating = request.ageRating
+        )
+        return updateEventUseCase.execute(eventId, patch, currentUserProvider.requireUserId())
     }
 
     @PostMapping("/{eventId}/close-sales")
