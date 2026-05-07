@@ -45,7 +45,10 @@ class MyOrganizationMembersController(
     fun list(): List<OrganizationMemberResponse> {
         val membership = requireMembership(setOf(OrganizationMemberRole.OWNER, OrganizationMemberRole.MANAGER))
         return organizationMemberService.listByOrganizationId(membership.organizationId)
-            .map(::OrganizationMemberResponse)
+            .map { member ->
+                val user = userRepository.findById(member.userId)
+                OrganizationMemberResponse(member, fullName = user?.fullName, phone = user?.phone)
+            }
     }
 
     @PostMapping
@@ -186,14 +189,18 @@ data class OrganizationMemberResponse(
     val organizationId: UUID,
     val userId: UUID,
     val role: OrganizationMemberRole,
-    val venueId: UUID?
+    val venueId: UUID?,
+    val fullName: String?,
+    val phone: String?
 ) {
-    constructor(m: OrganizationMember) : this(
+    constructor(m: OrganizationMember, fullName: String? = null, phone: String? = null) : this(
         id = m.id,
         organizationId = m.organizationId,
         userId = m.userId,
         role = m.role,
-        venueId = m.venueId
+        venueId = m.venueId,
+        fullName = fullName,
+        phone = phone
     )
 }
 
