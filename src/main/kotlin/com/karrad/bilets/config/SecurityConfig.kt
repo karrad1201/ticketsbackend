@@ -58,6 +58,7 @@ class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/v1/venues", "/api/v1/venues/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/layout-templates", "/api/v1/layout-templates/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/inventory-plans", "/api/v1/inventory-plans/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/inventory", "/api/v1/inventory/**").permitAll()
 
                     // Платёжные callbacks (публичные — вызываются шлюзом)
                     .requestMatchers(HttpMethod.POST, "/api/v1/payments/callbacks/**").permitAll()
