@@ -41,6 +41,7 @@ class MyOrganizationController(
                 label = event.label,
                 time = event.time,
                 venueLabel = event.venueLabel,
+                venueSpaceId = event.venueSpaceId,
                 hasInventory = plan != null,
                 sold = plan?.soldCount() ?: 0,
                 capacity = plan?.totalCapacity() ?: 0
@@ -126,6 +127,7 @@ data class MyOrganizationEventItem(
     val label: String,
     val time: Instant,
     val venueLabel: String?,
+    val venueSpaceId: UUID?,
     val hasInventory: Boolean,
     val sold: Int,
     val capacity: Int
