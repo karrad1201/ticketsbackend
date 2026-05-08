@@ -39,20 +39,27 @@ class GetEventDiscoveryUseCase(
         // Load categories once — shared by buildForYou and buildByCategory to avoid N+1
         val allCategories = categoryRepository.findAll().associateBy { it.id }
 
-        val forYou = buildForYou(userId, upcomingEvents, allCategories, page, size)
+        // Deduplicate grouped events and fill sessionTimes
+        val deduplicatedEvents = deduplicateGroups(upcomingEvents)
 
-        val byCategory = buildByCategory(upcomingEvents, allCategories, page, size)
+        val forYou = buildForYou(userId, deduplicatedEvents, allCategories, page, size)
+
+        val byCategory = buildByCategory(deduplicatedEvents, allCategories, page, size)
 
         val tomorrow = if (date != null) emptyList() else paginate(
-            eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(1), limit = 1000)
-                .sortedBy { it.time },
+            deduplicateGroups(
+                eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(1), limit = 1000)
+                    .sortedBy { it.time }
+            ),
             page = page,
             size = size
         )
 
         val dayAfterTomorrow = if (date != null) emptyList() else paginate(
-            eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(2), limit = 1000)
-                .sortedBy { it.time },
+            deduplicateGroups(
+                eventRepository.findAvailableByCity(city, clock.instant(), today.plusDays(2), limit = 1000)
+                    .sortedBy { it.time }
+            ),
             page = page,
             size = size
         )
@@ -151,5 +158,21 @@ class GetEventDiscoveryUseCase(
         if (fromIndex >= events.size) return emptyList()
         val toIndex = minOf(fromIndex + size, events.size)
         return events.subList(fromIndex, toIndex)
+    }
+
+    /**
+     * Groups events by groupId, returning one representative event per group (the soonest),
+     * with sessionTimes populated from all events in the group.
+     * Standalone events (groupId == null) pass through unchanged.
+     */
+    private fun deduplicateGroups(events: List<Event>): List<Event> {
+        val (grouped, standalone) = events.partition { it.groupId != null }
+        val representatives = grouped
+            .groupBy { it.groupId!! }
+            .map { (_, groupEvents) ->
+                val sorted = groupEvents.sortedBy { it.time }
+                sorted.first().copy(sessionTimes = sorted.map { it.time })
+            }
+        return (standalone + representatives).sortedBy { it.time }
     }
 }

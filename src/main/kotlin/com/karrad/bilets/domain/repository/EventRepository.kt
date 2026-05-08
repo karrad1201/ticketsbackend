@@ -34,5 +34,6 @@ interface EventRepository {
     fun searchAvailable(criteria: EventSearchCriteria): List<Event>
     fun findUpcomingByOrganizationId(organizationId: UUID, now: Instant): List<Event>
     fun findIdsWithStartedOpenSales(now: Instant, limit: Int): List<UUID>
+    fun findByGroupId(groupId: UUID): List<Event> = findAll().filter { it.groupId == groupId }
     fun deleteById(id: UUID): Boolean
 }

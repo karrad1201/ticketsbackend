@@ -19,7 +19,10 @@ data class Event(
     val ageRating: String? = null,
     val hasSeatMap: Boolean = false,
     val venueLabel: String? = null,
-    val categoryLabel: String? = null
+    val categoryLabel: String? = null,
+    val groupId: UUID? = null,
+    /** Transient: all session times for the group; populated by the service layer, not stored in DB. */
+    val sessionTimes: List<Instant> = emptyList()
 ) {
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }

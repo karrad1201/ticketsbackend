@@ -44,7 +44,9 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshToke
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsRateLimiter
@@ -179,4 +181,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnMissingBean(AdminCredentialRepository::class)
     fun adminCredentialRepository(): AdminCredentialRepository = InMemoryAdminCredentialRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
+    fun spacePriceProfileRepository(): SpacePriceProfileRepository = InMemorySpacePriceProfileRepository()
 }
