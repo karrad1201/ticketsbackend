@@ -14,6 +14,7 @@ import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.util.UUID
 
@@ -36,6 +37,7 @@ class CreateEventUseCase(
      * @param sessionTimes  if provided, creates one event per time; first time overrides event.time
      * @param priceProfileId if provided, auto-generates EventInventoryPlan for each created event
      */
+    @Transactional
     fun create(
         event: Event,
         actorUserId: UUID,

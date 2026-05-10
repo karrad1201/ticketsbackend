@@ -171,7 +171,7 @@ class GetEventDiscoveryUseCase(
             .groupBy { it.groupId!! }
             .map { (_, groupEvents) ->
                 val sorted = groupEvents.sortedBy { it.time }
-                sorted.first().copy(sessionTimes = sorted.map { it.time })
+                sorted.first().copy(sessionTimes = sorted.map { it.time }, sessionEventIds = sorted.map { it.id })
             }
         return (standalone + representatives).sortedBy { it.time }
     }
