@@ -14,19 +14,20 @@ class JdbcEventRepository(
     override fun save(event: Event): Event {
         jdbcTemplate.update(
             """
-            insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map)
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            insert into events (id, label, description, venue_id, category_id, event_time, venue_space_id, organization_id, sales_closed_at, image_url, min_price, age_rating, has_seat_map, group_id)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             on conflict (id) do update set
               label = excluded.label, description = excluded.description, venue_id = excluded.venue_id,
               category_id = excluded.category_id, event_time = excluded.event_time,
               venue_space_id = excluded.venue_space_id, organization_id = excluded.organization_id,
               sales_closed_at = excluded.sales_closed_at, image_url = excluded.image_url,
-              min_price = excluded.min_price, age_rating = excluded.age_rating, has_seat_map = excluded.has_seat_map
+              min_price = excluded.min_price, age_rating = excluded.age_rating,
+              has_seat_map = excluded.has_seat_map, group_id = excluded.group_id
             """.trimIndent(),
             event.id, event.label, event.description, event.venueId, event.categoryId,
             Timestamp.from(event.time), event.venueSpaceId, event.organizationId,
             instantToTimestamp(event.salesClosedAt), event.imageUrl, event.minPrice,
-            event.ageRating, event.hasSeatMap
+            event.ageRating, event.hasSeatMap, event.groupId
         )
         return event
     }
@@ -46,13 +47,14 @@ class JdbcEventRepository(
         ageRating = rs.getString("age_rating"),
         hasSeatMap = rs.getBoolean("has_seat_map"),
         venueLabel = rs.getString("venue_label"),
-        categoryLabel = rs.getString("category_label")
+        categoryLabel = rs.getString("category_label"),
+        groupId = rs.nullableUuid("group_id")
     )
 
     private val selectAll = """
         select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time,
                e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url,
-               e.min_price, e.age_rating, e.has_seat_map,
+               e.min_price, e.age_rating, e.has_seat_map, e.group_id,
                v.label as venue_label, c.label as category_label
         from events e
         left join venues v on v.id = e.venue_id
@@ -96,7 +98,7 @@ class JdbcEventRepository(
 
     override fun findAvailableByCity(city: String, now: java.time.Instant): List<Event> = jdbcTemplate.query(
         """
-        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+        select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map, e.group_id,
                v.label as venue_label, c.label as category_label
         from events e
         join venues v on v.id = e.venue_id
@@ -105,6 +107,7 @@ class JdbcEventRepository(
           and e.sales_closed_at is null
           and e.event_time > ?
         order by e.event_time, e.id
+
         """.trimIndent(),
         { rs, _ -> rowMapper(rs) },
         city.trim().lowercase(),
@@ -123,7 +126,7 @@ class JdbcEventRepository(
         params += limit
         return jdbcTemplate.query(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map, e.group_id,
                    v.label as venue_label, c.label as category_label
             from events e
             join venues v on v.id = e.venue_id
@@ -143,7 +146,7 @@ class JdbcEventRepository(
     override fun searchAvailable(criteria: EventSearchCriteria): List<Event> {
         val sql = StringBuilder(
             """
-            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map,
+            select e.id, e.label, e.description, e.venue_id, e.category_id, e.event_time, e.venue_space_id, e.organization_id, e.sales_closed_at, e.image_url, e.min_price, e.age_rating, e.has_seat_map, e.group_id,
                    v.label as venue_label, c.label as category_label
             from events e
             join venues v on v.id = e.venue_id
@@ -213,6 +216,12 @@ class JdbcEventRepository(
             limit
         )
     }
+
+    override fun findByGroupId(groupId: UUID): List<Event> = jdbcTemplate.query(
+        "$selectAll\nwhere e.group_id = ?\norder by e.event_time, e.id",
+        { rs, _ -> rowMapper(rs) },
+        groupId
+    )
 
     override fun deleteById(id: UUID): Boolean = jdbcTemplate.update(
         "delete from events where id = ?",

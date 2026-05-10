@@ -127,6 +127,48 @@ class GetEventDiscoveryUseCaseTests {
     }
 
     @Test
+    fun `should deduplicate grouped session events into single card with sessionTimes`() {
+        categoryRepository.save(Category(code = "rock", label = "Rock", id = rockCategoryId()))
+        venueRepository.save(
+            demoVenue(
+                organizationId = orgOneId(),
+                venueSpaceId = UUID.fromString("123e4567-e89b-12d3-a456-426614176208")
+            )
+        )
+        val groupId = UUID.randomUUID()
+        val session1Time = LocalDate.now(ZoneOffset.UTC).plusDays(1).atTime(14, 0).toInstant(ZoneOffset.UTC)
+        val session2Time = LocalDate.now(ZoneOffset.UTC).plusDays(1).atTime(19, 0).toInstant(ZoneOffset.UTC)
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176220"),
+                label = "Grouped Show",
+                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176200"),
+                categoryId = rockCategoryId(),
+                time = session1Time,
+                organizationId = orgOneId()
+            ).copy(groupId = groupId)
+        )
+        eventRepository.save(
+            demoEvent(
+                id = UUID.fromString("123e4567-e89b-12d3-a456-426614176221"),
+                label = "Grouped Show",
+                venueId = UUID.fromString("123e4567-e89b-12d3-a456-426614176200"),
+                categoryId = rockCategoryId(),
+                time = session2Time,
+                organizationId = orgOneId()
+            ).copy(groupId = groupId)
+        )
+
+        val result = useCase.get(userId = userId(), city = "Ekaterinburg", page = 0, size = 10)
+
+        val allEvents = result.forYou + result.byCategory.flatMap { it.events } + result.tomorrow + result.dayAfterTomorrow
+        val grouped = allEvents.filter { it.label == "Grouped Show" }
+        assert(grouped.all { it.sessionTimes.size == 2 }) {
+            "Grouped events should be deduplicated into one card with 2 sessionTimes"
+        }
+    }
+
+    @Test
     fun `should exclude started and manually closed events from discovery`() {
         categoryRepository.save(Category(code = "rock", label = "Rock", id = rockCategoryId()))
         venueRepository.save(

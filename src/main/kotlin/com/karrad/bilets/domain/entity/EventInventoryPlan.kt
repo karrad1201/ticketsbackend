@@ -133,18 +133,32 @@ data class EventInventoryPlan(
     }
 
     companion object {
-        fun seated(event: Event, layoutTemplate: LayoutTemplate): EventInventoryPlan {
+        fun seated(
+            event: Event,
+            layoutTemplate: LayoutTemplate,
+            sectionPriceOverrides: Map<String, Int> = emptyMap()
+        ): EventInventoryPlan {
             val venueSpaceId = requireNotNull(event.venueSpaceId) { "Seated event requires venueSpaceId" }
             require(layoutTemplate.venueSpaceId == venueSpaceId) {
                 "LayoutTemplate venueSpaceId must match Event venueSpaceId"
             }
 
-            val seatInventory = layoutTemplate.materializeSeatTemplates().map { template ->
-                EventSeat(
-                    eventUuid = event.id,
-                    seatKey = template.seatKey,
-                    price = template.price
-                )
+            val seatInventory = layoutTemplate.sections.flatMap { section ->
+                val priceOverride = sectionPriceOverrides[section.key]
+                section.rows.flatMap { row ->
+                    val price = priceOverride ?: row.price
+                    (row.startSeat..row.endSeat).map { seatNumber ->
+                        EventSeat(
+                            eventUuid = event.id,
+                            seatKey = SeatKey(
+                                sectionKey = section.key,
+                                rowKey = row.key,
+                                seatKey = seatNumber.toString()
+                            ),
+                            price = price
+                        )
+                    }
+                }
             }
 
             return EventInventoryPlan(

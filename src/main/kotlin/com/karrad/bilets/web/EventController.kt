@@ -43,9 +43,12 @@ class EventController(
     @ResponseStatus(HttpStatus.CREATED)
     fun create(
         @RequestBody request: CreateEventRequest
-    ): Event {
-        return createEventUseCase.create(request.toDomain(), currentUserProvider.requireUserId())
-    }
+    ): Event = createEventUseCase.create(
+        event = request.toDomain(),
+        actorUserId = currentUserProvider.requireUserId(),
+        sessionTimes = request.effectiveSessionTimes(),
+        priceProfileId = request.priceProfileId
+    )
 
     @PatchMapping("/{eventId}")
     fun update(

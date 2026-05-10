@@ -31,7 +31,9 @@ import com.karrad.bilets.domain.repository.VenueAccessGrantRepository
 import com.karrad.bilets.domain.repository.VenueRepository
 import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -233,6 +235,9 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun adminCredentialRepository(): AdminCredentialRepository = InMemoryAdminCredentialRepository()
+
+    @Bean
+    fun spacePriceProfileRepository(): SpacePriceProfileRepository = InMemorySpacePriceProfileRepository()
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
