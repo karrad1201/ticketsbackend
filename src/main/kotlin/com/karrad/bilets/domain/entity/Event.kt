@@ -22,7 +22,9 @@ data class Event(
     val categoryLabel: String? = null,
     val groupId: UUID? = null,
     /** Transient: all session times for the group; populated by the service layer, not stored in DB. */
-    val sessionTimes: List<Instant> = emptyList()
+    val sessionTimes: List<Instant> = emptyList(),
+    /** Transient: event IDs for each session in the group (parallel to sessionTimes); not stored in DB. */
+    val sessionEventIds: List<UUID> = emptyList()
 ) {
     init {
         require(label.isNotBlank()) { "Event label must not be blank" }
