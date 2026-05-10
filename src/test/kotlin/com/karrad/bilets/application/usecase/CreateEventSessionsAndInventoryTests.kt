@@ -71,7 +71,8 @@ class CreateEventSessionsAndInventoryTests {
             sessionTimes = listOf(time1, time2, time3)
         )
 
-        assertNotNull(first.groupId)
+        val groupId = first.groupId
+        assertNotNull(groupId)
         val all = eventRepository.findAll()
         assertEquals(3, all.size)
         val groupIds = all.map { it.groupId }.toSet()
@@ -80,6 +81,10 @@ class CreateEventSessionsAndInventoryTests {
         assertTrue(times.contains(time1))
         assertTrue(times.contains(time2))
         assertTrue(times.contains(time3))
+        // Verify findByGroupId default impl returns all sessions
+        val byGroup = eventRepository.findByGroupId(groupId)
+        assertEquals(3, byGroup.size)
+        assertTrue(byGroup.all { it.groupId == groupId })
     }
 
     @Test
