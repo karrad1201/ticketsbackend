@@ -2,12 +2,14 @@ package com.karrad.bilets.application.usecase
 
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.application.service.PaymentSettlementService
+import com.karrad.bilets.application.service.PushNotificationService
 import com.karrad.bilets.application.transaction.OrderFlowTransactionManager
 import com.karrad.bilets.domain.entity.Order
 import com.karrad.bilets.domain.entity.PaymentCallbackAudit
 import com.karrad.bilets.domain.enums.OrderStatus
 import com.karrad.bilets.domain.enums.PaymentAttemptStatus
 import com.karrad.bilets.domain.enums.PaymentCallbackStatus
+import com.karrad.bilets.domain.push.PushMessage
 import com.karrad.bilets.domain.repository.PaymentAttemptRepository
 import com.karrad.bilets.domain.repository.PaymentCallbackAuditRepository
 import com.karrad.bilets.domain.repository.OrderInventoryRepository
@@ -33,6 +35,7 @@ class HandlePaymentCallbackUseCase(
     private val orderRepository: OrderRepository,
     private val orderInventoryRepository: OrderInventoryRepository,
     private val paymentSettlementService: PaymentSettlementService,
+    private val pushNotificationService: PushNotificationService,
     private val eventLockManager: EventLockManager,
     private val orderFlowTransactionManager: OrderFlowTransactionManager,
     private val clock: Clock
@@ -109,7 +112,16 @@ class HandlePaymentCallbackUseCase(
             paymentAttemptRepository.save(attempt.markSucceeded(receivedAt))
         }
         log.info("PAYMENT_CALLBACK_SUCCESS reference={} orderId={}", attempt.reference, order.id)
-        return paymentSettlementService.completePaidOrder(order, receivedAt)
+        val paidOrder = paymentSettlementService.completePaidOrder(order, receivedAt)
+        pushNotificationService.sendToUser(
+            paidOrder.buyerUserId,
+            PushMessage(
+                title = "Оплата прошла успешно",
+                body = "Билет добавлен в раздел «Мои билеты»",
+                data = mapOf("orderId" to paidOrder.id.toString(), "screen" to "tickets")
+            )
+        )
+        return paidOrder
     }
 
     private fun handleFailure(
@@ -131,7 +143,12 @@ class HandlePaymentCallbackUseCase(
             return order
         }
         log.info("PAYMENT_CALLBACK_FAILURE reference={} orderId={} reason={}", attempt.reference, order.id, command.failureReason)
-        return paymentSettlementService.failPendingOrder(order, failedAttempt.updatedAt)
+        val failedOrder = paymentSettlementService.failPendingOrder(order, failedAttempt.updatedAt)
+        pushNotificationService.sendToUser(
+            failedOrder.buyerUserId,
+            PushMessage(title = "Оплата не прошла", body = "Места освобождены. Попробуйте оформить заказ заново.")
+        )
+        return failedOrder
     }
 
     private fun handleExpired(
@@ -155,6 +172,11 @@ class HandlePaymentCallbackUseCase(
         }
         log.info("PAYMENT_CALLBACK_SESSION_EXPIRED reference={} orderId={}", attempt.reference, order.id)
         orderInventoryRepository.release(order)
-        return orderRepository.save(order.markPaymentFailed(failedAttempt.updatedAt))
+        val expiredOrder = orderRepository.save(order.markPaymentFailed(failedAttempt.updatedAt))
+        pushNotificationService.sendToUser(
+            expiredOrder.buyerUserId,
+            PushMessage(title = "Время оплаты истекло", body = "Места освобождены. Попробуйте оформить заказ заново.")
+        )
+        return expiredOrder
     }
 }

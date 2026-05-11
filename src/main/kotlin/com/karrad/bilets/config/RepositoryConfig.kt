@@ -43,10 +43,14 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAuthTokenRe
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryRefreshTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.domain.push.PushNotificationGateway
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.domain.repository.PushTokenRepository
 import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
+import com.karrad.bilets.infrastructure.push.MockPushNotificationGateway
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
 import com.karrad.bilets.domain.sms.SmsRateLimiter
@@ -185,4 +189,12 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
     fun spacePriceProfileRepository(): SpacePriceProfileRepository = InMemorySpacePriceProfileRepository()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
+    fun pushTokenRepository(): PushTokenRepository = InMemoryPushTokenRepository()
+
+    @Bean
+    @ConditionalOnMissingBean(PushNotificationGateway::class)
+    fun pushNotificationGateway(): PushNotificationGateway = MockPushNotificationGateway()
 }

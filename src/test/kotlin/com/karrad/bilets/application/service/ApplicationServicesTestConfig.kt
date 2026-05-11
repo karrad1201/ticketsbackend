@@ -33,7 +33,12 @@ import com.karrad.bilets.infrastructure.lock.InMemoryEventLockManager
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
 import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
+import com.karrad.bilets.infrastructure.push.MockPushNotificationGateway
+import com.karrad.bilets.application.service.PushNotificationService
+import com.karrad.bilets.domain.push.PushNotificationGateway
+import com.karrad.bilets.domain.repository.PushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryFavoriteEventRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueAccessGrantRepository
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -238,6 +243,18 @@ class ApplicationServicesTestConfig {
 
     @Bean
     fun spacePriceProfileRepository(): SpacePriceProfileRepository = InMemorySpacePriceProfileRepository()
+
+    @Bean
+    fun pushTokenRepository(): PushTokenRepository = InMemoryPushTokenRepository()
+
+    @Bean
+    fun pushNotificationGateway(): PushNotificationGateway = MockPushNotificationGateway()
+
+    @Bean
+    fun pushNotificationService(
+        pushTokenRepository: PushTokenRepository,
+        pushNotificationGateway: PushNotificationGateway
+    ): PushNotificationService = PushNotificationService(pushTokenRepository, pushNotificationGateway)
 
     @Bean
     fun passwordEncoder(): PasswordEncoder = BCryptPasswordEncoder()
