@@ -52,6 +52,11 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCreden
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventPhotoRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
+import com.google.auth.oauth2.GoogleCredentials
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
+import com.google.firebase.messaging.FirebaseMessaging
+import com.karrad.bilets.infrastructure.push.FcmPushNotificationGateway
 import com.karrad.bilets.infrastructure.push.MockPushNotificationGateway
 import com.karrad.bilets.application.lock.EventLockManager
 import com.karrad.bilets.domain.security.BearerTokenRateLimiter
@@ -195,6 +200,32 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
     fun pushTokenRepository(): PushTokenRepository = InMemoryPushTokenRepository()
+
+    @Bean
+    @ConditionalOnProperty(name = ["push.fcm.enabled"], havingValue = "true")
+    fun firebaseMessaging(): FirebaseMessaging {
+        val credentialsPath = System.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        val options = if (credentialsPath != null) {
+            FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.getApplicationDefault())
+                .build()
+        } else {
+            FirebaseOptions.builder()
+                .setCredentials(GoogleCredentials.getApplicationDefault())
+                .build()
+        }
+        val app = if (FirebaseApp.getApps().isEmpty()) {
+            FirebaseApp.initializeApp(options)
+        } else {
+            FirebaseApp.getInstance()
+        }
+        return FirebaseMessaging.getInstance(app)
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = ["push.fcm.enabled"], havingValue = "true")
+    fun fcmPushNotificationGateway(fcm: FirebaseMessaging): PushNotificationGateway =
+        FcmPushNotificationGateway(fcm)
 
     @Bean
     @ConditionalOnMissingBean(PushNotificationGateway::class)

@@ -34,3 +34,7 @@ zvonok:
   base-url: https://zvonok.com
   public-key: ${ZVONOK_PUBLIC_KEY}
   campaign-id: ${ZVONOK_CAMPAIGN_ID}
+
+push:
+  fcm:
+    enabled: ${PUSH_FCM_ENABLED:false}

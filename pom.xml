@@ -169,6 +169,13 @@
             <artifactId>logstash-logback-encoder</artifactId>
             <version>8.1</version>
         </dependency>
+
+        <!-- Firebase Admin SDK (FCM push notifications) -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.4.3</version>
+        </dependency>
     </dependencies>
 
     <build>
