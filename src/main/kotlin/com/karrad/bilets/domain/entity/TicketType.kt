@@ -10,7 +10,7 @@ data class TicketType(
 ) {
     init {
         require(label.isNotBlank()) { "TicketType label must not be blank" }
-        require(price > 0) { "TicketType price must be positive" }
+        require(price >= 0) { "TicketType price must not be negative" }
         require(quota == null || quota >= 0) { "TicketType quota must not be negative" }
     }
 }

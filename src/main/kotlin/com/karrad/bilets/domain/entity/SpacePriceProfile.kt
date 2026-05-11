@@ -30,7 +30,7 @@ data class SectionPrice(
 ) {
     init {
         require(sectionKey.isNotBlank()) { "SectionPrice sectionKey must not be blank" }
-        require(price > 0) { "SectionPrice price must be positive" }
+        require(price >= 0) { "SectionPrice price must not be negative" }
     }
 }
 
@@ -41,7 +41,7 @@ data class TicketTypeTemplate(
 ) {
     init {
         require(label.isNotBlank()) { "TicketTypeTemplate label must not be blank" }
-        require(price > 0) { "TicketTypeTemplate price must be positive" }
+        require(price >= 0) { "TicketTypeTemplate price must not be negative" }
         require(quota > 0) { "TicketTypeTemplate quota must be positive" }
     }
 
