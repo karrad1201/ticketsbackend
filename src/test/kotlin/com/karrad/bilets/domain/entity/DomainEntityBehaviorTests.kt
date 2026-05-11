@@ -126,7 +126,7 @@ class DomainEntityBehaviorTests {
     @Test
     fun `event admission inventory should validate counts and capacity`() {
         assertEquals(
-            "EventAdmissionInventory price must be positive",
+            "EventAdmissionInventory price must not be negative",
             assertFailsWith<IllegalArgumentException> { admissionInventory(price = -1) }.message
         )
         assertEquals(
