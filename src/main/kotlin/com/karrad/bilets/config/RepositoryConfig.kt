@@ -45,9 +45,11 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySmsCodeRepo
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
 import com.karrad.bilets.domain.push.PushNotificationGateway
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.domain.repository.EventPhotoRepository
 import com.karrad.bilets.domain.repository.PushTokenRepository
 import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryEventPhotoRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemorySpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.push.MockPushNotificationGateway
@@ -197,4 +199,8 @@ class RepositoryConfig {
     @Bean
     @ConditionalOnMissingBean(PushNotificationGateway::class)
     fun pushNotificationGateway(): PushNotificationGateway = MockPushNotificationGateway()
+
+    @Bean
+    @ConditionalOnProperty(prefix = "order-flow", name = ["persistence"], havingValue = "in-memory", matchIfMissing = false)
+    fun eventPhotoRepository(): EventPhotoRepository = InMemoryEventPhotoRepository()
 }

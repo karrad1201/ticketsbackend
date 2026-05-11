@@ -3,15 +3,21 @@ package com.karrad.bilets.web
 import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.application.usecase.CloseEventSalesUseCase
 import com.karrad.bilets.application.usecase.CreateEventUseCase
+import com.karrad.bilets.application.usecase.DeleteEventUseCase
 import com.karrad.bilets.application.usecase.EventPatch
 import com.karrad.bilets.application.usecase.SearchEventsUseCase
 import com.karrad.bilets.application.usecase.UpdateEventUseCase
 import com.karrad.bilets.application.usecase.UploadEventCoverUseCase
 import com.karrad.bilets.domain.entity.Event
+import com.karrad.bilets.domain.repository.TicketRepository
+import com.karrad.bilets.domain.repository.UserRepository
+import com.karrad.bilets.web.dto.AttendeeDto
+import com.karrad.bilets.web.dto.maskPhone
 import com.karrad.bilets.web.dto.CreateEventRequest
 import com.karrad.bilets.web.dto.UpdateEventRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -34,8 +40,11 @@ class EventController(
     private val closeEventSalesUseCase: CloseEventSalesUseCase,
     private val uploadEventCoverUseCase: UploadEventCoverUseCase,
     private val updateEventUseCase: UpdateEventUseCase,
+    private val deleteEventUseCase: DeleteEventUseCase,
     private val eventService: EventService,
     private val searchEventsUseCase: SearchEventsUseCase,
+    private val ticketRepository: TicketRepository,
+    private val userRepository: UserRepository,
     private val currentUserProvider: CurrentUserProvider
 ) {
 
@@ -111,5 +120,34 @@ class EventController(
         val imageUrl = event.imageUrl
             ?: throw NoSuchElementException("Event $eventId has no cover image")
         return RedirectView(imageUrl)
+    }
+
+    @DeleteMapping("/{eventId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun delete(@PathVariable eventId: UUID) {
+        deleteEventUseCase.execute(eventId, currentUserProvider.requireUserId())
+    }
+
+    @GetMapping("/{eventId}/attendees")
+    fun getAttendees(
+        @PathVariable eventId: UUID,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): List<AttendeeDto> {
+        require(page >= 0) { "page must be non-negative" }
+        require(size in 1..100) { "size must be between 1 and 100" }
+        val tickets = ticketRepository.findByEventId(eventId)
+        return tickets
+            .distinctBy { it.userId }
+            .drop(page * size)
+            .take(size)
+            .map { ticket ->
+                val user = userRepository.findById(ticket.userId)
+                AttendeeDto(
+                    userId = ticket.userId.toString(),
+                    name = user?.fullName ?: "—",
+                    maskedPhone = user?.phone?.maskPhone()
+                )
+            }
     }
 }
