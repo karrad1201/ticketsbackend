@@ -24,6 +24,20 @@ class EventService(
     @Cacheable(value = ["events"], cacheManager = "redisCacheManager", key = "#id")
     fun getById(id: UUID): Event? = eventRepository.findById(id)
 
+    /**
+     * Like getById but populates sessionTimes and sessionEventIds for grouped events.
+     * Used by GET /api/v1/events/{id} so EventDetailScreen can show session chips.
+     */
+    fun getByIdWithSessions(id: UUID): Event? {
+        val event = getById(id) ?: return null
+        if (event.groupId == null) return event
+        val group = eventRepository.findByGroupId(event.groupId).sortedBy { it.time }
+        return event.copy(
+            sessionTimes = group.map { it.time },
+            sessionEventIds = group.map { it.id }
+        )
+    }
+
     fun getByIds(ids: Collection<UUID>): Map<UUID, Event> =
         eventRepository.findAllByIds(ids).associateBy { it.id }
 

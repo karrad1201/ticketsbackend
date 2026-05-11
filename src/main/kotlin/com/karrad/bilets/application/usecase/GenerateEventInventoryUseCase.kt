@@ -1,5 +1,6 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.domain.entity.EventInventoryPlan
 import com.karrad.bilets.domain.entity.TicketType
 import com.karrad.bilets.domain.enums.UserRole
@@ -14,6 +15,7 @@ import java.util.UUID
 @Component
 class GenerateEventInventoryUseCase(
     private val eventRepository: EventRepository,
+    private val eventService: EventService,
     private val layoutTemplateRepository: LayoutTemplateRepository,
     private val eventInventoryPlanRepository: EventInventoryPlanRepository,
     private val organizationMemberRepository: OrganizationMemberRepository,
@@ -31,7 +33,8 @@ class GenerateEventInventoryUseCase(
 
         val plan = EventInventoryPlan.seated(event = event, layoutTemplate = layoutTemplate)
         val savedPlan = eventInventoryPlanRepository.save(plan)
-        eventRepository.save(event.copy(minPrice = plan.seatInventory.minOf { it.price }, hasSeatMap = true))
+        // Используем EventService.update() чтобы сбросить Redis-кэш события
+        eventService.update(event.copy(minPrice = plan.seatInventory.minOf { it.price }, hasSeatMap = true))
         return savedPlan
     }
 
@@ -43,7 +46,8 @@ class GenerateEventInventoryUseCase(
 
         val plan = EventInventoryPlan.generalAdmission(event = event, ticketTypes = ticketTypes)
         val savedPlan = eventInventoryPlanRepository.save(plan)
-        eventRepository.save(event.copy(minPrice = ticketTypes.minOf { it.price }))
+        // Используем EventService.update() чтобы сбросить Redis-кэш события
+        eventService.update(event.copy(minPrice = ticketTypes.minOf { it.price }))
         return savedPlan
     }
 

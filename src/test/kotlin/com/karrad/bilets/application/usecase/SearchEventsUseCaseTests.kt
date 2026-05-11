@@ -209,6 +209,28 @@ class SearchEventsUseCaseTests {
             organizationId = UUID.fromString("123e4567-e89b-12d3-a456-426614176301")
         )
 
+    @Test
+    fun `should deduplicate grouped sessions into one card with sessionTimes and sessionEventIds`() {
+        val vId = venueId(); val cId = categoryId()
+        venueRepository.save(demoVenue())
+        val groupId = UUID.randomUUID()
+        val id1 = UUID.randomUUID(); val id2 = UUID.randomUUID()
+        val t1 = Instant.parse("2099-06-01T14:00:00Z")
+        val t2 = Instant.parse("2099-06-01T19:00:00Z")
+        eventRepository.save(demoEvent(id1, "Вечер джаза", vId, cId, t1).copy(groupId = groupId))
+        eventRepository.save(demoEvent(id2, "Вечер джаза", vId, cId, t2).copy(groupId = groupId))
+
+        val result = useCase.search(query = "джаз", city = null, categoryId = null, venueId = null, dateFrom = null, dateTo = null, page = 0, size = 10)
+
+        assertEquals(1, result.size, "Grouped sessions must collapse into one card")
+        val card = result.first()
+        assertEquals(2, card.sessionTimes.size)
+        assertEquals(2, card.sessionEventIds.size)
+        assertEquals(listOf(t1, t2), card.sessionTimes)
+        assertEquals(listOf(id1, id2), card.sessionEventIds)
+        assertEquals(id1, card.id, "Representative is the earliest session")
+    }
+
     private fun venueId(): UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614176300")
     private fun categoryId(): UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614176305")
 }

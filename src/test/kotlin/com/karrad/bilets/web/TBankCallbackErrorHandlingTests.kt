@@ -17,7 +17,10 @@ import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryOrganizatio
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentAttemptRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPaymentCallbackAuditRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryTicketRepository
+import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.inmemory.InMemoryVenueRepository
+import com.karrad.bilets.infrastructure.push.MockPushNotificationGateway
+import com.karrad.bilets.application.service.PushNotificationService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.Clock
@@ -80,12 +83,14 @@ class TBankCallbackErrorHandlingTests {
         )
         val lockManager: EventLockManager = InMemoryEventLockManager()
 
+        val pushService = PushNotificationService(InMemoryPushTokenRepository(), MockPushNotificationGateway())
         val useCase = HandlePaymentCallbackUseCase(
             paymentAttemptRepository = paymentAttemptRepo,
             paymentCallbackAuditRepository = callbackAuditRepo,
             orderRepository = orderRepo,
             orderInventoryRepository = orderInventoryRepo,
             paymentSettlementService = settlementService,
+            pushNotificationService = pushService,
             eventLockManager = lockManager,
             orderFlowTransactionManager = txManager,
             clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), java.time.ZoneOffset.UTC)

@@ -48,10 +48,24 @@ class SearchEventsUseCase(
         )
             .sortedWith(compareBy<Event> { queryRank(it.label, normalizedQuery) }.thenBy { it.time })
 
+        val deduplicated = deduplicateGroups(filtered, normalizedQuery)
+
         val fromIndex = page * size
-        if (fromIndex >= filtered.size) return emptyList()
-        val toIndex = minOf(fromIndex + size, filtered.size)
-        return filtered.subList(fromIndex, toIndex)
+        if (fromIndex >= deduplicated.size) return emptyList()
+        val toIndex = minOf(fromIndex + size, deduplicated.size)
+        return deduplicated.subList(fromIndex, toIndex)
+    }
+
+    private fun deduplicateGroups(sorted: List<Event>, normalizedQuery: String): List<Event> {
+        val (grouped, standalone) = sorted.partition { it.groupId != null }
+        val representatives = grouped
+            .groupBy { it.groupId!! }
+            .map { (_, group) ->
+                val byTime = group.sortedBy { it.time }
+                byTime.first().copy(sessionTimes = byTime.map { it.time }, sessionEventIds = byTime.map { it.id })
+            }
+        return (standalone + representatives)
+            .sortedWith(compareBy<Event> { queryRank(it.label, normalizedQuery) }.thenBy { it.time })
     }
 
     private fun validatePagination(page: Int, size: Int) {

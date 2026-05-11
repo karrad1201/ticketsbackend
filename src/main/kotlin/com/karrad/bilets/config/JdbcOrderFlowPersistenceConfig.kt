@@ -58,8 +58,10 @@ import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcUserEventVisitRepos
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueApplicationRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcVenueRepository
 import com.karrad.bilets.domain.repository.AdminCredentialRepository
+import com.karrad.bilets.domain.repository.PushTokenRepository
 import com.karrad.bilets.domain.repository.SpacePriceProfileRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcAdminCredentialRepository
+import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcPushTokenRepository
 import com.karrad.bilets.infrastructure.persistence.jdbc.JdbcSpacePriceProfileRepository
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.MigrationVersion
@@ -214,4 +216,8 @@ class JdbcOrderFlowPersistenceConfig {
     @Bean
     fun spacePriceProfileRepository(jdbcTemplate: JdbcTemplate): SpacePriceProfileRepository =
         JdbcSpacePriceProfileRepository(jdbcTemplate)
+
+    @Bean
+    fun pushTokenRepository(jdbcTemplate: JdbcTemplate): PushTokenRepository =
+        JdbcPushTokenRepository(jdbcTemplate)
 }

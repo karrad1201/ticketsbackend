@@ -1,7 +1,7 @@
 package com.karrad.bilets.application.usecase
 
+import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.domain.entity.Event
-import com.karrad.bilets.domain.repository.EventRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
@@ -10,7 +10,7 @@ import java.util.UUID
 
 @Component
 class UploadEventCoverUseCase(
-    private val eventRepository: EventRepository,
+    private val eventService: EventService,
     private val organizationMemberRepository: OrganizationMemberRepository
 ) {
     fun upload(eventId: UUID, file: MultipartFile, callerId: UUID): Event {
@@ -22,7 +22,7 @@ class UploadEventCoverUseCase(
             "Cover must be JPEG, PNG or WebP image"
         }
 
-        val event = requireNotNull(eventRepository.findById(eventId)) {
+        val event = requireNotNull(eventService.getById(eventId)) {
             "Event not found: $eventId"
         }
 
@@ -40,7 +40,8 @@ class UploadEventCoverUseCase(
         file.transferTo(dest)
 
         val imageUrl = "/uploads/events/$eventId/cover.$ext"
-        return eventRepository.save(event.copy(imageUrl = imageUrl))
+        // Use EventService.update to evict all event-related caches (events, eventSearch, discovery)
+        return eventService.update(event.copy(imageUrl = imageUrl))
     }
 
     companion object {

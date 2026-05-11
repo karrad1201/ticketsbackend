@@ -93,7 +93,7 @@ class EventController(
 
     @GetMapping("/{eventId}")
     fun getById(@PathVariable eventId: java.util.UUID): Event =
-        eventService.getById(eventId) ?: throw NoSuchElementException("Event not found: $eventId")
+        eventService.getByIdWithSessions(eventId) ?: throw NoSuchElementException("Event not found: $eventId")
 
     @PostMapping("/{eventId}/cover", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun uploadCover(
