@@ -1,0 +1,42 @@
+services:
+  backend:
+    image: ghcr.io/karrad1201/ticketsbackend:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bilets
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-bilets}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-bilets}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bilets
+      POSTGRES_USER: ${DB_USER:-bilets}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bilets}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bilets}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  uploads_data:
