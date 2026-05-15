@@ -89,7 +89,8 @@ class EventPhotoController(
         const val MAX_FILE_SIZE = 10L * 1024 * 1024
         val ALLOWED_TYPES = mapOf(
             "image/jpeg" to "jpg",
-            "image/png" to "png",
+            "image/jpg"  to "jpg",
+            "image/png"  to "png",
             "image/webp" to "webp"
         )
     }
