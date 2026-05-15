@@ -17,10 +17,15 @@ RUN ./mvnw -B -DskipTests package -q
 FROM eclipse-temurin:24-jre-alpine AS runtime
 
 RUN addgroup -S bilets && adduser -S bilets -G bilets
-USER bilets
 
 WORKDIR /app
+RUN chown bilets:bilets /app
+USER bilets
+
 COPY --from=builder /build/target/bilets-*.jar app.jar
+RUN mkdir -p uploads
+
+VOLUME ["/app/uploads"]
 
 EXPOSE 8080
 
