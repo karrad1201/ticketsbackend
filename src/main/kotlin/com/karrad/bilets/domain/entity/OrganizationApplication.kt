@@ -8,6 +8,9 @@ data class OrganizationApplication(
     val applicantUserId: UUID,
     val organizationCode: String,
     val organizationName: String,
+    val contactEmail: String? = null,
+    val contactPhone: String? = null,
+    val documentUrls: List<String> = emptyList(),
     val status: OrganizationApplicationStatus = OrganizationApplicationStatus.PENDING,
     val reviewedByUserId: UUID? = null,
     val reviewedAt: Instant? = null,
@@ -17,6 +20,7 @@ data class OrganizationApplication(
     init {
         require(organizationCode.isNotBlank()) { "OrganizationApplication organizationCode must not be blank" }
         require(organizationName.isNotBlank()) { "OrganizationApplication organizationName must not be blank" }
+        require(documentUrls.size <= 10) { "OrganizationApplication documentUrls must not exceed 10" }
 
         when (status) {
             OrganizationApplicationStatus.PENDING -> {
@@ -37,6 +41,11 @@ data class OrganizationApplication(
                 require(organizationId == null) { "Rejected application must not have organizationId" }
             }
         }
+    }
+
+    fun addDocument(url: String): OrganizationApplication {
+        require(documentUrls.size < 10) { "Cannot add more than 10 documents" }
+        return copy(documentUrls = documentUrls + url)
     }
 
     fun approve(adminUserId: UUID, approvedOrganizationId: UUID, at: Instant): OrganizationApplication {

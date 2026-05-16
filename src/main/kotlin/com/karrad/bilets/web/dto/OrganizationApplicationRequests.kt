@@ -5,13 +5,17 @@ import java.util.UUID
 
 data class CreateOrganizationApplicationRequest(
     val organizationCode: String,
-    val organizationName: String
+    val organizationName: String,
+    val contactEmail: String? = null,
+    val contactPhone: String? = null
 ) {
     fun toDomain(applicantUserId: UUID): OrganizationApplication {
         return OrganizationApplication(
             applicantUserId = applicantUserId,
             organizationCode = organizationCode,
-            organizationName = organizationName
+            organizationName = organizationName,
+            contactEmail = contactEmail?.takeIf { it.isNotBlank() },
+            contactPhone = contactPhone?.takeIf { it.isNotBlank() }
         )
     }
 }
