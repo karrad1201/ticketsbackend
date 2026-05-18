@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.entity.OrganizationApplication
 import com.karrad.bilets.domain.enums.OrganizationApplicationStatus
 import com.karrad.bilets.domain.repository.OrganizationApplicationRepository
 import com.karrad.bilets.web.dto.CreateOrganizationApplicationRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -28,7 +29,8 @@ class OrganizationApplicationController(
     private val reviewOrganizationApplicationUseCase: ReviewOrganizationApplicationUseCase,
     private val organizationApplicationService: OrganizationApplicationService,
     private val organizationApplicationRepository: OrganizationApplicationRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    @Value("\${app.uploads.dir}") private val uploadsDir: String
 ) {
 
     @PostMapping
@@ -81,10 +83,10 @@ class OrganizationApplicationController(
             "Cannot add documents to a non-pending application"
         }
 
-        val uploadsDir = File("uploads/org-docs")
-        uploadsDir.mkdirs()
+        val dir = File("$uploadsDir/org-docs")
+        dir.mkdirs()
         val filename = "${UUID.randomUUID()}_${file.originalFilename?.replace(" ", "_") ?: "doc"}"
-        val dest = File(uploadsDir, filename)
+        val dest = File(dir, filename)
         file.transferTo(dest)
 
         val url = "/uploads/org-docs/$filename"

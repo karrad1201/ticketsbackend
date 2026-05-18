@@ -52,6 +52,8 @@ management:
 app:
   cors:
     allowed-origins: "*"
+  uploads:
+    dir: uploads
 
 tbank:
   base-url: http://localhost:8888

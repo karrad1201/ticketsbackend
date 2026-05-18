@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.enums.OrganizationMemberRole
 import com.karrad.bilets.domain.enums.VenueApplicationStatus
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.VenueApplicationRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.GetMapping
@@ -29,7 +30,8 @@ class VenueApplicationController(
     private val venueApplicationRepository: VenueApplicationRepository,
     private val organizationMemberRepository: OrganizationMemberRepository,
     private val currentUserProvider: CurrentUserProvider,
-    private val clock: Clock
+    private val clock: Clock,
+    @Value("\${app.uploads.dir}") private val uploadsDir: String
 ) {
 
     /** Подать заявку на создание площадки (OWNER текущей организации). */
@@ -91,10 +93,10 @@ class VenueApplicationController(
             "Cannot add documents to a non-pending application"
         }
 
-        val uploadsDir = File("uploads/venue-docs")
-        uploadsDir.mkdirs()
+        val dir = File("$uploadsDir/venue-docs")
+        dir.mkdirs()
         val filename = "${UUID.randomUUID()}_${file.originalFilename?.replace(" ", "_") ?: "doc"}"
-        val dest = File(uploadsDir, filename)
+        val dest = File(dir, filename)
         file.transferTo(dest)
 
         val url = "/uploads/venue-docs/$filename"
