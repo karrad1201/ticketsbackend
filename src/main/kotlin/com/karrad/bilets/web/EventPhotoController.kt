@@ -7,6 +7,7 @@ import com.karrad.bilets.domain.enums.UserRole
 import com.karrad.bilets.domain.repository.EventPhotoRepository
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
 import com.karrad.bilets.domain.repository.UserRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -28,7 +29,8 @@ class EventPhotoController(
     private val eventService: EventService,
     private val organizationMemberRepository: OrganizationMemberRepository,
     private val userRepository: UserRepository,
-    private val currentUserProvider: CurrentUserProvider
+    private val currentUserProvider: CurrentUserProvider,
+    @Value("\${app.uploads.dir}") private val uploadsDir: String
 ) {
 
     @GetMapping
@@ -50,7 +52,7 @@ class EventPhotoController(
         val ext = requireNotNull(ALLOWED_TYPES[file.contentType ?: ""]) { "Photo must be JPEG, PNG or WebP" }
 
         val photoId = UUID.randomUUID()
-        val dir = File("uploads/events/$eventId/photos")
+        val dir = File("$uploadsDir/events/$eventId/photos")
         dir.mkdirs()
         val dest = File(dir, "$photoId.$ext")
         file.transferTo(dest)

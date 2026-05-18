@@ -3,6 +3,7 @@ package com.karrad.bilets.application.usecase
 import com.karrad.bilets.application.service.EventService
 import com.karrad.bilets.domain.entity.Event
 import com.karrad.bilets.domain.repository.OrganizationMemberRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 import java.io.File
@@ -11,7 +12,8 @@ import java.util.UUID
 @Component
 class UploadEventCoverUseCase(
     private val eventService: EventService,
-    private val organizationMemberRepository: OrganizationMemberRepository
+    private val organizationMemberRepository: OrganizationMemberRepository,
+    @Value("\${app.uploads.dir}") private val uploadsDir: String
 ) {
     fun upload(eventId: UUID, file: MultipartFile, callerId: UUID): Event {
         require(!file.isEmpty) { "File must not be empty" }
@@ -34,7 +36,7 @@ class UploadEventCoverUseCase(
         }
 
         val ext = ALLOWED_TYPES[contentType]!!
-        val dir = File("uploads/events/$eventId")
+        val dir = File("$uploadsDir/events/$eventId")
         dir.mkdirs()
         val dest = File(dir, "cover.$ext")
         file.transferTo(dest)
