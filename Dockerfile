@@ -25,8 +25,6 @@ USER bilets
 COPY --from=builder /build/target/bilets-*.jar app.jar
 RUN mkdir -p uploads
 
-VOLUME ["/app/uploads"]
-
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
