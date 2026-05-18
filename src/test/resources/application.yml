@@ -10,3 +10,7 @@ order-flow:
 purchase:
   hold-ttl: PT30M
   platform-commission-rate: 0.10
+
+app:
+  uploads:
+    dir: uploads
